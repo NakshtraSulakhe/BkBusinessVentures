@@ -1,0 +1,179 @@
+<svg width="100%" height="100%" viewBox="0 0 800 1000" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#dbeafe;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e0e7ff;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="greenGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="purpleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7c3aed;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="orangeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#d97706;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="800" height="1000" fill="url(#bgGradient)"/>
+  
+  <!-- Background Pattern -->
+  <g opacity="0.1">
+    <circle cx="150" cy="200" r="80" fill="#3b82f6">
+      <animate attributeName="cy" values="200;180;200" dur="4s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="650" cy="800" r="60" fill="#10b981">
+      <animate attributeName="cy" values="800;780;800" dur="3s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="550" cy="300" r="70" fill="#8b5cf6">
+      <animate attributeName="cy" values="300;280;300" dur="5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="250" cy="700" r="50" fill="#f59e0b">
+      <animate attributeName="cy" values="700;680;700" dur="3.5s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+  
+  <!-- Title Section -->
+  <text x="400" y="120" text-anchor="middle" fill="#1e293b" font-family="Arial, sans-serif" font-size="42" font-weight="bold">
+    Smart Financial
+  </text>
+  <text x="400" y="165" text-anchor="middle" fill="#1e293b" font-family="Arial, sans-serif" font-size="42" font-weight="bold">
+    Management
+  </text>
+  <text x="400" y="210" text-anchor="middle" fill="#64748b" font-family="Arial, sans-serif" font-size="20">
+    Manage your wealth with confidence
+  </text>
+  
+  <!-- Financial Cards -->
+  <g transform="translate(100, 280)">
+    <!-- RD Card -->
+    <g transform="translate(0, 0)">
+      <rect x="0" y="0" width="200" height="140" rx="16" fill="url(#blueGradient)" opacity="0.95">
+        <animate attributeName="y" values="0;-5;0" dur="3s" repeatCount="indefinite"/>
+      </rect>
+      <text x="100" y="40" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="20" font-weight="bold">Recurring Deposit</text>
+      <text x="100" y="70" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="16">8.5% p.a.</text>
+      <text x="100" y="95" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="14">Min. ₹500</text>
+      <rect x="20" y="105" width="160" height="5" rx="2.5" fill="white" opacity="0.3"/>
+      <rect x="20" y="105" width="120" height="5" rx="2.5" fill="white">
+        <animate attributeName="width" values="0;120;0" dur="2s" repeatCount="indefinite"/>
+      </rect>
+    </g>
+    
+    <!-- FD Card -->
+    <g transform="translate(250, 40)">
+      <rect x="0" y="0" width="200" height="140" rx="16" fill="url(#greenGradient)" opacity="0.95">
+        <animate attributeName="y" values="40;35;40" dur="3.5s" repeatCount="indefinite"/>
+      </rect>
+      <text x="100" y="40" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="20" font-weight="bold">Fixed Deposit</text>
+      <text x="100" y="70" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="16">7.2% p.a.</text>
+      <text x="100" y="95" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="14">Min. ₹1,000</text>
+      <rect x="20" y="105" width="160" height="5" rx="2.5" fill="white" opacity="0.3"/>
+      <rect x="20" y="105" width="140" height="5" rx="2.5" fill="white">
+        <animate attributeName="width" values="0;140;0" dur="2.5s" repeatCount="indefinite"/>
+      </rect>
+    </g>
+    
+    <!-- Loan Card -->
+    <g transform="translate(0, 200)">
+      <rect x="0" y="0" width="200" height="140" rx="16" fill="url(#purpleGradient)" opacity="0.95">
+        <animate attributeName="y" values="200;192;200" dur="4s" repeatCount="indefinite"/>
+      </rect>
+      <text x="100" y="40" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="20" font-weight="bold">Personal Loan</text>
+      <text x="100" y="70" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="16">10.5% p.a.</text>
+      <text x="100" y="95" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="14">Up to ₹10L</text>
+      <rect x="20" y="105" width="160" height="5" rx="2.5" fill="white" opacity="0.3"/>
+      <rect x="20" y="105" width="90" height="5" rx="2.5" fill="white">
+        <animate attributeName="width" values="0;90;0" dur="3s" repeatCount="indefinite"/>
+      </rect>
+    </g>
+  </g>
+  
+  <!-- Growth Chart -->
+  <g transform="translate(100, 680)">
+    <text x="0" y="0" fill="#1e293b" font-family="Arial, sans-serif" font-size="24" font-weight="bold">Investment Growth</text>
+    <polyline points="0,60 60,48 120,36 180,42 240,24 300,12 360,18 420,6 480,0" 
+              fill="none" stroke="url(#blueGradient)" stroke-width="4" opacity="0.9">
+      <animate attributeName="stroke-dasharray" values="0 700;700 0" dur="2s" repeatCount="indefinite"/>
+    </polyline>
+    <!-- Data Points -->
+    <circle cx="0" cy="60" r="5" fill="#3b82f6">
+      <animate attributeName="r" values="5;8;5" dur="2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="120" cy="36" r="5" fill="#3b82f6">
+      <animate attributeName="r" values="5;8;5" dur="2s" begin="0.5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="240" cy="24" r="5" fill="#3b82f6">
+      <animate attributeName="r" values="5;8;5" dur="2s" begin="1s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="360" cy="18" r="5" fill="#3b82f6">
+      <animate attributeName="r" values="5;8;5" dur="2s" begin="1.5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="480" cy="0" r="5" fill="#3b82f6">
+      <animate attributeName="r" values="5;8;5" dur="2s" begin="2s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+  
+  <!-- Floating Coins -->
+  <g>
+    <g transform="translate(600, 400)">
+      <circle cx="0" cy="0" r="25" fill="url(#orangeGradient)" opacity="0.9">
+        <animateTransform attributeName="transform" type="rotate" from="0 0 0" to="360 0 0" dur="4s" repeatCount="indefinite"/>
+      </circle>
+      <text x="0" y="6" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="18" font-weight="bold">₹</text>
+    </g>
+    <g transform="translate(680, 500)">
+      <circle cx="0" cy="0" r="20" fill="url(#orangeGradient)" opacity="0.9">
+        <animateTransform attributeName="transform" type="rotate" from="0 0 0" to="360 0 0" dur="3s" repeatCount="indefinite"/>
+      </circle>
+      <text x="0" y="5" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="14" font-weight="bold">₹</text>
+    </g>
+    <g transform="translate(550, 550)">
+      <circle cx="0" cy="0" r="22" fill="url(#orangeGradient)" opacity="0.9">
+        <animateTransform attributeName="transform" type="rotate" from="0 0 0" to="360 0 0" dur="3.5s" repeatCount="indefinite"/>
+      </circle>
+      <text x="0" y="6" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="16" font-weight="bold">₹</text>
+    </g>
+  </g>
+  
+  <!-- Decorative Elements -->
+  <g opacity="0.2">
+    <rect x="80" y="250" width="120" height="3" fill="#3b82f6">
+      <animate attributeName="opacity" values="0.2;0.8;0.2" dur="3s" repeatCount="indefinite"/>
+    </rect>
+    <rect x="600" y="350" width="100" height="3" fill="#10b981">
+      <animate attributeName="opacity" values="0.2;0.8;0.2" dur="3s" begin="1s" repeatCount="indefinite"/>
+    </rect>
+    <rect x="150" y="850" width="140" height="3" fill="#8b5cf6">
+      <animate attributeName="opacity" values="0.2;0.8;0.2" dur="3s" begin="2s" repeatCount="indefinite"/>
+    </rect>
+  </g>
+  
+  <!-- Bottom Stats -->
+  <g transform="translate(100, 850)">
+    <rect x="0" y="0" width="150" height="80" rx="12" fill="white" opacity="0.9"/>
+    <text x="75" y="30" text-anchor="middle" fill="#1e293b" font-family="Arial, sans-serif" font-size="14" font-weight="bold">Happy Clients</text>
+    <text x="75" y="55" text-anchor="middle" fill="#3b82f6" font-family="Arial, sans-serif" font-size="24" font-weight="bold">10,000+</text>
+    
+    <rect x="175" y="0" width="150" height="80" rx="12" fill="white" opacity="0.9"/>
+    <text x="250" y="30" text-anchor="middle" fill="#1e293b" font-family="Arial, sans-serif" font-size="14" font-weight="bold">Total Assets</text>
+    <text x="250" y="55" text-anchor="middle" fill="#10b981" font-family="Arial, sans-serif" font-size="24" font-weight="bold">₹500Cr+</text>
+    
+    <rect x="350" y="0" width="150" height="80" rx="12" fill="white" opacity="0.9"/>
+    <text x="425" y="30" text-anchor="middle" fill="#1e293b" font-family="Arial, sans-serif" font-size="14" font-weight="bold">Success Rate</text>
+    <text x="425" y="55" text-anchor="middle" fill="#8b5cf6" font-family="Arial, sans-serif" font-size="24" font-weight="bold">98%</text>
+  </g>
+</svg>

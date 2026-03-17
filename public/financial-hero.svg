@@ -1,0 +1,240 @@
+<svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Enhanced Blue Gradient Background -->
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0F172A;stop-opacity:1" />
+      <stop offset="30%" style="stop-color:#1E40AF;stop-opacity:1" />
+      <stop offset="70%" style="stop-color:#2563EB;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Card Gradients with Depth -->
+    <linearGradient id="card1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1D4ED8;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="card2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#60A5FA;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2563EB;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="card3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#93C5FD;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Enhanced Shadow Filters -->
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="4"/>
+      <feOffset dx="0" dy="6" result="offsetblur"/>
+      <feFlood flood-color="#000000" flood-opacity="0.3"/>
+      <feComposite in2="offsetblur" operator="in"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    
+    <!-- Animated Gradient -->
+    <linearGradient id="animatedGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#60A5FA;stop-opacity:0.8">
+        <animate attributeName="stop-color" values="#60A5FA;#3B82F6;#60A5FA" dur="3s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="100%" style="stop-color:#2563EB;stop-opacity:0.8">
+        <animate attributeName="stop-color" values="#2563EB;#1D4ED8;#2563EB" dur="3s" repeatCount="indefinite"/>
+      </stop>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="800" height="600" fill="url(#bg)"/>
+  
+  <!-- Animated Grid Pattern -->
+  <pattern id="grid" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" stroke-width="0.5" opacity="0.1">
+      <animate attributeName="opacity" values="0.1;0.2;0.1" dur="4s" repeatCount="indefinite"/>
+    </path>
+  </pattern>
+  <rect width="800" height="600" fill="url(#grid)"/>
+  
+  <!-- Floating Particles -->
+  <g opacity="0.6">
+    <circle cx="100" cy="100" r="2" fill="white">
+      <animate attributeName="cy" values="100;80;100" dur="3s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="700" cy="200" r="3" fill="white">
+      <animate attributeName="cy" values="200;180;200" dur="4s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.4;0.8;0.4" dur="4s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="200" cy="500" r="2" fill="white">
+      <animate attributeName="cy" values="500;480;500" dur="3.5s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.5;0.9;0.5" dur="3.5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="600" cy="400" r="2.5" fill="white">
+      <animate attributeName="cy" values="400;380;400" dur="2.5s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.6;1;0.6" dur="2.5s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+  
+  <!-- Main Content -->
+  <g transform="translate(400, 300)">
+    
+    <!-- Enhanced RD Card with Animation -->
+    <g transform="translate(-200, -100)">
+      <rect x="-100" y="-70" width="200" height="140" rx="16" fill="url(#card1)" filter="url(#shadow)"/>
+      <rect x="-100" y="-70" width="200" height="140" rx="16" fill="white" opacity="0.15"/>
+      
+      <!-- Card Icon -->
+      <g transform="translate(-70, -45)">
+        <circle r="15" fill="white" opacity="0.2"/>
+        <text y="5" text-anchor="middle" fill="white" font-size="16" font-weight="bold">💰</text>
+      </g>
+      
+      <text x="0" y="-30" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="18" font-weight="bold">Recurring Deposit</text>
+      <text x="0" y="5" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="32" font-weight="bold">₹50,000</text>
+      <text x="0" y="30" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="16" opacity="0.9">7.5% p.a.</text>
+      
+      <!-- Progress Bar -->
+      <rect x="-70" y="45" width="140" height="8" rx="4" fill="white" opacity="0.2"/>
+      <rect x="-70" y="45" width="100" height="8" rx="4" fill="url(#animatedGradient)"/>
+      
+      <!-- Floating Animation -->
+      <animateTransform attributeName="transform" type="translate" values="-200,-100; -200,-105; -200,-100" dur="4s" repeatCount="indefinite"/>
+    </g>
+    
+    <!-- Enhanced FD Card with Animation -->
+    <g transform="translate(0, -120)">
+      <rect x="-100" y="-70" width="200" height="140" rx="16" fill="url(#card2)" filter="url(#shadow)"/>
+      <rect x="-100" y="-70" width="200" height="140" rx="16" fill="white" opacity="0.15"/>
+      
+      <!-- Card Icon -->
+      <g transform="translate(-70, -45)">
+        <circle r="15" fill="white" opacity="0.2"/>
+        <text y="5" text-anchor="middle" fill="white" font-size="16" font-weight="bold">🏦</text>
+      </g>
+      
+      <text x="0" y="-30" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="18" font-weight="bold">Fixed Deposit</text>
+      <text x="0" y="5" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="32" font-weight="bold">₹2,00,000</text>
+      <text x="0" y="30" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="16" opacity="0.9">8.2% p.a.</text>
+      
+      <!-- Progress Bar -->
+      <rect x="-70" y="45" width="140" height="8" rx="4" fill="white" opacity="0.2"/>
+      <rect x="-70" y="45" width="120" height="8" rx="4" fill="url(#animatedGradient)"/>
+      
+      <!-- Floating Animation -->
+      <animateTransform attributeName="transform" type="translate" values="0,-120; 0,-125; 0,-120" dur="3.5s" repeatCount="indefinite"/>
+    </g>
+    
+    <!-- Enhanced Loan Card with Animation -->
+    <g transform="translate(200, -100)">
+      <rect x="-100" y="-70" width="200" height="140" rx="16" fill="url(#card3)" filter="url(#shadow)"/>
+      <rect x="-100" y="-70" width="200" height="140" rx="16" fill="white" opacity="0.15"/>
+      
+      <!-- Card Icon -->
+      <g transform="translate(-70, -45)">
+        <circle r="15" fill="white" opacity="0.2"/>
+        <text y="5" text-anchor="middle" fill="white" font-size="16" font-weight="bold">📊</text>
+      </g>
+      
+      <text x="0" y="-30" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="18" font-weight="bold">Personal Loan</text>
+      <text x="0" y="5" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="32" font-weight="bold">₹5,00,000</text>
+      <text x="0" y="30" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="16" opacity="0.9">10.5% p.a.</text>
+      
+      <!-- Progress Bar -->
+      <rect x="-70" y="45" width="140" height="8" rx="4" fill="white" opacity="0.2"/>
+      <rect x="-70" y="45" width="110" height="8" rx="4" fill="url(#animatedGradient)"/>
+      
+      <!-- Floating Animation -->
+      <animateTransform attributeName="transform" type="translate" values="200,-100; 200,-105; 200,-100" dur="4.5s" repeatCount="indefinite"/>
+    </g>
+    
+    <!-- Animated Growth Chart -->
+    <g transform="translate(0, 100)">
+      <path d="M -250 80 L -200 60 L -150 30 L -100 5 L -50 -20 L 0 -45 L 50 -70 L 100 -90 L 250 -120" 
+            stroke="url(#animatedGradient)" stroke-width="5" fill="none" opacity="0.9" stroke-linecap="round" filter="url(#glow)"/>
+      <path d="M -250 80 L -200 60 L -150 30 L -100 5 L -50 -20 L 0 -45 L 50 -70 L 100 -90 L 250 -120 L 250 100 L -250 100 Z" 
+            fill="url(#animatedGradient)" opacity="0.1"/>
+      
+      <!-- Animated Data Points -->
+      <circle cx="-250" cy="80" r="6" fill="white" filter="url(#glow)">
+        <animate attributeName="r" values="6;8;6" dur="2s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="-200" cy="60" r="6" fill="white" filter="url(#glow)">
+        <animate attributeName="r" values="6;8;6" dur="2.2s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="-150" cy="30" r="6" fill="white" filter="url(#glow)">
+        <animate attributeName="r" values="6;8;6" dur="2.4s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="-100" cy="5" r="6" fill="white" filter="url(#glow)">
+        <animate attributeName="r" values="6;8;6" dur="2.6s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="-50" cy="-20" r="7" fill="white" filter="url(#glow)">
+        <animate attributeName="r" values="7;9;7" dur="2.8s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="0" cy="-45" r="7" fill="white" filter="url(#glow)">
+        <animate attributeName="r" values="7;9;7" dur="3s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="50" cy="-70" r="6" fill="white" filter="url(#glow)">
+        <animate attributeName="r" values="6;8;6" dur="3.2s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="100" cy="-90" r="6" fill="white" filter="url(#glow)">
+        <animate attributeName="r" values="6;8;6" dur="3.4s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="250" cy="-120" r="8" fill="white" filter="url(#glow)">
+        <animate attributeName="r" values="8;10;8" dur="3.6s" repeatCount="indefinite"/>
+      </circle>
+    </g>
+    
+    <!-- Enhanced Floating Coins with Animation -->
+    <g opacity="0.8">
+      <g transform="translate(-280, -180)">
+        <circle r="25" fill="white" opacity="0.15"/>
+        <circle r="20" fill="white" opacity="0.25"/>
+        <text y="6" text-anchor="middle" fill="#3B82F6" font-size="20" font-weight="bold">₹</text>
+        <animateTransform attributeName="transform" type="rotate" values="0;360" dur="20s" repeatCount="indefinite"/>
+      </g>
+      
+      <g transform="translate(280, -160)">
+        <circle r="22" fill="white" opacity="0.15"/>
+        <circle r="18" fill="white" opacity="0.25"/>
+        <text y="5" text-anchor="middle" fill="#2563EB" font-size="18" font-weight="bold">₹</text>
+        <animateTransform attributeName="transform" type="rotate" values="0;-360" dur="18s" repeatCount="indefinite"/>
+      </g>
+      
+      <g transform="translate(-250, 150)">
+        <circle r="18" fill="white" opacity="0.15"/>
+        <circle r="14" fill="white" opacity="0.25"/>
+        <text y="4" text-anchor="middle" fill="#60A5FA" font-size="16" font-weight="bold">₹</text>
+        <animateTransform attributeName="transform" type="rotate" values="0;360" dur="15s" repeatCount="indefinite"/>
+      </g>
+      
+      <g transform="translate(270, 130)">
+        <circle r="28" fill="white" opacity="0.15"/>
+        <circle r="23" fill="white" opacity="0.25"/>
+        <text y="7" text-anchor="middle" fill="#1D4ED8" font-size="22" font-weight="bold">₹</text>
+        <animateTransform attributeName="transform" type="rotate" values="0;-360" dur="22s" repeatCount="indefinite"/>
+      </g>
+    </g>
+    
+    <!-- Decorative Elements -->
+    <g opacity="0.4">
+      <rect x="-350" y="-200" width="70" height="70" rx="10" fill="none" stroke="url(#animatedGradient)" stroke-width="2" transform="rotate(15 -315 -165)">
+        <animate attributeName="stroke-opacity" values="0.4;0.8;0.4" dur="3s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="280" y="-180" width="60" height="60" rx="8" fill="none" stroke="url(#animatedGradient)" stroke-width="2" transform="rotate(-20 310 -150)">
+        <animate attributeName="stroke-opacity" values="0.4;0.8;0.4" dur="3.5s" repeatCount="indefinite"/>
+      </rect>
+      <circle cx="330" cy="60" r="30" fill="none" stroke="url(#animatedGradient)" stroke-width="2">
+        <animate attributeName="stroke-opacity" values="0.4;0.8;0.4" dur="4s" repeatCount="indefinite"/>
+      </circle>
+    </g>
+  </g>
+</svg>
