@@ -2,21 +2,29 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { DashboardLayout } from "@/components/dashboard-layout"
+import { MainLayout } from "@/components/layout/MainLayout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Skeleton } from "@/components/ui/skeleton"
 import { 
-  PlusIcon,
-  MagnifyingGlassIcon,
-  BanknotesIcon,
-  CalendarIcon,
-  UserIcon,
-  ArrowPathIcon,
-  EyeIcon
-} from "@heroicons/react/24/outline"
+  Plus,
+  Search,
+  RotateCcw,
+  Eye,
+  Building,
+  User,
+  TrendingUp,
+  TrendingDown,
+  MoreHorizontal,
+  CreditCard,
+  PiggyBank
+} from "lucide-react"
+import { cn, formatCurrency } from "@/lib/utils"
 
 interface Account {
   id: string
@@ -44,19 +52,19 @@ export default function AccountsPage() {
   const [accounts, setAccounts] = useState<Account[]>([])
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
-  const [accountType, setAccountType] = useState('')
+  const [accountType, setAccountType] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
 
-  const fetchAccounts = async (page = 1, searchQuery = '', typeFilter = '') => {
+  const fetchAccounts = async (page = 1, searchQuery = '', typeFilter = 'all') => {
     try {
       setLoading(true)
       const params = new URLSearchParams({
         page: page.toString(),
         limit: '10',
         ...(searchQuery && { search: searchQuery }),
-        ...(typeFilter && { accountType: typeFilter })
+        ...(typeFilter && typeFilter !== 'all' && { accountType: typeFilter })
       })
 
       const response = await fetch(`/api/accounts?${params}`)
@@ -90,298 +98,335 @@ export default function AccountsPage() {
 
   const getAccountTypeColor = (type: string) => {
     switch (type) {
-      case 'fd': return 'bg-blue-100 text-blue-700'
-      case 'rd': return 'bg-green-100 text-green-700'
-      case 'loan': return 'bg-red-100 text-red-700'
-      default: return 'bg-gray-100 text-gray-700'
+      case 'fd': return 'bg-blue-100 text-blue-800'
+      case 'rd': return 'bg-emerald-100 text-emerald-800'
+      case 'loan': return 'bg-red-100 text-red-800'
+      default: return 'bg-gray-100 text-gray-800'
     }
   }
 
   const getAccountTypeIcon = (type: string) => {
     switch (type) {
-      case 'fd': return '💰'
-      case 'rd': return '🔄'
-      case 'loan': return '💳'
-      default: return '🏦'
+      case 'fd': return <PiggyBank className="h-4 w-4" />
+      case 'rd': return <TrendingUp className="h-4 w-4" />
+      case 'loan': return <CreditCard className="h-4 w-4" />
+      default: return <Building className="h-4 w-4" />
     }
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-700'
-      case 'matured': return 'bg-yellow-100 text-yellow-700'
-      case 'closed': return 'bg-red-100 text-red-700'
-      default: return 'bg-gray-100 text-gray-700'
+      case 'active': return 'bg-emerald-100 text-emerald-800'
+      case 'matured': return 'bg-amber-100 text-amber-800'
+      case 'closed': return 'bg-red-100 text-red-800'
+      default: return 'bg-gray-100 text-gray-800'
     }
   }
 
+  const totalPrincipal = accounts.reduce((sum, acc) => sum + acc.principalAmount, 0)
+  const fdCount = accounts.filter(a => a.accountType === 'fd').length
+  const rdCount = accounts.filter(a => a.accountType === 'rd').length
+  const loanCount = accounts.filter(a => a.accountType === 'loan').length
+
   return (
-    <DashboardLayout>
-      <div className="p-6 min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Accounts Master
-              </h1>
-              <p className="text-gray-600 mt-2">
-                Manage Fixed Deposits, Recurring Deposits, and Loans
-              </p>
-            </div>
+    <MainLayout>
+      <div className="space-y-6 animate-fade-in">
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Accounts</h1>
+            <p className="text-gray-600">Manage your business accounts and portfolios</p>
+          </div>
+          <div className="mt-4 sm:mt-0 flex space-x-3">
+            <Button
+              variant="outline"
+              onClick={() => fetchAccounts(1, '', 'all')}
+            >
+              <RotateCcw className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
             <Button
               onClick={() => router.push('/dashboard/accounts/create')}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg h-12 px-6"
             >
-              <PlusIcon className="h-5 w-5 mr-2" />
+              <Plus className="mr-2 h-4 w-4" />
               Create Account
             </Button>
           </div>
+        </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <Card className="bg-white/60 backdrop-blur-sm">
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <div className="p-3 bg-blue-100 rounded-lg">
-                    <BanknotesIcon className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm text-gray-600">Total Accounts</p>
-                    <p className="text-2xl font-bold">{total}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white/60 backdrop-blur-sm">
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <div className="p-3 bg-green-100 rounded-lg">
-                    <span className="text-xl">💰</span>
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm text-gray-600">Fixed Deposits</p>
-                    <p className="text-2xl font-bold">
-                      {accounts.filter(a => a.accountType === 'fd').length}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white/60 backdrop-blur-sm">
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <div className="p-3 bg-yellow-100 rounded-lg">
-                    <span className="text-xl">🔄</span>
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm text-gray-600">Recurring Deposits</p>
-                    <p className="text-2xl font-bold">
-                      {accounts.filter(a => a.accountType === 'rd').length}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white/60 backdrop-blur-sm">
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <div className="p-3 bg-red-100 rounded-lg">
-                    <span className="text-xl">💳</span>
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm text-gray-600">Loans</p>
-                    <p className="text-2xl font-bold">
-                      {accounts.filter(a => a.accountType === 'loan').length}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Filters */}
-          <Card className="bg-white/60 backdrop-blur-sm mb-6">
+        {/* Overview Cards */}
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <Card>
             <CardContent className="p-6">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1">
-                  <div className="relative">
-                    <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      placeholder="Search by account number, customer name..."
-                      value={search}
-                      onChange={(e) => handleSearch(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Accounts</p>
+                  <p className="text-2xl font-bold text-gray-900">{total}</p>
                 </div>
-                <div className="w-full md:w-48">
-                  <Select value={accountType} onValueChange={handleTypeFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="All Types" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">All Types</SelectItem>
-                      <SelectItem value="fd">Fixed Deposit</SelectItem>
-                      <SelectItem value="rd">Recurring Deposit</SelectItem>
-                      <SelectItem value="loan">Loan</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Building className="h-4 w-4 text-blue-600" />
                 </div>
-                <Button
-                  variant="outline"
-                  onClick={() => fetchAccounts(1, '', '')}
-                  className="w-full md:w-auto"
-                >
-                  <ArrowPathIcon className="h-4 w-4 mr-2" />
-                  Refresh
-                </Button>
               </div>
             </CardContent>
           </Card>
 
-          {/* Accounts Table */}
-          <Card className="bg-white/60 backdrop-blur-sm">
+          <Card>
             <CardContent className="p-6">
-              {loading ? (
-                <div className="flex justify-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Principal</p>
+                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalPrincipal)}</p>
                 </div>
-              ) : accounts.length === 0 ? (
-                <div className="text-center py-12">
-                  <BanknotesIcon className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-4 text-lg font-medium text-gray-900">No accounts found</h3>
-                  <p className="mt-2 text-sm text-gray-500">
-                    Get started by creating your first account.
-                  </p>
-                  <Button
-                    onClick={() => router.push('/dashboard/accounts/create')}
-                    className="mt-4 bg-gradient-to-r from-blue-600 to-purple-600"
-                  >
-                    <PlusIcon className="h-4 w-4 mr-2" />
-                    Create First Account
-                  </Button>
+                <div className="h-8 w-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+                  <PiggyBank className="h-4 w-4 text-emerald-600" />
                 </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-4 font-medium text-gray-700">Account</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700">Customer</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700">Type</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700">Principal</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700">Rate</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700">Status</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {accounts.map((account) => (
-                        <tr key={account.id} className="border-b border-gray-100 hover:bg-gray-50">
-                          <td className="py-4 px-4">
-                            <div>
-                              <div className="font-medium">{account.accountNumber}</div>
-                              <div className="text-sm text-gray-500">
-                                {new Date(account.createdAt).toLocaleDateString()}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-4 px-4">
-                            <div className="flex items-center">
-                              <UserIcon className="h-4 w-4 text-gray-400 mr-2" />
-                              <div>
-                                <div className="font-medium">{account.customer.name}</div>
-                                <div className="text-sm text-gray-500">{account.customer.email}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-4 px-4">
-                            <Badge className={getAccountTypeColor(account.accountType)}>
-                              <span className="mr-1">{getAccountTypeIcon(account.accountType)}</span>
-                              {account.accountType.toUpperCase()}
-                            </Badge>
-                          </td>
-                          <td className="py-4 px-4">
-                            <div className="font-medium">
-                              ₹{account.principalAmount.toLocaleString()}
-                            </div>
-                          </td>
-                          <td className="py-4 px-4">
-                            <div className="font-medium">{account.interestRate}%</div>
-                            <div className="text-sm text-gray-500">{account.tenure} months</div>
-                          </td>
-                          <td className="py-4 px-4">
-                            <Badge className={getStatusColor(account.state)}>
-                              {account.state}
-                            </Badge>
-                          </td>
-                          <td className="py-4 px-4">
-                            <div className="flex items-center space-x-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => router.push(`/dashboard/accounts/${account.id}`)}
-                              >
-                                <EyeIcon className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+              </div>
+            </CardContent>
+          </Card>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-6">
-                  <div className="text-sm text-gray-600">
-                    Showing {((currentPage - 1) * 10) + 1} to {Math.min(currentPage * 10, total)} of {total} accounts
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                      disabled={currentPage === 1}
-                    >
-                      Previous
-                    </Button>
-                    <div className="flex items-center space-x-1">
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        const page = i + 1
-                        return (
-                          <Button
-                            key={page}
-                            variant={currentPage === page ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setCurrentPage(page)}
-                          >
-                            {page}
-                          </Button>
-                        )
-                      })}
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                      disabled={currentPage === totalPages}
-                    >
-                      Next
-                    </Button>
-                  </div>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Fixed Deposits</p>
+                  <p className="text-2xl font-bold text-gray-900">{fdCount}</p>
                 </div>
-              )}
+                <div className="h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <PiggyBank className="h-4 w-4 text-blue-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Active Loans</p>
+                  <p className="text-2xl font-bold text-gray-900">{loanCount}</p>
+                </div>
+                <div className="h-8 w-8 bg-red-100 rounded-lg flex items-center justify-center">
+                  <CreditCard className="h-4 w-4 text-red-600" />
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
+
+        {/* Main Content */}
+        <Tabs defaultValue="accounts" className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <TabsList className="grid w-full sm:w-auto grid-cols-3">
+              <TabsTrigger value="accounts">Accounts</TabsTrigger>
+              <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
+            </TabsList>
+
+            {/* Filters */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Input
+                  placeholder="Search accounts..."
+                  value={search}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className="pl-10 w-full sm:w-64"
+                />
+              </div>
+              <Select value={accountType} onValueChange={handleTypeFilter}>
+                <SelectTrigger className="w-full sm:w-40">
+                  <SelectValue placeholder="All Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="fd">Fixed Deposit</SelectItem>
+                  <SelectItem value="rd">Recurring Deposit</SelectItem>
+                  <SelectItem value="loan">Loan</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <TabsContent value="accounts" className="space-y-6">
+            <Card>
+              <CardContent className="p-6">
+                {loading ? (
+                  <div className="space-y-4">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className="flex items-center space-x-4">
+                        <Skeleton className="h-12 w-12 rounded-lg" />
+                        <div className="flex-1 space-y-2">
+                          <Skeleton className="h-4 w-3/4" />
+                          <Skeleton className="h-4 w-1/2" />
+                        </div>
+                        <Skeleton className="h-8 w-20" />
+                      </div>
+                    ))}
+                  </div>
+                ) : accounts.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Building className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-4 text-lg font-medium text-gray-900">No accounts found</h3>
+                    <p className="mt-2 text-sm text-gray-500">
+                      Get started by creating your first account.
+                    </p>
+                    <Button
+                      onClick={() => router.push('/dashboard/accounts/create')}
+                      className="mt-4"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create First Account
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {accounts.map((account) => (
+                      <div key={account.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                        <div className="flex items-center space-x-4">
+                          <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                            {getAccountTypeIcon(account.accountType)}
+                          </div>
+                          <div>
+                            <div className="flex items-center space-x-2">
+                              <h3 className="font-semibold text-gray-900">{account.accountNumber}</h3>
+                              <Badge variant="secondary" className={getAccountTypeColor(account.accountType)}>
+                                {account.accountType.toUpperCase()}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center space-x-2 mt-1">
+                              <User className="h-3 w-3 text-gray-400" />
+                              <span className="text-sm text-gray-600">{account.customer.name}</span>
+                              <span className="text-sm text-gray-400">•</span>
+                              <span className="text-sm text-gray-500">{account.customer.email}</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="text-right">
+                          <div className="text-lg font-semibold text-gray-900">
+                            {formatCurrency(account.principalAmount)}
+                          </div>
+                          <div className="flex items-center space-x-2 text-sm text-gray-600">
+                            <span>{account.interestRate}%</span>
+                            <span>•</span>
+                            <span>{account.tenure} months</span>
+                          </div>
+                          <div className="flex items-center justify-end mt-2 space-x-2">
+                            <Badge variant="secondary" className={getStatusColor(account.state)}>
+                              {account.state}
+                            </Badge>
+                            <Button variant="ghost" size="icon">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-200">
+                    <div className="text-sm text-gray-600">
+                      Showing {((currentPage - 1) * 10) + 1} to {Math.min(currentPage * 10, total)} of {total} accounts
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        disabled={currentPage === 1}
+                      >
+                        Previous
+                      </Button>
+                      <div className="flex items-center space-x-1">
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                          const page = i + 1
+                          return (
+                            <Button
+                              key={page}
+                              variant={currentPage === page ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setCurrentPage(page)}
+                            >
+                              {page}
+                            </Button>
+                          )
+                        })}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                        disabled={currentPage === totalPages}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="analytics" className="space-y-6">
+            <div className="grid gap-6 lg:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Account Distribution</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                    <div className="pt-4">
+                      <p className="text-sm text-gray-600">Analytics dashboard coming soon...</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Performance Metrics</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-2/3" />
+                    <Skeleton className="h-4 w-3/4" />
+                    <div className="pt-4">
+                      <p className="text-sm text-gray-600">Detailed analytics coming soon...</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="settings" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Account Settings</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <div className="pt-4">
+                    <p className="text-sm text-gray-600">Settings panel coming soon...</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
-    </DashboardLayout>
+    </MainLayout>
   )
 }
