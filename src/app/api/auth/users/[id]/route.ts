@@ -4,9 +4,10 @@ import { verifyToken } from "@/lib/auth"
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const token = request.headers.get("authorization")?.replace("Bearer ", "")
     
     if (!token) {
@@ -26,7 +27,7 @@ export async function PATCH(
     const { isActive, role } = body
 
     const updatedUser = await prisma.user.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(isActive !== undefined && { isActive }),
         ...(role && { role })
@@ -50,9 +51,10 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const token = request.headers.get("authorization")?.replace("Bearer ", "")
     
     if (!token) {
@@ -69,12 +71,15 @@ export async function DELETE(
     }
 
     await prisma.user.delete({
-      where: { id: params.id }
+      where: { id }
     })
 
     return NextResponse.json({ message: "User deleted successfully" })
   } catch (error) {
     console.error("Failed to delete user:", error)
-    return NextResponse.json({ error: "Failed to delete user" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Failed to delete user" },
+      { status: 500 }
+    )
   }
 }

@@ -125,10 +125,11 @@ export async function POST(request: NextRequest) {
       const template = await prisma.numberingTemplate.create({
         data: {
           name: body.name,
+          template: body.template || body.name,
+          description: body.description,
           accountType: body.accountType,
-          format: body.format,
-          sequence: body.sequence || 1,
-          sequenceLength: body.sequenceLength || 6,
+          sequenceStart: body.sequenceStart || 1,
+          currentSequence: body.currentSequence || 0,
           isActive: body.isActive !== undefined ? true : body.isActive
         }
       })
@@ -141,10 +142,11 @@ export async function POST(request: NextRequest) {
       const mockTemplate = {
         id: Math.random().toString(36).substr(2, 9),
         name: body.name,
+        template: body.template || body.name,
+        description: body.description,
         accountType: body.accountType,
-        format: body.format,
-        sequence: body.sequence || 1,
-        sequenceLength: body.sequenceLength || 6,
+        sequenceStart: body.sequenceStart || 1,
+        currentSequence: body.currentSequence || 0,
         isActive: body.isActive !== undefined ? true : body.isActive,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -193,10 +195,11 @@ export async function PUT(request: NextRequest) {
         where: { id: templateId },
         data: {
           name: body.name,
+          template: body.template,
+          description: body.description,
           accountType: body.accountType,
-          format: body.format,
-          sequence: body.sequence,
-          sequenceLength: body.sequenceLength,
+          sequenceStart: body.sequenceStart,
+          currentSequence: body.currentSequence,
           isActive: body.isActive
         }
       })
@@ -209,10 +212,11 @@ export async function PUT(request: NextRequest) {
       const mockTemplate = {
         id: templateId,
         name: body.name,
+        template: body.template,
+        description: body.description,
         accountType: body.accountType,
-        format: body.format,
-        sequence: body.sequence,
-        sequenceLength: body.sequenceLength,
+        sequenceStart: body.sequenceStart,
+        currentSequence: body.currentSequence,
         isActive: body.isActive,
         updatedAt: new Date().toISOString()
       }

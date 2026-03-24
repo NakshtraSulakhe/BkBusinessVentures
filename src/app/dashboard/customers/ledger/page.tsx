@@ -13,8 +13,8 @@ import {
   UserIcon,
   BuildingLibraryIcon,
   CurrencyDollarIcon,
-  TrendingUpIcon,
-  TrendingDownIcon,
+  ArrowTrendingUpIcon,
+  ArrowTrendingDownIcon,
   EyeIcon,
   FunnelIcon,
   ChevronLeftIcon,
@@ -242,8 +242,8 @@ export default function CustomerLedger() {
   }
 
   const getNetWorthIcon = (netWorth: number) => {
-    if (netWorth > 0) return <TrendingUpIcon className="h-4 w-4" />
-    if (netWorth < 0) return <TrendingDownIcon className="h-4 w-4" />
+    if (netWorth > 0) return <ArrowTrendingUpIcon className="h-4 w-4" />
+    if (netWorth < 0) return <ArrowTrendingDownIcon className="h-4 w-4" />
     return <CurrencyDollarIcon className="h-4 w-4" />
   }
 
@@ -367,7 +367,7 @@ export default function CustomerLedger() {
                       {formatCurrency(customers.reduce((sum, c) => sum + c.financialSummary.totalDeposits, 0))}
                     </p>
                   </div>
-                  <TrendingUpIcon className="h-8 w-8 text-green-500" />
+                  <ArrowTrendingUpIcon className="h-8 w-8 text-green-500" />
                 </div>
               </CardContent>
             </Card>
@@ -381,7 +381,7 @@ export default function CustomerLedger() {
                       {formatCurrency(customers.reduce((sum, c) => sum + c.financialSummary.totalLoans, 0))}
                     </p>
                   </div>
-                  <TrendingDownIcon className="h-8 w-8 text-red-500" />
+                  <ArrowTrendingDownIcon className="h-8 w-8 text-red-500" />
                 </div>
               </CardContent>
             </Card>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -336,8 +336,56 @@ const adminSection = [
     href: "/dashboard/admin/audit", 
     icon: ClipboardDocumentListIcon, 
     current: false,
+    section: "admin",
+    indent: true
+  },
+  { 
+    name: "Ledger Edits", 
+    href: "/dashboard/admin/audit/ledger", 
+    icon: BookOpenIcon, 
+    current: false,
+    section: "admin",
+    indent: true
+  },
+  { 
+    name: "Suggestions Runs", 
+    href: "/dashboard/admin/audit/suggestions", 
+    icon: QueueListIcon, 
+    current: false,
+    section: "admin",
+    indent: true
+  },
+  { 
+    name: "Account Closure", 
+    href: "/dashboard/admin/closure", 
+    icon: XMarkIcon, 
+    current: false,
     section: "admin"
   },
+  { 
+    name: "Close Account", 
+    href: "/dashboard/admin/closure/close", 
+    icon: XMarkIcon, 
+    current: false,
+    section: "admin"
+  },
+  { 
+    name: "Reopen Account", 
+    href: "/dashboard/admin/closure/reopen", 
+    icon: UserIcon, 
+    current: false,
+    section: "admin",
+    indent: true
+  },
+]
+
+function SectionHeader({ title }: { title: string }) {
+  return (
+    <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+      {title}
+    </div>
+  )
+}
 
 function renderNavigationItems(items: any[]) {
   const { isAdmin } = useAuth()
@@ -354,7 +402,7 @@ function renderNavigationItems(items: any[]) {
         href={item.href}
         className={cn(
           "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200",
-          item.indent ? "ml-4 lg:ml-0" : "",
+          item.indent ? "ml-4" : "",
           item.current
             ? "bg-blue-100 text-blue-700 border-l-4 border-blue-700"
             : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
@@ -370,20 +418,35 @@ function renderNavigationItems(items: any[]) {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
   const { user, logout } = useAuth()
+
+  // Close mobile menus when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      if (!target.closest('.mobile-menu, .mobile-menu-trigger')) {
+        setMobileMenuOpen(false)
+        setUserMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('click', handleClickOutside)
+    return () => {
+      document.removeEventListener('click', handleClickOutside)
+    }
+  }, [])
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Mobile sidebar overlay */}
-      <div 
-        className={cn(
-          "fixed inset-0 z-50 lg:hidden transition-opacity duration-300",
-          sidebarOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-        )}
-      >
+      {/* Mobile sidebar */}
+      <div className={cn(
+        "fixed inset-0 z-50 lg:hidden transition-opacity duration-300",
+        sidebarOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+      )}>
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
         <div className="fixed inset-y-0 left-0 w-64 max-w-xs sm:max-w-md bg-white shadow-xl transform transition-transform duration-300 ease-in-out">
-          <div className="flex items-center justify-between h-16 px-4 border-b">
+          <div className="flex items-center justify-between h-16 px-4 border-b bg-white">
             <h2 className="text-lg font-semibold text-gray-900">BK Business Ventures</h2>
             <button
               onClick={() => setSidebarOpen(false)}
@@ -440,34 +503,76 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       </div>
 
       {/* Main content area */}
-      <div className="lg:pl-64 flex flex flex-col min-h-screen">
-        {/* Top navigation bar */}
-        <header className="bg-white shadow-sm border-b border-gray-200 lg:hidden">
+      <div className="flex-1 lg:pl-64">
+        {/* Mobile top bar */}
+        <header className={cn(
+          "bg-white shadow-sm border-b lg:hidden",
+          "sticky top-0 z-30"
+        )}>
           <div className="flex items-center justify-between h-16 px-4">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-md hover:bg-gray-100 transition-colors"
-              size="sm"
-              onClick={() => setSidebarOpen(true)}
+              className="mobile-menu-trigger p-2 rounded-md hover:bg-gray-100 transition-colors"
             >
               <Bars3Icon className="h-6 w-6" />
-            </Button>
+            </button>
             <h1 className="text-lg font-semibold text-gray-900">Dashboard</h1>
-            <div className="w-10" /> {/* Spacer for centering */}
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <div className="flex-shrink-0">
+                  <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
+                    <span className="text-white text-sm font-medium">
+                      {user?.name?.charAt(0).toUpperCase() || 'U'}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex flex-col items-start min-w-0">
+                  <span className="text-sm font-medium text-gray-900 truncate">
+                    {user?.name || 'User'}
+                  </span>
+                  <span className="text-xs text-gray-500 truncate">
+                    {user?.email}
+                  </span>
+                </div>
+                <ChevronDownIcon className={cn(
+                  "ml-2 h-4 w-4 transition-transform duration-200",
+                  userMenuOpen ? "rotate-180" : ""
+                )} />
+              </button>
+              
+              {/* User dropdown menu */}
+              {userMenuOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                  <button
+                    onClick={logout}
+                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    <ArrowRightOnRectangleIcon className="mr-3 h-4 w-4" />
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
-        <header className="bg-white shadow-sm border-b hidden lg:block">
-          <div className="flex items-center justify-between h-16 px-6">
-            <h1 className="text-xl font-semibold text-gray-900">Dashboard</h1>
+        {/* Desktop header */}
+        <header className="hidden lg:block bg-white shadow-sm border-b sticky top-0 z-30">
+          <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
+            <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
             <div className="flex items-center space-x-4">
               <div className="text-sm text-gray-600">
                 Welcome back, {user?.name}
               </div>
-              <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
-                <span className="text-white text-sm font-medium">
-                  {user?.name?.charAt(0).toUpperCase() || 'U'}
-                </span>
+              <div className="flex-shrink-0">
+                <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
+                  <span className="text-white text-sm font-medium">
+                    {user?.name?.charAt(0).toUpperCase() || 'U'}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -475,7 +580,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* Page content */}
         <main className="flex-1 overflow-auto">
-          {children}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            {children}
+          </div>
         </main>
       </div>
     </div>
