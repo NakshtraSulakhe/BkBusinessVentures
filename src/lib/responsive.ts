@@ -3,6 +3,8 @@
  * Helper functions and constants for responsive design
  */
 
+import { useState, useEffect } from 'react'
+
 // Breakpoints
 export const breakpoints = {
   xs: '0px',      // 0px - 639px

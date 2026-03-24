@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
@@ -33,7 +33,7 @@ interface Customer {
   phone: string
 }
 
-export default function CreateRD() {
+function CreateRDComponent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [customers, setCustomers] = useState<Customer[]>([])
@@ -476,5 +476,13 @@ export default function CreateRD() {
         </div>
       </div>
     </DashboardLayout>
+  )
+}
+
+export default function CreateRD() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CreateRDComponent />
+    </Suspense>
   )
 }

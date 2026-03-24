@@ -61,7 +61,7 @@ export function CustomerSelectionTab({ customers, formData, setFormData, errors,
             </label>
             <Select
               value={formData.customerId}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, customerId: value }))}
+              onValueChange={(value) => setFormData((prev: any) => ({ ...prev, customerId: value }))}
             >
               <SelectTrigger className={errors.customerId ? 'border-red-500' : ''}>
                 <SelectValue placeholder="Choose a customer..." />
@@ -93,7 +93,7 @@ export function CustomerSelectionTab({ customers, formData, setFormData, errors,
             </label>
             <Select
               value={formData.accountType}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, accountType: value }))}
+              onValueChange={(value) => setFormData((prev: any) => ({ ...prev, accountType: value }))}
             >
               <SelectTrigger className={errors.accountType ? 'border-red-500' : ''}>
                 <SelectValue placeholder="Select account type..." />
@@ -130,7 +130,7 @@ export function CustomerSelectionTab({ customers, formData, setFormData, errors,
             </label>
             <Select
               value={formData.numberingTemplateId || 'default'}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, numberingTemplateId: value === 'default' ? '' : value }))}
+              onValueChange={(value) => setFormData((prev: any) => ({ ...prev, numberingTemplateId: value === 'default' ? '' : value }))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Use default template" />
@@ -218,7 +218,7 @@ export function AccountDetailsTab({ formData, setFormData, errors, accountSummar
                 type="number"
                 step="0.01"
                 value={formData.monthlyInstallment}
-                onChange={(e) => setFormData(prev => ({ ...prev, monthlyInstallment: e.target.value }))}
+                onChange={(e) => setFormData((prev: any) => ({ ...prev, monthlyInstallment: e.target.value }))}
                 className={errors.monthlyInstallment ? 'border-red-500' : ''}
                 placeholder="Enter monthly installment amount"
               />
@@ -235,7 +235,7 @@ export function AccountDetailsTab({ formData, setFormData, errors, accountSummar
                 type="number"
                 step="0.01"
                 value={formData.principalAmount}
-                onChange={(e) => setFormData(prev => ({ ...prev, principalAmount: e.target.value }))}
+                onChange={(e) => setFormData((prev: any) => ({ ...prev, principalAmount: e.target.value }))}
                 className={errors.principalAmount ? 'border-red-500' : ''}
                 placeholder="Enter principal amount"
               />
@@ -254,7 +254,7 @@ export function AccountDetailsTab({ formData, setFormData, errors, accountSummar
                 type="number"
                 step="0.1"
                 value={formData.interestRate}
-                onChange={(e) => setFormData(prev => ({ ...prev, interestRate: e.target.value }))}
+                onChange={(e) => setFormData((prev: any) => ({ ...prev, interestRate: e.target.value }))}
                 className={errors.interestRate ? 'border-red-500' : ''}
                 placeholder="Enter interest rate"
               />
@@ -270,7 +270,7 @@ export function AccountDetailsTab({ formData, setFormData, errors, accountSummar
               <Input
                 type="number"
                 value={formData.tenure}
-                onChange={(e) => setFormData(prev => ({ ...prev, tenure: e.target.value }))}
+                onChange={(e) => setFormData((prev: any) => ({ ...prev, tenure: e.target.value }))}
                 className={errors.tenure ? 'border-red-500' : ''}
                 placeholder="Enter tenure in months"
               />
@@ -287,7 +287,7 @@ export function AccountDetailsTab({ formData, setFormData, errors, accountSummar
             <Input
               type="date"
               value={formData.startDate}
-              onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+              onChange={(e) => setFormData((prev: any) => ({ ...prev, startDate: e.target.value }))}
               className={errors.startDate ? 'border-red-500' : ''}
             />
             {errors.startDate && (
@@ -385,7 +385,7 @@ export function AccountRulesTab({ formData, setFormData }: AccountRulesTabProps)
                 <Select
                   value={formData.interestMode}
                   onValueChange={(value: 'monthly' | 'maturity-only') => 
-                    setFormData(prev => ({ ...prev, interestMode: value }))
+                    setFormData((prev: any) => ({ ...prev, interestMode: value }))
                   }
                 >
                   <SelectTrigger>
@@ -405,7 +405,7 @@ export function AccountRulesTab({ formData, setFormData }: AccountRulesTabProps)
                 <Select
                   value={formData.payoutMode}
                   onValueChange={(value: 'reinvest' | 'paid-out') => 
-                    setFormData(prev => ({ ...prev, payoutMode: value }))
+                    setFormData((prev: any) => ({ ...prev, payoutMode: value }))
                   }
                 >
                   <SelectTrigger>
@@ -429,7 +429,7 @@ export function AccountRulesTab({ formData, setFormData }: AccountRulesTabProps)
                 <Select
                   value={formData.interestMethod}
                   onValueChange={(value: 'installment_weighted' | 'monthly_balance') => 
-                    setFormData(prev => ({ ...prev, interestMethod: value }))
+                    setFormData((prev: any) => ({ ...prev, interestMethod: value }))
                   }
                 >
                   <SelectTrigger>
@@ -449,7 +449,7 @@ export function AccountRulesTab({ formData, setFormData }: AccountRulesTabProps)
                 <Select
                   value={formData.rdBalanceDateRule}
                   onValueChange={(value: 'month_end' | 'fixed_day') => 
-                    setFormData(prev => ({ ...prev, rdBalanceDateRule: value }))
+                    setFormData((prev: any) => ({ ...prev, rdBalanceDateRule: value }))
                   }
                 >
                   <SelectTrigger>
@@ -469,7 +469,7 @@ export function AccountRulesTab({ formData, setFormData }: AccountRulesTabProps)
                   </label>
                   <Select
                     value={formData.rdBalanceDay}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, rdBalanceDay: value }))}
+                    onValueChange={(value) => setFormData((prev: any) => ({ ...prev, rdBalanceDay: value }))}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -496,7 +496,7 @@ export function AccountRulesTab({ formData, setFormData }: AccountRulesTabProps)
                 <Select
                   value={formData.loanMethod}
                   onValueChange={(value: 'flat' | 'reducing') => 
-                    setFormData(prev => ({ ...prev, loanMethod: value }))
+                    setFormData((prev: any) => ({ ...prev, loanMethod: value }))
                   }
                 >
                   <SelectTrigger>
@@ -515,7 +515,7 @@ export function AccountRulesTab({ formData, setFormData }: AccountRulesTabProps)
                 </label>
                 <Select
                   value={formData.emiDueDay}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, emiDueDay: value }))}
+                  onValueChange={(value) => setFormData((prev: any) => ({ ...prev, emiDueDay: value }))}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -536,7 +536,7 @@ export function AccountRulesTab({ formData, setFormData }: AccountRulesTabProps)
                 </label>
                 <Select
                   value={formData.gracePeriodDays}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, gracePeriodDays: value }))}
+                  onValueChange={(value) => setFormData((prev: any) => ({ ...prev, gracePeriodDays: value }))}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -557,7 +557,7 @@ export function AccountRulesTab({ formData, setFormData }: AccountRulesTabProps)
                 </label>
                 <Select
                   value={formData.penaltyRate}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, penaltyRate: value }))}
+                  onValueChange={(value) => setFormData((prev: any) => ({ ...prev, penaltyRate: value }))}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -580,7 +580,7 @@ export function AccountRulesTab({ formData, setFormData }: AccountRulesTabProps)
             </label>
             <Select
               value={formData.roundingPrecision}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, roundingPrecision: value }))}
+              onValueChange={(value) => setFormData((prev: any) => ({ ...prev, roundingPrecision: value }))}
             >
               <SelectTrigger>
                 <SelectValue />

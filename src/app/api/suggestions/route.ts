@@ -62,7 +62,9 @@ export async function POST(request: NextRequest) {
         type: body.type,
         amount: parseFloat(body.amount),
         description: body.description || null,
-        runDate: body.runDate ? new Date(body.runDate) : new Date()
+        runDate: body.runDate ? new Date(body.runDate) : new Date(),
+        periodStartDate: body.periodStartDate ? new Date(body.periodStartDate) : new Date(),
+        periodEndDate: body.periodEndDate ? new Date(body.periodEndDate) : new Date(),
       },
       include: {
         account: {

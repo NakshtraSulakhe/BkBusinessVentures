@@ -59,7 +59,12 @@ export default function UsersPage() {
   const fetchUsers = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/auth/users')
+      const token = localStorage.getItem('auth_token')
+      const response = await fetch('/api/auth/users', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
       if (response.ok) {
         const data = await response.json()
         setUsers(data)
@@ -82,10 +87,12 @@ export default function UsersPage() {
         return
       }
 
+      const token = localStorage.getItem('auth_token')
       const response = await fetch('/api/auth/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           name: formData.name,
@@ -119,10 +126,12 @@ export default function UsersPage() {
     if (!selectedUser) return
 
     try {
+      const token = localStorage.getItem('auth_token')
       const response = await fetch(`/api/auth/users/${selectedUser.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(editFormData),
       })
@@ -143,10 +152,12 @@ export default function UsersPage() {
 
   const handleToggleUserStatus = async (userId: string, currentStatus: boolean) => {
     try {
+      const token = localStorage.getItem('auth_token')
       const response = await fetch(`/api/auth/users/${userId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           isActive: !currentStatus
@@ -171,8 +182,12 @@ export default function UsersPage() {
     }
 
     try {
+      const token = localStorage.getItem('auth_token')
       const response = await fetch(`/api/auth/users/${userId}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       })
 
       if (response.ok) {
@@ -440,8 +455,8 @@ export default function UsersPage() {
 
           {/* Create User Modal */}
           {showCreateModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <Card className="w-full max-w-md m-4">
+            <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+              <Card className="w-full max-w-md m-4 bg-white shadow-xl rounded-xl">
                 <CardHeader>
                   <CardTitle>Create New User</CardTitle>
                 </CardHeader>
@@ -512,8 +527,8 @@ export default function UsersPage() {
 
           {/* Edit User Modal */}
           {showEditModal && selectedUser && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <Card className="w-full max-w-md m-4">
+            <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+              <Card className="w-full max-w-md m-4 bg-white shadow-xl rounded-xl">
                 <CardHeader>
                   <CardTitle>Edit User</CardTitle>
                 </CardHeader>

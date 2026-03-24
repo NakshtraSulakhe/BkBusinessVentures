@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
@@ -66,7 +66,7 @@ interface FormProgress {
   review: boolean
 }
 
-export default function CreateAccount() {
+function CreateAccountComponent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [customers, setCustomers] = useState<Customer[]>([])
@@ -892,5 +892,13 @@ export default function CreateAccount() {
         </div>
       </div>
     </DashboardLayout>
+  )
+}
+
+export default function CreateAccount() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CreateAccountComponent />
+    </Suspense>
   )
 }

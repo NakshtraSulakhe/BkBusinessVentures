@@ -57,7 +57,9 @@ export async function POST(request: NextRequest) {
             type: 'interest',
             amount: monthlyInterest,
             description: `Monthly interest for ${new Date(year, month - 1).toLocaleString('default', { month: 'long', year: 'numeric' })}`,
-            runDate: new Date(year, month - 1, 1)
+            runDate: new Date(year, month - 1, 1),
+            periodStartDate: new Date(year, month - 1, 1),
+            periodEndDate: new Date(year, month - 1, 1)
           }
         })
         
@@ -102,7 +104,9 @@ export async function POST(request: NextRequest) {
             type: 'emi',
             amount: emiAmount,
             description: `EMI payment for ${new Date(year, month - 1).toLocaleString('default', { month: 'long', year: 'numeric' })}`,
-            runDate: new Date(year, month - 1, emiDueDay)
+            runDate: new Date(year, month - 1, emiDueDay),
+            periodStartDate: new Date(year, month - 1, emiDueDay),
+            periodEndDate: new Date(year, month - 1, emiDueDay)
           }
         })
         

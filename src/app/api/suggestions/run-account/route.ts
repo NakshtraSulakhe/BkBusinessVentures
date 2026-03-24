@@ -68,7 +68,9 @@ export async function POST(request: NextRequest) {
                 type: 'interest',
                 amount: monthlyInterest,
                 description: `Monthly interest for ${currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}`,
-                runDate: new Date(currentDate)
+                runDate: new Date(currentDate),
+                periodStartDate: new Date(currentDate),
+                periodEndDate: new Date(currentDate)
               }
             })
             
@@ -87,7 +89,9 @@ export async function POST(request: NextRequest) {
             type: 'interest',
             amount: totalInterest,
             description: `Maturity interest for ${account.accountNumber}`,
-            runDate: account.maturityDate || end
+            runDate: account.maturityDate || end,
+            periodStartDate: new Date(account.maturityDate || end),
+            periodEndDate: new Date(account.maturityDate || end)
           }
         })
         
@@ -117,7 +121,9 @@ export async function POST(request: NextRequest) {
                 type: 'emi',
                 amount: emiAmount,
                 description: `EMI payment for ${currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}`,
-                runDate: new Date(currentDate)
+                runDate: new Date(currentDate),
+                periodStartDate: new Date(currentDate),
+                periodEndDate: new Date(currentDate)
               }
             })
             

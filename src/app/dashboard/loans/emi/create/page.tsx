@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { DashboardLayout } from "@/components/dashboard-layout"
@@ -29,8 +29,7 @@ import {
   ChartBarIcon,
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
-  DocumentTextIcon,
-  ReceiptIcon
+  DocumentTextIcon
 } from "@heroicons/react/24/outline"
 
 interface Customer {
@@ -73,7 +72,7 @@ interface CustomerBalance {
   loanAccounts: any[]
 }
 
-export default function CreateEMI() {
+function CreateEMIComponent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [customers, setCustomers] = useState<Customer[]>([])
@@ -158,7 +157,7 @@ export default function CreateEMI() {
         if (mockLoanAccount.accountRules?.emiAmount) {
           setFormData(prev => ({ 
             ...prev, 
-            amount: mockLoanAccount.accountRules.emiAmount.toString() 
+            amount: mockLoanAccount.accountRules?.emiAmount?.toString() || '' 
           }))
         }
         
@@ -601,5 +600,13 @@ export default function CreateEMI() {
         </div>
       </div>
     </DashboardLayout>
+  )
+}
+
+export default function CreateEMI() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CreateEMIComponent />
+    </Suspense>
   )
 }
