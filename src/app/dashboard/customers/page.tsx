@@ -142,6 +142,11 @@ export default function CustomerMaster() {
     }
   }
 
+  const handleAddTransactionForCustomer = (customerId: string) => {
+    // Navigate to ledger page with customer pre-selected
+    router.push(`/dashboard/ledger?customerId=${customerId}`)
+  }
+
   const cancelDelete = () => {
     setShowDeleteDialog({ show: false, customerId: '', customerName: '' })
   }
@@ -356,6 +361,15 @@ export default function CustomerMaster() {
                     <span className="text-sm text-gray-500">
                       {selectedCustomers.length} selected
                     </span>
+                    {selectedCustomers.length === 1 && (
+                      <Button
+                        onClick={() => handleAddTransactionForCustomer(selectedCustomers[0])}
+                        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 h-10 px-4 shadow-sm"
+                      >
+                        <PlusIcon className="h-4 w-4 mr-2" />
+                        Add Transaction
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"

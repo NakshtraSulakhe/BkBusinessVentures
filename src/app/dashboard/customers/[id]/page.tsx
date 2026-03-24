@@ -5,7 +5,23 @@ import { useRouter, useParams } from "next/navigation"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { 
   ArrowLeftIcon,
   UserIcon,
@@ -22,7 +38,19 @@ import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
   SparklesIcon,
-  PlusIcon
+  PlusIcon,
+  BuildingLibraryIcon,
+  CreditCardIcon,
+  ChartBarIcon,
+  ArrowTrendingUpIcon,
+  ArrowTrendingDownIcon,
+  BookOpenIcon,
+  MagnifyingGlassIcon,
+  FunnelIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ArrowDownIcon,
+  ArrowUpIcon
 } from "@heroicons/react/24/outline"
 
 interface Customer {
@@ -49,9 +77,115 @@ export default function CustomerView() {
   const router = useRouter()
   const params = useParams()
   const [customer, setCustomer] = useState<Customer | null>(null)
+  const [customerLedger, setCustomerLedger] = useState<any>(null)
+  const [allTransactions, setAllTransactions] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [showDeleteDialog, setShowDeleteDialog] = useState<{ show: boolean; customerId: string; customerName: string }>({ show: false, customerId: '', customerName: '' })
+  
+  // Ledger filtering states
+  const [searchTerm, setSearchTerm] = useState('')
+  const [transactionType, setTransactionType] = useState('all')
+  const [accountFilter, setAccountFilter] = useState('all')
+  const [dateFilter, setDateFilter] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 20,
+    total: 0,
+    pages: 0
+  })
+
+  const fetchCustomerLedger = async () => {
+    try {
+      const response = await fetch(`/api/customers/${params.id}/ledger`)
+      if (response.ok) {
+        const data = await response.json()
+        setCustomerLedger(data)
+        setAllTransactions(data.recentTransactions || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch customer ledger:', error)
+    }
+  }
+
+  const fetchAllTransactions = async () => {
+    try {
+      setLoading(true)
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: '20',
+        ...(searchTerm && { search: searchTerm }),
+        ...(transactionType !== 'all' && { type: transactionType }),
+        ...(dateFilter && { date: dateFilter }),
+      })
+
+      // Get all account IDs for this customer
+      if (customerLedger?.accounts) {
+        const accountIds = customerLedger.accounts.map((acc: any) => acc.id)
+        if (accountIds.length > 0) {
+          params.set('accountId', accountIds.join(','))
+        }
+      }
+
+      const response = await fetch(`/api/transactions?${params}`)
+      if (response.ok) {
+        const data = await response.json()
+        setAllTransactions(data.transactions || [])
+        setPagination(data.pagination)
+      }
+    } catch (error) {
+      console.error('Failed to fetch transactions:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (customerLedger) {
+      fetchAllTransactions()
+    }
+  }, [currentPage, searchTerm, transactionType, accountFilter, dateFilter])
+
+  const handleSearch = (value: string) => {
+    setSearchTerm(value)
+    setCurrentPage(1)
+  }
+
+  const handleTransactionTypeFilter = (value: string) => {
+    setTransactionType(value)
+    setCurrentPage(1)
+  }
+
+  const handleAccountFilter = (value: string) => {
+    setAccountFilter(value)
+    setCurrentPage(1)
+  }
+
+  const handleDateFilter = (value: string) => {
+    setDateFilter(value)
+    setCurrentPage(1)
+  }
+
+  const clearFilters = () => {
+    setSearchTerm('')
+    setTransactionType('all')
+    setAccountFilter('all')
+    setDateFilter('')
+    setCurrentPage(1)
+  }
+
+  const getFilteredTransactions = () => {
+    let filtered = allTransactions
+
+    if (accountFilter !== 'all' && customerLedger?.accounts) {
+      const filteredAccounts = customerLedger.accounts.filter((acc: any) => acc.accountType === accountFilter.toUpperCase())
+      const filteredAccountIds = filteredAccounts.map((acc: any) => acc.id)
+      filtered = filtered.filter(tx => filteredAccountIds.includes(tx.accountId))
+    }
+
+    return filtered
+  }
 
   const fetchCustomer = async () => {
     try {
@@ -104,6 +238,7 @@ export default function CustomerView() {
   useEffect(() => {
     if (params.id) {
       fetchCustomer()
+      fetchCustomerLedger()
     }
   }, [params.id])
 
@@ -169,6 +304,43 @@ export default function CustomerView() {
       default: return '🏦'
     }
   }
+
+  const getTransactionTypeColor = (type: string) => {
+    switch (type) {
+      case 'deposit': return 'bg-green-100 text-green-700'
+      case 'withdrawal': return 'bg-red-100 text-red-700'
+      case 'interest': return 'bg-blue-100 text-blue-700'
+      case 'disbursement': return 'bg-orange-100 text-orange-700'
+      default: return 'bg-gray-100 text-gray-700'
+    }
+  }
+
+  const getTransactionIcon = (type: string) => {
+    switch (type) {
+      case 'deposit': return <ArrowDownIcon className="h-4 w-4" />
+      case 'withdrawal': return <ArrowUpIcon className="h-4 w-4" />
+      case 'interest': return <CurrencyDollarIcon className="h-4 w-4" />
+      case 'disbursement': return <CreditCardIcon className="h-4 w-4" />
+      default: return <BookOpenIcon className="h-4 w-4" />
+    }
+  }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR'
+    }).format(amount)
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    })
+  }
+
+  const filteredTransactions = getFilteredTransactions()
 
   if (loading && !customer) {
     return (
@@ -490,6 +662,309 @@ export default function CustomerView() {
                   </div>
                 </div>
               </div>
+
+              {/* Comprehensive Ledger Section */}
+              {customerLedger && (
+                <div className="space-y-6 mt-6">
+                  {/* Ledger Filters */}
+                  <Card className="bg-white/60 backdrop-blur-sm">
+                    <CardHeader>
+                      <CardTitle className="flex items-center text-lg">
+                        <FunnelIcon className="h-5 w-5 mr-2" />
+                        Transaction Filters
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Search
+                          </label>
+                          <div className="relative">
+                            <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                            <Input
+                              placeholder="Search transactions..."
+                              value={searchTerm}
+                              onChange={(e) => handleSearch(e.target.value)}
+                              className="pl-10"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Transaction Type
+                          </label>
+                          <Select value={transactionType} onValueChange={handleTransactionTypeFilter}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Types</SelectItem>
+                              <SelectItem value="deposit">Deposits</SelectItem>
+                              <SelectItem value="withdrawal">Withdrawals</SelectItem>
+                              <SelectItem value="interest">Interest</SelectItem>
+                              <SelectItem value="disbursement">Disbursements</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Account Type
+                          </label>
+                          <Select value={accountFilter} onValueChange={handleAccountFilter}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Accounts</SelectItem>
+                              <SelectItem value="fd">FD Accounts</SelectItem>
+                              <SelectItem value="rd">RD Accounts</SelectItem>
+                              <SelectItem value="loan">Loan Accounts</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Date
+                          </label>
+                          <Input
+                            type="date"
+                            value={dateFilter}
+                            onChange={(e) => handleDateFilter(e.target.value)}
+                          />
+                        </div>
+
+                        <div className="flex items-end">
+                          <Button
+                            variant="outline"
+                            onClick={clearFilters}
+                            className="w-full"
+                          >
+                            Clear Filters
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Transaction Summary Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-green-600 text-sm font-medium">Total Credits</p>
+                            <p className="text-2xl font-bold text-green-900">
+                              {formatCurrency(
+                                filteredTransactions
+                                  .filter(tx => ['deposit', 'interest'].includes(tx.type))
+                                  .reduce((sum, tx) => sum + tx.amount, 0)
+                              )}
+                            </p>
+                          </div>
+                          <ArrowDownIcon className="h-8 w-8 text-green-500" />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-red-600 text-sm font-medium">Total Debits</p>
+                            <p className="text-2xl font-bold text-red-900">
+                              {formatCurrency(
+                                filteredTransactions
+                                  .filter(tx => ['withdrawal', 'disbursement'].includes(tx.type))
+                                  .reduce((sum, tx) => sum + tx.amount, 0)
+                              )}
+                            </p>
+                          </div>
+                          <ArrowUpIcon className="h-8 w-8 text-red-500" />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-blue-600 text-sm font-medium">Net Balance</p>
+                            <p className="text-2xl font-bold text-blue-900">
+                              {formatCurrency(
+                                filteredTransactions.reduce((sum, tx) => {
+                                  if (['deposit', 'interest'].includes(tx.type)) return sum + tx.amount
+                                  if (['withdrawal', 'disbursement'].includes(tx.type)) return sum - tx.amount
+                                  return sum
+                                }, 0)
+                              )}
+                            </p>
+                          </div>
+                          <CurrencyDollarIcon className="h-8 w-8 text-blue-500" />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-purple-600 text-sm font-medium">Transactions</p>
+                            <p className="text-2xl font-bold text-purple-900">{filteredTransactions.length}</p>
+                          </div>
+                          <BookOpenIcon className="h-8 w-8 text-purple-500" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Detailed Ledger Table */}
+                  <Card className="bg-white/60 backdrop-blur-sm">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-xl font-semibold flex items-center">
+                          <BookOpenIcon className="h-5 w-5 mr-2" />
+                          Transaction Ledger
+                        </CardTitle>
+                        <Badge variant="outline">
+                          {filteredTransactions.length} transactions
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      {loading ? (
+                        <div className="flex items-center justify-center py-12">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        </div>
+                      ) : filteredTransactions.length === 0 ? (
+                        <div className="text-center py-12">
+                          <BookOpenIcon className="mx-auto h-12 w-12 text-gray-400" />
+                          <h3 className="mt-2 text-sm font-medium text-gray-900">No transactions found</h3>
+                          <p className="mt-1 text-sm text-gray-500">Try adjusting your search or filters</p>
+                          <div className="mt-6">
+                            <Button
+                              onClick={clearFilters}
+                              variant="outline"
+                            >
+                              Clear Filters
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Account</TableHead>
+                                <TableHead>Type</TableHead>
+                                <TableHead>Description</TableHead>
+                                <TableHead>Reference</TableHead>
+                                <TableHead className="text-right">Credit</TableHead>
+                                <TableHead className="text-right">Debit</TableHead>
+                                <TableHead className="text-right">Balance</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {filteredTransactions.map((transaction: any) => (
+                                <TableRow key={transaction.id} className="hover:bg-gray-50/50">
+                                  <TableCell>
+                                    <div className="flex items-center">
+                                      <CalendarIcon className="h-4 w-4 mr-2 text-gray-400" />
+                                      {formatDate(transaction.createdAt)}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex items-center">
+                                      <span className="mr-2">{getAccountTypeIcon(transaction.account.accountType)}</span>
+                                      <div>
+                                        <div className="font-medium text-gray-900">{transaction.account.accountNumber}</div>
+                                        <Badge className={`text-xs mt-1 ${getAccountTypeColor(transaction.account.accountType)}`}>
+                                          {transaction.account.accountType}
+                                        </Badge>
+                                      </div>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge className={`text-xs ${getTransactionTypeColor(transaction.type)}`}>
+                                      <span className="mr-1">{getTransactionIcon(transaction.type)}</span>
+                                      {transaction.type}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="max-w-xs truncate" title={transaction.description}>
+                                      {transaction.description || '-'}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant="outline" className="text-xs">
+                                      {transaction.reference || 'N/A'}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    {['deposit', 'interest'].includes(transaction.type) && (
+                                      <span className="font-semibold text-green-600">
+                                        +{formatCurrency(transaction.amount)}
+                                      </span>
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    {['withdrawal', 'disbursement'].includes(transaction.type) && (
+                                      <span className="font-semibold text-red-600">
+                                        -{formatCurrency(transaction.amount)}
+                                      </span>
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="text-right font-medium text-gray-900">
+                                    {formatCurrency(transaction.balance)}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      )}
+
+                      {/* Pagination */}
+                      {pagination.pages > 1 && (
+                        <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-200">
+                          <div className="text-sm text-gray-700">
+                            Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
+                            {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
+                            {pagination.total} transactions
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setCurrentPage(pagination.page - 1)}
+                              disabled={pagination.page === 1}
+                            >
+                              <ChevronLeftIcon className="h-4 w-4" />
+                              Previous
+                            </Button>
+                            <span className="text-sm text-gray-700">
+                              Page {pagination.page} of {pagination.pages}
+                            </span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setCurrentPage(pagination.page + 1)}
+                              disabled={pagination.page === pagination.pages}
+                            >
+                              Next
+                              <ChevronRightIcon className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
             </>
           )}
 

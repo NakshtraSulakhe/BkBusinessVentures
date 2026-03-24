@@ -12,6 +12,8 @@ model User {
   email        String   @unique
   passwordHash String   @map("password_hash")
   name         String?
+  role         String   @default("operator") // admin, operator
+  isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
@@ -45,106 +47,160 @@ model Customer {
   purpose       String?
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
-
-  // Relations
   accounts      Account[]
-  
+
   @@map("customers")
 }
 
-// Account Master for FD/RD/Loan
 model Account {
-  id                String    @id @default(cuid())
-  accountNumber     String    @unique
-  customerId        String
-  accountType       String
-  principalAmount   Float
-  interestRate      Float
-  tenure            Int
-  startDate         DateTime
-  maturityDate      DateTime?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id               String           @id @default(cuid())
+  accountNumber    String           @unique
+  customerId       String
+  accountType      String           // FD, RD, LOAN
+  status           String           @default("ACTIVE") // ACTIVE, MATURITY_PENDING, CLOSING_PENDING, CLOSED
+  principalAmount  Float
+  interestRate     Float
+  tenure           Int
+  startDate        DateTime
+  maturityDate     DateTime?
+  closedAt         DateTime?        @map("closed_at")
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  accountRules     AccountRules?
+  customer         Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  suggestedEntries SuggestedEntry[]
+  transactions     Transaction[]
+  installmentEntries InstallmentEntry[]
 
-  // Relations
-  customer          Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  accountRules      AccountRules?
-  transactions      Transaction[]
-  
   @@map("accounts")
 }
 
-// Per-account rules configuration
 model AccountRules {
-  id                  String   @id @default(cuid())
-  accountId           String   @unique @map("account_id")
-  
-  // Interest configuration
-  interestMode        String   @map("interest_mode") @default("maturity")
-  payoutMode          String   @map("payout_mode") @default("reinvest")
-  
-  // Loan specific
-  loanMethod          String?  @map("loan_method")
-  emiAmount           Float?   @map("emi_amount")
-  emiDueDay           Int?     @map("emi_due_day")
-  gracePeriodDays     Int?     @map("grace_period_days") @default(0)
-  
-  // General settings
-  roundingMode        String   @map("rounding_mode") @default("nearest")
-  roundingPrecision   Int      @map("rounding_precision") @default(2)
-  
-  // Numbering template reference
-  numberingTemplateId String?  @map("numbering_template_id")
-  
-  // Custom field overrides
-  customFields        Json?   @map("custom_fields")
-  
-  createdAt           DateTime @default(now()) @map("created_at")
-  updatedAt           DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  account             Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  id                  String             @id @default(cuid())
+  accountId           String             @unique @map("account_id")
+  interestMode        String             @default("maturity") @map("interest_mode") // monthly, maturity-only
+  payoutMode          String             @default("reinvest") @map("payout_mode") // reinvest, paid-out
+  loanMethod          String?            @map("loan_method") // flat, reducing
+  rdInterestMethod    String?            @map("rd_interest_method") // installment_weighted, monthly_balance
+  rdBalanceDateRule   String?            @map("rd_balance_date_rule") // month_end, fixed_day
+  rdBalanceDay        Int?               @map("rd_balance_day") // for fixed_day rule
+  emiAmount           Float?             @map("emi_amount")
+  emiDueDay           Int?               @map("emi_due_day")
+  gracePeriodDays     Int?               @default(0) @map("grace_period_days")
+  penaltyRate         Float?             @default(1.0) @map("penalty_rate") // percentage
+  roundingMode        String             @default("nearest") @map("rounding_mode")
+  roundingPrecision   Int                @default(2) @map("rounding_precision")
+  numberingTemplateId String?            @map("numbering_template_id")
+  customFields        Json?              @map("custom_fields")
+  createdAt           DateTime           @default(now()) @map("created_at")
+  updatedAt           DateTime           @updatedAt @map("updated_at")
+  account             Account            @relation(fields: [accountId], references: [id], onDelete: Cascade)
   numberingTemplate   NumberingTemplate? @relation(fields: [numberingTemplateId], references: [id])
-  
+
   @@map("account_rules")
 }
 
-// Numbering templates for account generation
 model NumberingTemplate {
-  id                  String   @id @default(cuid())
-  name                String
-  template            String
-  description         String?
-  isActive            Boolean  @default(true) @map("is_active")
-  accountType         String   @map("account_type")
-  sequenceStart       Int      @map("sequence_start") @default(1)
-  currentSequence     Int      @map("current_sequence") @default(0)
-  
-  // Template validation
-  requiredVariables   Json?    @map("required_variables")
-  
-  createdAt           DateTime @default(now()) @map("created_at")
-  updatedAt           DateTime @updatedAt @map("updated_at")
+  id                String         @id @default(cuid())
+  name              String
+  template          String
+  description       String?
+  isActive          Boolean        @default(true) @map("is_active")
+  accountType       String         @map("account_type")
+  sequenceStart     Int            @default(1) @map("sequence_start")
+  currentSequence   Int            @default(0) @map("current_sequence")
+  requiredVariables Json?          @map("required_variables")
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+  accountRules      AccountRules[]
 
-  // Relations
-  accountRules        AccountRules[]
-  
   @@map("numbering_templates")
 }
 
-// Transaction history
 model Transaction {
-  id            String    @id @default(cuid())
-  accountId     String    @map("account_id")
-  type          String
-  amount        Float
-  balance       Float?
-  description   String?
-  reference     String?
-  createdAt     DateTime  @default(now()) @map("created_at")
+  id              String   @id @default(cuid())
+  accountId       String   @map("account_id")
+  type            String   // INTEREST, INSTALLMENT, EMI, PENALTY, PRINCIPAL_PAYMENT, MATURITY_PAYOUT
+  amount          Float
+  balance         Float?
+  description     String?
+  reference       String?
+  transactionDate DateTime @default(now()) @map("transaction_date")
+  createdBy       String?  @map("created_by")
+  createdAt       DateTime @default(now()) @map("created_at")
+  account         Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
-  // Relations
-  account       Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  
   @@map("transactions")
+}
+
+model SuggestedEntry {
+  id              String   @id @default(cuid())
+  accountId       String   @map("account_id")
+  type            String   // INTEREST, EMI_DUE, PENALTY
+  amount          Float
+  description     String?
+  runDate         DateTime @default(now()) @map("run_date")
+  periodStartDate DateTime @map("period_start_date")
+  periodEndDate   DateTime @map("period_end_date")
+  status          String   @default("pending") // pending, approved, rejected
+  rejectionReason String?  @map("rejection_reason")
+  approvedBy      String?  @map("approved_by")
+  approvedAt      DateTime? @map("approved_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  account         Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@map("suggested_entries")
+}
+
+model InstallmentEntry {
+  id              String   @id @default(cuid())
+  accountId       String   @map("account_id")
+  amount          Float
+  installmentDate DateTime @map("installment_date")
+  description     String?
+  createdBy       String?  @map("created_by")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  account         Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@map("installment_entries")
+}
+
+model EMIEntry {
+  id              String   @id @default(cuid())
+  accountId       String   @map("account_id")
+  emiNumber       Int      @map("emi_number")
+  dueDate         DateTime @map("due_date")
+  emiAmount       Float    @map("emi_amount")
+  principalAmount Float    @map("principal_amount")
+  interestAmount  Float    @map("interest_amount")
+  penaltyAmount   Float?   @map("penalty_amount")
+  status          String   @default("DUE") // DUE, PAID, PART_PAID, OVERDUE
+  paidAmount      Float?   @map("paid_amount")
+  paidDate        DateTime? @map("paid_date")
+  createdBy       String?  @map("created_by")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("emi_entries")
+}
+
+model AccountClosure {
+  id                String   @id @default(cuid())
+  accountId         String   @unique @map("account_id")
+  closureType       String   @map("closure_type") // maturity, premature
+  principalAmount   Float    @map("principal_amount")
+  interestAmount    Float    @map("interest_amount")
+  penaltyAmount     Float?   @map("penalty_amount")
+  totalPayable      Float    @map("total_payable")
+  closureDate       DateTime @map("closure_date")
+  reason            String?
+  closedBy          String   @map("closed_by")
+  approvedBy        String?  @map("approved_by")
+  approvedAt        DateTime? @map("approved_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("account_closures")
 }

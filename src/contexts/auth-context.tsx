@@ -6,6 +6,8 @@ interface User {
   id: string;
   email: string;
   name: string;
+  role: string;
+  isActive: boolean;
   createdAt: string;
 }
 
@@ -16,6 +18,8 @@ interface AuthContextType {
   signup: (email: string, password: string, firstName: string, lastName: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   isLoading: boolean;
+  hasRole: (role: string) => boolean;
+  isAdmin: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -104,6 +108,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('auth_user');
   };
 
+  const hasRole = (role: string): boolean => {
+    return user?.role === role;
+  };
+
+  const isAdmin = (): boolean => {
+    return user?.role === 'admin';
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -111,7 +123,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       login,
       signup,
       logout,
-      isLoading
+      isLoading,
+      hasRole,
+      isAdmin
     }}>
       {children}
     </AuthContext.Provider>

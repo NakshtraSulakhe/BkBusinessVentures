@@ -15,7 +15,13 @@ import {
   CalendarIcon,
   UserIcon,
   ArrowPathIcon,
-  EyeIcon
+  EyeIcon,
+  BuildingLibraryIcon,
+  CurrencyDollarIcon,
+  ChartBarIcon,
+  SparklesIcon,
+  CheckCircleIcon,
+  ExclamationTriangleIcon
 } from "@heroicons/react/24/outline"
 
 interface Account {
@@ -44,10 +50,16 @@ export default function AccountsPage() {
   const [accounts, setAccounts] = useState<Account[]>([])
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
-  const [accountType, setAccountType] = useState('')
+  const [accountType, setAccountType] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+
+  const showMessage = (text: string, type: 'success' | 'error') => {
+    setMessage({ text, type })
+    setTimeout(() => setMessage(null), 5000)
+  }
 
   const fetchAccounts = async (page = 1, searchQuery = '', typeFilter = '') => {
     try {
@@ -56,7 +68,7 @@ export default function AccountsPage() {
         page: page.toString(),
         limit: '10',
         ...(searchQuery && { search: searchQuery }),
-        ...(typeFilter && { accountType: typeFilter })
+        ...(typeFilter && typeFilter !== 'all' && { accountType: typeFilter })
       })
 
       const response = await fetch(`/api/accounts?${params}`)
@@ -140,67 +152,63 @@ export default function AccountsPage() {
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <Card className="bg-white/60 backdrop-blur-sm">
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <div className="p-3 bg-blue-100 rounded-lg">
-                    <BanknotesIcon className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm text-gray-600">Total Accounts</p>
-                    <p className="text-2xl font-bold">{total}</p>
-                  </div>
+            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 mb-2">Total Accounts</p>
+                  <p className="text-3xl font-bold text-gray-900">{total}</p>
+                  <p className="text-xs text-gray-500 mt-2">All account types</p>
                 </div>
-              </CardContent>
-            </Card>
+                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
+                  <BanknotesIcon className="h-7 w-7 text-white" />
+                </div>
+              </div>
+            </div>
 
-            <Card className="bg-white/60 backdrop-blur-sm">
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <div className="p-3 bg-green-100 rounded-lg">
-                    <span className="text-xl">💰</span>
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm text-gray-600">Fixed Deposits</p>
-                    <p className="text-2xl font-bold">
-                      {accounts.filter(a => a.accountType === 'fd').length}
-                    </p>
-                  </div>
+            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 mb-2">Fixed Deposits</p>
+                  <p className="text-3xl font-bold text-gray-900">
+                    {accounts.filter(a => a.accountType === 'fd').length}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2">Investment accounts</p>
                 </div>
-              </CardContent>
-            </Card>
+                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg">
+                  <span className="text-2xl">💰</span>
+                </div>
+              </div>
+            </div>
 
-            <Card className="bg-white/60 backdrop-blur-sm">
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <div className="p-3 bg-yellow-100 rounded-lg">
-                    <span className="text-xl">🔄</span>
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm text-gray-600">Recurring Deposits</p>
-                    <p className="text-2xl font-bold">
-                      {accounts.filter(a => a.accountType === 'rd').length}
-                    </p>
-                  </div>
+            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 mb-2">Recurring Deposits</p>
+                  <p className="text-3xl font-bold text-gray-900">
+                    {accounts.filter(a => a.accountType === 'rd').length}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2">Monthly savings</p>
                 </div>
-              </CardContent>
-            </Card>
+                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg">
+                  <span className="text-2xl">🔄</span>
+                </div>
+              </div>
+            </div>
 
-            <Card className="bg-white/60 backdrop-blur-sm">
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <div className="p-3 bg-red-100 rounded-lg">
-                    <span className="text-xl">💳</span>
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm text-gray-600">Loans</p>
-                    <p className="text-2xl font-bold">
-                      {accounts.filter(a => a.accountType === 'loan').length}
-                    </p>
-                  </div>
+            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 mb-2">Loans</p>
+                  <p className="text-3xl font-bold text-gray-900">
+                    {accounts.filter(a => a.accountType === 'loan').length}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2">Active loans</p>
                 </div>
-              </CardContent>
-            </Card>
+                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center shadow-lg">
+                  <span className="text-2xl">💳</span>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Filters */}
@@ -224,7 +232,7 @@ export default function AccountsPage() {
                       <SelectValue placeholder="All Types" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Types</SelectItem>
+                      <SelectItem value="all">All Types</SelectItem>
                       <SelectItem value="fd">Fixed Deposit</SelectItem>
                       <SelectItem value="rd">Recurring Deposit</SelectItem>
                       <SelectItem value="loan">Loan</SelectItem>
@@ -233,7 +241,7 @@ export default function AccountsPage() {
                 </div>
                 <Button
                   variant="outline"
-                  onClick={() => fetchAccounts(1, '', '')}
+                  onClick={() => fetchAccounts(1, '', 'all')}
                   className="w-full md:w-auto"
                 >
                   <ArrowPathIcon className="h-4 w-4 mr-2" />

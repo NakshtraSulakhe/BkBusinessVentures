@@ -4,26 +4,34 @@ import { useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { 
-  HomeIcon, 
-  UsersIcon, 
+import {
+  HomeIcon,
+  UsersIcon,
   BuildingLibraryIcon,
+  BookOpenIcon,
   DocumentTextIcon,
   BanknotesIcon,
+  CreditCardIcon,
+  CurrencyDollarIcon,
   ChartBarIcon,
+  ReceiptPercentIcon,
   QueueListIcon,
-  DocumentArrowDownIcon,
+  ArrowDownTrayIcon,
   CogIcon,
   ClipboardDocumentListIcon,
-  XMarkIcon,
-  Bars3Icon,
-  UserGroupIcon,
-  BookOpenIcon,
-  CurrencyDollarIcon,
-  ReceiptPercentIcon,
   DocumentIcon,
-  ArchiveBoxXMarkIcon,
-  ArrowRightOnRectangleIcon
+  XMarkIcon,
+  UserIcon,
+  CalendarIcon,
+  CheckCircleIcon,
+  ArrowTrendingUpIcon,
+  ArrowTrendingDownIcon,
+  PlusIcon,
+  ArrowRightIcon,
+  ArrowRightOnRectangleIcon,
+  Bars3Icon,
+  ChevronDownIcon,
+  ChevronUpIcon
 } from "@heroicons/react/24/outline"
 
 interface DashboardLayoutProps {
@@ -42,6 +50,38 @@ const navigation = [
   { 
     name: "Customer Master", 
     href: "/dashboard/customers", 
+    icon: UsersIcon, 
+    current: false,
+    section: "main",
+    indent: true
+  },
+  { 
+    name: "Account Master", 
+    href: "/dashboard/accounts", 
+    icon: BuildingLibraryIcon, 
+    current: false,
+    section: "main",
+    indent: true
+  },
+  { 
+    name: "Ledger", 
+    href: "/dashboard/ledger", 
+    icon: DocumentTextIcon, 
+    current: false,
+    section: "main",
+    indent: true
+  },
+  { 
+    name: "Suggestions", 
+    href: "/dashboard/suggestions", 
+    icon: ClipboardDocumentListIcon, 
+    current: false,
+    section: "main",
+    indent: true
+  },
+  { 
+    name: "Users", 
+    href: "/dashboard/users", 
     icon: UsersIcon, 
     current: false,
     section: "main",
@@ -156,7 +196,7 @@ const navigation = [
   { 
     name: "Generate Suggestions (Monthly)", 
     href: "/dashboard/operations/generate-suggestions", 
-    icon: DocumentArrowDownIcon, 
+    icon: ArrowDownTrayIcon, 
     current: false,
     section: "operations",
     indent: true
@@ -172,7 +212,7 @@ const navigation = [
   { 
     name: "Rejected Suggestions Log", 
     href: "/dashboard/operations/rejected", 
-    icon: ArchiveBoxXMarkIcon, 
+    icon: XMarkIcon, 
     current: false,
     section: "operations",
     indent: true
@@ -236,7 +276,7 @@ const navigation = [
   { 
     name: "Generate Invoice / Receipt", 
     href: "/dashboard/documents/invoices/create", 
-    icon: DocumentArrowDownIcon, 
+    icon: ArrowDownTrayIcon, 
     current: false,
     section: "reports",
     indent: true
@@ -254,7 +294,7 @@ const navigation = [
 const adminSection = [
   { 
     name: "Settings", 
-    href: "/dashboard/admin/settings", 
+    href: "/dashboard/settings", 
     icon: CogIcon, 
     current: false,
     section: "admin"
@@ -262,7 +302,7 @@ const adminSection = [
   { 
     name: "Users & Roles", 
     href: "/dashboard/admin/users", 
-    icon: UserGroupIcon, 
+    icon: UsersIcon, 
     current: false,
     section: "admin",
     indent: true
@@ -298,98 +338,61 @@ const adminSection = [
     current: false,
     section: "admin"
   },
-  { 
-    name: "Ledger Edits", 
-    href: "/dashboard/admin/audit/ledger", 
-    icon: BookOpenIcon, 
-    current: false,
-    section: "admin",
-    indent: true
-  },
-  { 
-    name: "Suggestions Runs", 
-    href: "/dashboard/admin/audit/suggestions", 
-    icon: QueueListIcon, 
-    current: false,
-    section: "admin",
-    indent: true
-  },
-  { 
-    name: "Account Closure", 
-    href: "/dashboard/admin/closure", 
-    icon: ArchiveBoxXMarkIcon, 
-    current: false,
-    section: "admin"
-  },
-  { 
-    name: "Close Account", 
-    href: "/dashboard/admin/closure/close", 
-    icon: ArchiveBoxXMarkIcon, 
-    current: false,
-    section: "admin",
-    indent: true
-  },
-  { 
-    name: "Reopen Account", 
-    href: "/dashboard/admin/closure/reopen", 
-    icon: UsersIcon, 
-    current: false,
-    section: "admin",
-    indent: true
-  },
-]
-
-function SectionHeader({ title }: { title: string }) {
-  return (
-    <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-      {title}
-    </div>
-  )
-}
 
 function renderNavigationItems(items: any[]) {
-  return items.map((item) => (
-    <a
-      key={item.name}
-      href={item.href}
-      className={cn(
-        "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
-        item.indent ? "ml-4" : "",
-        item.current
-          ? "bg-blue-100 text-blue-700"
-          : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-      )}
-    >
-      <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
-      <span className="truncate">{item.name}</span>
-    </a>
-  ))
+  const { isAdmin } = useAuth()
+  
+  return items.map((item) => {
+    // Hide admin-only items for non-admin users
+    if (item.section === 'admin' && !isAdmin) {
+      return null
+    }
+    
+    return (
+      <a
+        key={item.name}
+        href={item.href}
+        className={cn(
+          "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200",
+          item.indent ? "ml-4 lg:ml-0" : "",
+          item.current
+            ? "bg-blue-100 text-blue-700 border-l-4 border-blue-700"
+            : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+        )}
+      >
+        <item.icon className="mr-3 h-4 w-4 flex-shrink-0" />
+        <span className="truncate">{item.name}</span>
+      </a>
+    )
+  })
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { user, logout } = useAuth()
 
   return (
-    <div className="h-screen bg-gray-50 flex">
-      {/* Mobile sidebar */}
-      <div className={cn(
-        "fixed inset-0 z-50 lg:hidden",
-        sidebarOpen ? "block" : "hidden"
-      )}>
+    <div className="min-h-screen bg-gray-50">
+      {/* Mobile sidebar overlay */}
+      <div 
+        className={cn(
+          "fixed inset-0 z-50 lg:hidden transition-opacity duration-300",
+          sidebarOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        )}
+      >
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
-        <div className="fixed inset-y-0 left-0 flex flex-col w-80 bg-white overflow-y-auto">
+        <div className="fixed inset-y-0 left-0 w-64 max-w-xs sm:max-w-md bg-white shadow-xl transform transition-transform duration-300 ease-in-out">
           <div className="flex items-center justify-between h-16 px-4 border-b">
             <h2 className="text-lg font-semibold text-gray-900">BK Business Ventures</h2>
-            <Button
-              variant="ghost"
-              size="sm"
+            <button
               onClick={() => setSidebarOpen(false)}
+              className="p-2 rounded-md hover:bg-gray-100 transition-colors"
             >
-              <XMarkIcon className="h-6 w-6" />
-            </Button>
+              <XMarkIcon className="h-5 w-5" />
+            </button>
           </div>
-          <nav className="flex-1 px-2 py-4 space-y-1">
+          <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto max-h-[calc(100vh-4rem)]">
             <SectionHeader title="Main" />
             {renderNavigationItems(navigation.filter(item => item.section === "main"))}
             
@@ -402,102 +405,48 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <SectionHeader title="Operations" />
             {renderNavigationItems(navigation.filter(item => item.section === "operations"))}
             
-            <SectionHeader title="Reports & Documents" />
+            <SectionHeader title="Reports" />
+            {renderNavigationItems(navigation.filter(item => item.section === "reports"))}
+          </nav>
+        </div>
+      </div>
+
+      {/* Desktop sidebar */}
+      <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-0 lg:z-40">
+        <div className="flex flex-col h-full bg-white border-r border-gray-200">
+          <div className="flex items-center h-16 px-4 border-b">
+            <h2 className="text-lg font-semibold text-gray-900">BK Business Ventures</h2>
+          </div>
+          <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
+            <SectionHeader title="Main" />
+            {renderNavigationItems(navigation.filter(item => item.section === "main"))}
+            
+            <SectionHeader title="Deposits" />
+            {renderNavigationItems(navigation.filter(item => item.section === "deposits"))}
+            
+            <SectionHeader title="Loans" />
+            {renderNavigationItems(navigation.filter(item => item.section === "loans"))}
+            
+            <SectionHeader title="Operations" />
+            {renderNavigationItems(navigation.filter(item => item.section === "operations"))}
+            
+            <SectionHeader title="Reports" />
             {renderNavigationItems(navigation.filter(item => item.section === "reports"))}
             
             <SectionHeader title="Admin" />
             {renderNavigationItems(adminSection)}
           </nav>
-          <div className="border-t p-4">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">
-                    {user?.name?.charAt(0).toUpperCase() || 'U'}
-                  </span>
-                </div>
-              </div>
-              <div className="ml-3 flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
-                  {user?.name || 'User'}
-                </p>
-                <p className="text-sm text-gray-500 truncate">
-                  {user?.email}
-                </p>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              className="w-full mt-3 justify-start"
-              onClick={logout}
-            >
-              <ArrowRightOnRectangleIcon className="mr-3 h-5 w-5" />
-              Logout
-            </Button>
-          </div>
         </div>
       </div>
 
-      {/* Desktop sidebar */}
-      <div className="hidden lg:flex lg:flex-col lg:w-80 lg:bg-white lg:border-r lg:overflow-y-auto">
-        <div className="flex items-center h-16 px-6 border-b">
-          <h2 className="text-lg font-semibold text-gray-900">BK Business Ventures</h2>
-        </div>
-        <nav className="flex-1 px-2 py-4 space-y-1">
-          <SectionHeader title="Main" />
-          {renderNavigationItems(navigation.filter(item => item.section === "main"))}
-          
-          <SectionHeader title="Deposits" />
-          {renderNavigationItems(navigation.filter(item => item.section === "deposits"))}
-          
-          <SectionHeader title="Loans" />
-          {renderNavigationItems(navigation.filter(item => item.section === "loans"))}
-          
-          <SectionHeader title="Operations" />
-          {renderNavigationItems(navigation.filter(item => item.section === "operations"))}
-          
-          <SectionHeader title="Reports & Documents" />
-          {renderNavigationItems(navigation.filter(item => item.section === "reports"))}
-          
-          <SectionHeader title="Admin" />
-          {renderNavigationItems(adminSection)}
-        </nav>
-        <div className="border-t p-4">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
-                <span className="text-white text-sm font-medium">
-                  {user?.name?.charAt(0).toUpperCase() || 'U'}
-                </span>
-              </div>
-            </div>
-            <div className="ml-3 flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
-                {user?.name || 'User'}
-              </p>
-              <p className="text-sm text-gray-500 truncate">
-                {user?.email}
-              </p>
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            className="w-full mt-3 justify-start"
-            onClick={logout}
-          >
-            <ArrowRightOnRectangleIcon className="mr-3 h-5 w-5" />
-            Logout
-          </Button>
-        </div>
-      </div>
-
-      {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Topbar */}
-        <header className="bg-white shadow-sm border-b lg:hidden">
+      {/* Main content area */}
+      <div className="lg:pl-64 flex flex flex-col min-h-screen">
+        {/* Top navigation bar */}
+        <header className="bg-white shadow-sm border-b border-gray-200 lg:hidden">
           <div className="flex items-center justify-between h-16 px-4">
-            <Button
-              variant="ghost"
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 rounded-md hover:bg-gray-100 transition-colors"
               size="sm"
               onClick={() => setSidebarOpen(true)}
             >
