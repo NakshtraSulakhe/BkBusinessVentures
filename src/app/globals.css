@@ -47,6 +47,7 @@
   }
 
   * {
+    border-color: #e5e7eb;
     border-color: hsl(var(--border));
   }
 

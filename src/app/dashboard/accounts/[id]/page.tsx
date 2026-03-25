@@ -7,6 +7,16 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { 
   ArrowLeftIcon,
   BanknotesIcon,
@@ -93,6 +103,26 @@ export default function AccountView() {
       fetchAccount()
     }
   }, [params.id])
+
+  const handleDelete = async () => {
+    try {
+      const response = await fetch(`/api/accounts/${params.id}`, {
+        method: "DELETE",
+      })
+      
+      if (response.ok) {
+        router.push("/dashboard/accounts")
+      } else {
+        const data = await response.json()
+        alert(data.error || "Failed to delete account.")
+      }
+    } catch (error) {
+      console.error("Failed to delete account:", error)
+      alert("An error occurred while deleting the account.")
+    } finally {
+      setShowDeleteDialog(false)
+    }
+  }
 
   const getAccountTypeColor = (type: string) => {
     switch (type) {
@@ -464,6 +494,22 @@ export default function AccountView() {
           )}
         </div>
       </div>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to delete this account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the account 
+              <span className="font-semibold text-foreground"> {account?.accountNumber}</span> and remove all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   )
 }
