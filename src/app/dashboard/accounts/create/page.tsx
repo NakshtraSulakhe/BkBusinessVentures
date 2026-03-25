@@ -9,6 +9,15 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { CustomerSelectionTab, AccountDetailsTab, AccountRulesTab, ReviewTab } from "@/components/account-tabs"
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -18,6 +27,7 @@ import {
 import {
   ArrowLeftIcon,
   BuildingLibraryIcon,
+  ChevronDownIcon,
   CurrencyDollarIcon,
   CalendarIcon,
   CheckCircleIcon,
@@ -112,7 +122,7 @@ function CreateAccountComponent() {
 
   const fetchCustomers = async () => {
     try {
-      const response = await fetch('/api/customers')
+      const response = await fetch('/api/customers?limit=1000')
       if (response.ok) {
         const data = await response.json()
         setCustomers(data.customers || [])
@@ -422,26 +432,46 @@ function CreateAccountComponent() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Select Customer <span className="text-red-500">*</span>
                     </label>
-                    <Select
-                      value={formData.customerId}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, customerId: value }))}
-                    >
-                      <SelectTrigger className={errors.customerId ? 'border-red-500' : ''}>
-                        <SelectValue placeholder="Choose a customer..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {customers.map((customer) => (
-                          <SelectItem key={customer.id} value={customer.id}>
-                            <div className="flex items-center justify-between w-full">
-                              <span>{customer.name}</span>
-                              <span className="text-sm text-gray-500 ml-2">{customer.email}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          className={`w-full justify-between ${errors.customerId ? 'border-red-500' : ''}`}
+                        >
+                          {selectedCustomer ? selectedCustomer.name : 'Choose a customer...'}
+                          <ChevronDownIcon className="h-4 w-4 opacity-50" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-full max-h-60">
+                        <DropdownMenuLabel>Customers</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        {customers.length === 0 ? (
+                          <DropdownMenuItem disabled>
+                            Loading customers...
+                          </DropdownMenuItem>
+                        ) : (
+                          customers.map((customer) => (
+                            <DropdownMenuItem 
+                              key={customer.id}
+                              onClick={() => setFormData(prev => ({ ...prev, customerId: customer.id }))}
+                              className="cursor-pointer"
+                            >
+                              <div className="flex flex-col w-full">
+                                <span className="font-medium">{customer.name}</span>
+                                <span className="text-sm text-muted-foreground">
+                                  {customer.email}
+                                </span>
+                              </div>
+                            </DropdownMenuItem>
+                          ))
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                     {errors.customerId && (
                       <p className="text-red-500 text-sm mt-1">{errors.customerId}</p>
+                    )}
+                    {customers.length === 0 && (
+                      <p className="text-gray-500 text-xs mt-1">No customers found. Please add customers first.</p>
                     )}
                   </div>
 
@@ -449,19 +479,45 @@ function CreateAccountComponent() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Account Type <span className="text-red-500">*</span>
                     </label>
-                    <Select
-                      value={formData.accountType}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, accountType: value }))}
-                    >
-                      <SelectTrigger className={errors.accountType ? 'border-red-500' : ''}>
-                        <SelectValue placeholder="Select account type..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="FD">Fixed Deposit</SelectItem>
-                        <SelectItem value="RD">Recurring Deposit</SelectItem>
-                        <SelectItem value="LOAN">Loan</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          className={`w-full justify-between ${errors.accountType ? 'border-red-500' : ''}`}
+                        >
+                          {formData.accountType === 'FD' ? 'Fixed Deposit' : 
+                           formData.accountType === 'RD' ? 'Recurring Deposit' : 
+                           formData.accountType === 'LOAN' ? 'Loan' : 
+                           'Select account type...'}
+                          <ChevronDownIcon className="h-4 w-4 opacity-50" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-full max-h-60">
+                        <DropdownMenuLabel>Account Types</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          onClick={() => setFormData(prev => ({ ...prev, accountType: 'FD' }))}
+                          className="cursor-pointer"
+                        >
+                          <BuildingLibraryIcon className="h-4 w-4 mr-2" />
+                          Fixed Deposit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => setFormData(prev => ({ ...prev, accountType: 'RD' }))}
+                          className="cursor-pointer"
+                        >
+                          <CurrencyDollarIcon className="h-4 w-4 mr-2" />
+                          Recurring Deposit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => setFormData(prev => ({ ...prev, accountType: 'LOAN' }))}
+                          className="cursor-pointer"
+                        >
+                          <CreditCardIcon className="h-4 w-4 mr-2" />
+                          Loan
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                     {errors.accountType && (
                       <p className="text-red-500 text-sm mt-1">{errors.accountType}</p>
                     )}
@@ -471,20 +527,52 @@ function CreateAccountComponent() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Numbering Template <span className="text-gray-400">(Optional)</span>
                     </label>
-                    <Select
-                      value={formData.numberingTemplateId || 'default'}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, numberingTemplateId: value === 'default' ? '' : value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Use default template" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="default">Use default template</SelectItem>
-                        <SelectItem value="1">FD Default</SelectItem>
-                        <SelectItem value="2">RD Default</SelectItem>
-                        <SelectItem value="3">Loan Default</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          className="w-full justify-between"
+                        >
+                          {formData.numberingTemplateId === '1' ? 'FD Default' : 
+                           formData.numberingTemplateId === '2' ? 'RD Default' : 
+                           formData.numberingTemplateId === '3' ? 'Loan Default' : 
+                           'Use default template'}
+                          <ChevronDownIcon className="h-4 w-4 opacity-50" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-full max-h-60">
+                        <DropdownMenuLabel>Templates</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          onClick={() => setFormData(prev => ({ ...prev, numberingTemplateId: '' }))}
+                          className="cursor-pointer"
+                        >
+                          <Cog6ToothIcon className="h-4 w-4 mr-2" />
+                          Use default template
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => setFormData(prev => ({ ...prev, numberingTemplateId: '1' }))}
+                          className="cursor-pointer"
+                        >
+                          <BuildingLibraryIcon className="h-4 w-4 mr-2" />
+                          FD Default
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => setFormData(prev => ({ ...prev, numberingTemplateId: '2' }))}
+                          className="cursor-pointer"
+                        >
+                          <CurrencyDollarIcon className="h-4 w-4 mr-2" />
+                          RD Default
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => setFormData(prev => ({ ...prev, numberingTemplateId: '3' }))}
+                          className="cursor-pointer"
+                        >
+                          <CreditCardIcon className="h-4 w-4 mr-2" />
+                          Loan Default
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </CardContent>
               </Card>
