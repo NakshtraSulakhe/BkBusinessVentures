@@ -70,17 +70,26 @@ export async function POST(request: NextRequest) {
       }
 
       const decoded = verifyToken(token)
+      console.log('Decoded token userId:', decoded.userId)
+      
       const requestingUser = await prisma.user.findUnique({
         where: { id: decoded.userId }
       })
 
-      if (!requestingUser || !requestingUser.isActive) {
-        return NextResponse.json({ error: "Valid user access required" }, { status: 403 })
+      if (!requestingUser) {
+        console.log('Requesting user not found in database')
+        return NextResponse.json({ error: "Access denied: User not found" }, { status: 403 })
       }
 
-      // Only admins can create other admins
-      if (role === "admin" && requestingUser.role !== "admin") {
-        return NextResponse.json({ error: "Admin access required to create admin users" }, { status: 403 })
+      if (!requestingUser.isActive) {
+        console.log('Requesting user account is inactive')
+        return NextResponse.json({ error: "Access denied: Inactive account" }, { status: 403 })
+      }
+
+      // Security improvement: Only admins should be able to create any user
+      if (requestingUser.role !== "admin") {
+        console.log('Non-admin user attempted to create a user. Role:', requestingUser.role)
+        return NextResponse.json({ error: "Admin access required to create users" }, { status: 403 })
       }
     }
 

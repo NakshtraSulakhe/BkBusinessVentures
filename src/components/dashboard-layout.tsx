@@ -78,7 +78,7 @@ const navigation = [
   { name: "Suggestions", href: "/dashboard/suggestions", icon: ClipboardDocumentListIcon, current: false, section: "main", indent: true },
   { name: "Users", href: "/dashboard/users", icon: UsersIcon, current: false, section: "main", indent: true },
   { name: "Customer Ledger View", href: "/dashboard/customers/ledger", icon: BookOpenIcon, current: false, section: "main", indent: true },
-  { name: "Accounts Master", href: "/dashboard/accounts", icon: BanknotesIcon, current: false, section: "main", indent: true },
+  // { name: "Accounts Master", href: "/dashboard/accounts", icon: BanknotesIcon, current: false, section: "main", indent: true },  
 
   // Deposits Section
   { name: "Fixed Deposits (FD)", href: "/dashboard/deposits/fd", icon: BuildingLibraryIcon, current: false, section: "deposits" },

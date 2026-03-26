@@ -35,9 +35,14 @@ export async function POST(
       )
     }
 
+    const ids = id.includes(',') ? id.split(',') : [id]
+
     // Update suggestion as rejected
-    const updatedSuggestion = await prisma.suggestedEntry.update({
-      where: { id },
+    const updateResult = await prisma.suggestedEntry.updateMany({
+      where: { 
+        id: { in: ids },
+        status: 'pending'
+      },
       data: {
         status: 'rejected',
         rejectionReason: reason,
@@ -46,8 +51,8 @@ export async function POST(
     })
 
     return NextResponse.json({
-      message: 'Suggestion rejected successfully',
-      suggestion: updatedSuggestion
+      message: `${updateResult.count} suggestions rejected successfully`,
+      count: updateResult.count
     })
   } catch (error) {
     console.error('Failed to reject suggestion:', error)

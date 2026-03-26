@@ -86,6 +86,7 @@ export default function CustomerLedger() {
   const [searchTerm, setSearchTerm] = useState('')
   const [accountTypeFilter, setAccountTypeFilter] = useState('all')
   const [balanceFilter, setBalanceFilter] = useState('all')
+  const [mounted, setMounted] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [pagination, setPagination] = useState({
     page: 1,
@@ -93,6 +94,11 @@ export default function CustomerLedger() {
     total: 0,
     pages: 0
   })
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
 
   const fetchCustomers = async () => {
     try {
@@ -246,6 +252,8 @@ export default function CustomerLedger() {
     if (netWorth < 0) return <ArrowTrendingDownIcon className="h-4 w-4" />
     return <CurrencyDollarIcon className="h-4 w-4" />
   }
+
+  if (!mounted) return null
 
   return (
     <DashboardLayout>

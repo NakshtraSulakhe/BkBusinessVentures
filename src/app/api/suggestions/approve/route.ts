@@ -46,16 +46,25 @@ export async function POST(request: NextRequest) {
         const currentBalance = lastTransaction?.balance || 0
         
         let newBalance = currentBalance
-        if (suggestion.type === 'interest' || suggestion.type === 'deposit') {
+        // Consistent with transactions/route.ts
+        const isCredit = [
+          'deposit', 'interest', 'PRINCIPAL_PAYMENT', 'CREDIT', 'INTEREST', 'INSTALLMENT'
+        ].includes(suggestion.type)
+        
+        const isDebit = [
+          'withdrawal', 'emi', 'EMI_DUE', 'DEBIT', 'MATURITY_PAYOUT', 'PENALTY'
+        ].includes(suggestion.type)
+
+        const isNeutral = [
+          'INTEREST_PAYOUT'
+        ].includes(suggestion.type)
+
+        if (isCredit) {
           newBalance = currentBalance + suggestion.amount
-        } else if (suggestion.type === 'emi' || suggestion.type === 'withdrawal') {
+        } else if (isDebit) {
           newBalance = currentBalance - suggestion.amount
-          
-          // Check for insufficient funds
-          if (newBalance < 0) {
-            results.push({ id: suggestionId, error: 'Insufficient funds' })
-            continue
-          }
+        } else if (isNeutral) {
+          newBalance = currentBalance
         }
 
         // Create transaction
@@ -66,7 +75,8 @@ export async function POST(request: NextRequest) {
             amount: suggestion.amount,
             balance: newBalance,
             description: suggestion.description,
-            reference: `SUG-${suggestion.id}`
+            reference: `SUG-${suggestion.id}`,
+            transactionDate: suggestion.runDate
           }
         })
 

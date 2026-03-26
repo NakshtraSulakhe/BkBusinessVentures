@@ -1,515 +1,364 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useRouter, useParams } from "next/navigation"
+import { useState, useEffect, use } from "react"
+import { useRouter } from "next/navigation"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { 
-  ArrowLeftIcon,
-  BanknotesIcon,
-  CalendarIcon,
-  ArrowTrendingUpIcon,
-  ClockIcon,
-  UserIcon,
-  BuildingOfficeIcon,
-  PencilIcon,
-  TrashIcon,
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-  SparklesIcon,
-  ArrowPathIcon
+   ArrowLeftIcon,
+   BuildingLibraryIcon,
+   UserIcon,
+   CalendarIcon,
+   CurrencyDollarIcon,
+   ClockIcon,
+   DocumentDuplicateIcon,
+   ChartBarIcon,
+   ShieldCheckIcon,
+   ArrowPathIcon,
+   ExclamationTriangleIcon,
+   SparklesIcon,
+   CheckCircleIcon,
+   PresentationChartBarIcon,
+   QueueListIcon,
+   BanknotesIcon
 } from "@heroicons/react/24/outline"
+import {
+   Table,
+   TableBody,
+   TableCell,
+   TableHead,
+   TableHeader,
+   TableRow,
+} from "@/components/ui/table"
 
-interface Account {
-  id: string
-  accountNumber: string
-  accountType: string
-  principalAmount: number
-  interestRate: number
-  tenure: number
-  startDate: string
-  maturityDate?: string
-  state: string
-  createdAt: string
-  customer: {
-    id: string
-    name: string
-    email: string
-    phone: string
-  }
-  accountRules?: {
-    interestMode: string
-    payoutMode: string
-    loanMethod?: string
-    emiAmount?: number
-    emiDueDay?: number
-    gracePeriodDays?: number
-    roundingMode: string
-    roundingPrecision: number
-  }
-  transactions: Array<{
-    id: string
-    type: string
-    amount: number
-    balance?: number
-    description?: string
-    createdAt: string
-  }>
-  _count: {
-    transactions: number
-  }
+export default function AccountDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+   const accountId = use(params).id
+   const router = useRouter()
+   const [account, setAccount] = useState<any>(null)
+   const [loading, setLoading] = useState(true)
+
+   useEffect(() => {
+      fetchAccountDetails()
+   }, [accountId])
+
+   const fetchAccountDetails = async () => {
+      try {
+         setLoading(true)
+         const res = await fetch(`/api/accounts/${accountId}`)
+         if (res.ok) {
+            const d = await res.json()
+            setAccount(d.account)
+         }
+      } catch (error) {
+         console.error(error)
+      } finally {
+         setLoading(false)
+      }
+   }
+
+   const formatCurrency = (amount: number) => {
+      return new Intl.NumberFormat('en-IN', {
+         style: 'currency', currency: 'INR'
+      }).format(amount)
+   }
+
+   if (loading) return (
+      <DashboardLayout>
+         <div className="p-6 min-h-screen bg-slate-50 flex items-center justify-center">
+            <div className="text-center">
+               <div className="h-10 w-10 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin mx-auto" />
+               <p className="mt-4 text-slate-400 font-black uppercase tracking-widest text-xs italic tracking-[0.2em]">Syncing Account DNA...</p>
+            </div>
+         </div>
+      </DashboardLayout>
+   )
+
+   if (!account) return (
+      <DashboardLayout>
+         <div className="p-6 min-h-screen bg-slate-50 flex items-center justify-center">
+            <div className="text-center text-red-500 font-bold italic uppercase tracking-widest">ERROR: Account Domain Not Resolved</div>
+         </div>
+      </DashboardLayout>
+   )
+
+   const isLoan = account.accountType === 'LOAN'
+   const rules = account.accountRules || {}
+
+   return (
+      <DashboardLayout>
+         <div className="p-6 min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
+            <div className="max-w-7xl mx-auto space-y-6">
+
+               {/* Header */}
+               <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                     <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => router.back()}
+                        className="h-10 w-10 p-0 rounded-full hover:bg-white transition-colors"
+                     >
+                        <ArrowLeftIcon className="h-5 w-5 text-gray-400" />
+                     </Button>
+                     <div>
+                        <h1 className="text-4xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent italic tracking-tighter">
+                           Instrument Intelligence
+                        </h1>
+                        <p className="text-gray-500 mt-2 flex items-center font-bold text-sm">
+                           <Badge variant="outline" className="mr-3 font-mono text-[10px] tracking-widest border-blue-100 bg-blue-50/50 text-blue-600 italic">ID: {account.accountNumber}</Badge>
+                           {account.customer.name} • Active Exposure
+                        </p>
+                     </div>
+                  </div>
+
+                  <div className="flex items-center space-x-3">
+                     <Button variant="outline" className="h-11 px-6 font-bold border-slate-200 bg-white/60 hover:bg-white shadow-sm italic text-xs rounded-xl">
+                        <DocumentDuplicateIcon className="h-4 w-4 mr-2" />
+                        Clone Rules
+                     </Button>
+                     <Button className="bg-slate-900 text-white h-11 px-8 font-black uppercase tracking-widest italic rounded-xl shadow-xl active:scale-95 transition-all">
+                        Edit Parameter Suite
+                     </Button>
+                  </div>
+               </div>
+
+               {/* Core DNA Stats */}
+               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
+                     <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                           <div className="space-y-1">
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Yield Configuration</p>
+                              <p className="text-3xl font-black text-slate-900 tabular-nums italic tracking-tighter">{account.interestRate}%</p>
+                              <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest italic flex items-center">
+                                 APY Guaranteed
+                              </p>
+                           </div>
+                           <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg border-2 border-white">
+                              <PresentationChartBarIcon className="h-7 w-7 text-white" />
+                           </div>
+                        </div>
+                     </CardContent>
+                  </Card>
+                  <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
+                     <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                           <div className="space-y-1">
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Principal Depth</p>
+                              <p className="text-2xl font-black text-slate-900 tabular-nums italic tracking-tighter">{formatCurrency(account.principalAmount)}</p>
+                              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest italic flex items-center">
+                                 Contracted Capital
+                              </p>
+                           </div>
+                           <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-indigo-400 to-blue-500 flex items-center justify-center shadow-lg border-2 border-white">
+                              <BanknotesIcon className="h-7 w-7 text-white" />
+                           </div>
+                        </div>
+                     </CardContent>
+                  </Card>
+                  <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
+                     <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                           <div className="space-y-1">
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Lifecycle Duration</p>
+                              <p className="text-2xl font-black text-slate-900 mt-1">{account.tenure} Months</p>
+                              <p className="text-[10px) font-bold text-gray-500 uppercase tracking-widest italic flex items-center">
+                                 {new Date(account.maturityDate).toLocaleDateString()} Final
+                              </p>
+                           </div>
+                           <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center shadow-lg border-2 border-white">
+                              <ClockIcon className="h-7 w-7 text-white" />
+                           </div>
+                        </div>
+                     </CardContent>
+                  </Card>
+                  <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
+                     <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                           <div className="space-y-1">
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Compliance State</p>
+                              <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100 font-black italic rounded-sm text-[10px] tracking-widest uppercase mt-2">Verified ACTIVE</Badge>
+                              <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest italic flex items-center mt-2">
+                                 <ShieldCheckIcon className="h-3 w-3 mr-1" /> Tier 1 Risk OK
+                              </p>
+                           </div>
+                           <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg border-2 border-white">
+                              <ShieldCheckIcon className="h-7 w-7 text-white" />
+                           </div>
+                        </div>
+                     </CardContent>
+                  </Card>
+               </div>
+
+               <div className="grid lg:grid-cols-3 gap-8">
+
+                  {/* Left: Rules & Parameters */}
+                  <div className="space-y-6 lg:sticky lg:top-24 h-fit">
+                     <Card className="bg-white/60 backdrop-blur-sm border-slate-200 rounded-3xl overflow-hidden shadow-sm">
+                        <CardHeader className="bg-white/40 border-b border-slate-100 px-8 h-20 flex flex-row items-center">
+                           <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-900 italic flex items-center">
+                              <ArrowPathIcon className="h-5 w-5 mr-3 text-blue-600" />
+                              Operational Parameters
+                           </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-8 space-y-6">
+                           <RuleEntry label="Interest Protocol" value={rules.interestMode || 'MATURITY'} icon={<SparklesIcon className="h-4 w-4 text-blue-500" />} />
+                           <RuleEntry label="Payout Strategy" value={rules.payoutMode || 'REINVEST'} icon={<ClockIcon className="h-4 w-4 text-indigo-500" />} />
+                           {isLoan && <RuleEntry label="Amortization" value={rules.loanMethod || 'FLAT'} icon={<ChartBarIcon className="h-4 w-4 text-rose-500" />} />}
+                           {rules.emiAmount && <RuleEntry label="Periodic Due" value={formatCurrency(rules.emiAmount)} icon={<CalendarIcon className="h-4 w-4 text-emerald-500" />} />}
+                           <RuleEntry label="Rounding" value={`${rules.roundingMode} (${rules.roundingPrecision}px)`} icon={<SparklesIcon className="h-4 w-4 text-slate-400" />} />
+                           <div className="pt-6 border-t border-slate-50">
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic mb-2">Internal Meta</p>
+                              <p className="text-xs text-slate-600 leading-relaxed font-medium italic">All interest calculations are finalized at month-end based on the established {rules.roundingMode} rounding protocol at 2 decimal points of precision.</p>
+                           </div>
+                        </CardContent>
+                     </Card>
+
+                     <Card className="bg-slate-900 border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
+                        <CardContent className="p-8">
+                           <div className="flex items-center space-x-4 mb-6">
+                              <div className="h-12 w-12 rounded-2xl bg-white/10 flex items-center justify-center">
+                                 <QueueListIcon className="h-6 w-6 text-white" />
+                              </div>
+                              <div>
+                                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Lifecycle Yield</p>
+                                 <p className="text-2xl font-black text-white italic">₹{(account.principalAmount * (account.interestRate / 100) * (account.tenure / 12)).toLocaleString()}</p>
+                              </div>
+                           </div>
+                           <p className="text-xs text-slate-400 font-medium italic mb-6">Projected growth based on contractual APY and {account.tenure}-month period.</p>
+                           <Button className="w-full bg-white text-slate-900 font-black uppercase tracking-widest italic h-12 rounded-xl hover:bg-slate-100 transition-all">
+                              Forecasting Suite
+                           </Button>
+                        </CardContent>
+                     </Card>
+                  </div>
+
+                  {/* Right: Dynamic Intelligence Tables (Schedule / Suggestions) */}
+                  <div className="lg:col-span-2 space-y-8 pb-20">
+
+                     {/* Schedule Table (ONLY FOR LOANS) */}
+                     {isLoan && (
+                        <Card className="bg-white/60 backdrop-blur-sm border-slate-200 rounded-3xl overflow-hidden shadow-sm">
+                           <CardHeader className="bg-white/40 border-b border-slate-100 px-8 h-20 flex flex-row items-center justify-between">
+                              <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-900 italic flex items-center">
+                                 <CalendarIcon className="h-5 w-5 mr-3 text-rose-500" />
+                                 EMI Amortization Schedule
+                              </CardTitle>
+                              <Badge variant="outline" className="font-mono text-[9px] tracking-widest uppercase py-1 px-3 italic">{account.emiEntries?.length || 0} PERIODS</Badge>
+                           </CardHeader>
+                           <CardContent className="p-0">
+                              <Table>
+                                 <TableHeader className="bg-slate-50/50">
+                                    <TableRow className="border-none">
+                                       <TableHead className="px-8 font-black uppercase text-[10px] tracking-widest text-slate-900 h-14">Period #</TableHead>
+                                       <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-900 h-14">Target Date</TableHead>
+                                       <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-900 h-14 text-right">Principal</TableHead>
+                                       <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-900 h-14 text-right">Yield</TableHead>
+                                       <TableHead className="px-8 font-black uppercase text-[10px] tracking-widest text-slate-900 h-14 text-center">Status</TableHead>
+                                    </TableRow>
+                                 </TableHeader>
+                                 <TableBody>
+                                    {account.emiEntries?.map((emi: any) => (
+                                       <TableRow key={emi.id} className="hover:bg-rose-50/10 transition-colors border-b border-slate-50 group">
+                                          <TableCell className="px-8 py-5">
+                                             <div className="h-8 w-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center font-black text-xs italic group-hover:bg-rose-600 group-hover:text-white transition-all">
+                                                {emi.emiNumber}
+                                             </div>
+                                          </TableCell>
+                                          <TableCell className="text-xs font-bold text-slate-600 uppercase tracking-widest">
+                                             {new Date(emi.dueDate).toLocaleDateString()}
+                                          </TableCell>
+                                          <TableCell className="text-right text-sm font-black italic">{formatCurrency(emi.principalAmount)}</TableCell>
+                                          <TableCell className="text-right text-sm font-black italic">{formatCurrency(emi.interestAmount)}</TableCell>
+                                          <TableCell className="px-8 text-center text-xs">
+                                             <Badge className={`uppercase font-black text-[9px] tracking-widest px-3 py-1 rounded-sm border ${emi.status === 'PAID' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-rose-50 text-rose-700 border-rose-100'}`}>
+                                                {emi.status}
+                                             </Badge>
+                                          </TableCell>
+                                       </TableRow>
+                                    ))}
+                                 </TableBody>
+                              </Table>
+                           </CardContent>
+                        </Card>
+                     )}
+
+                     {/* Suggestions History */}
+                     <Card className="bg-white/60 backdrop-blur-sm border-slate-200 rounded-3xl overflow-hidden shadow-sm">
+                        <CardHeader className="bg-white/40 border-b border-slate-100 px-8 h-20 flex flex-row items-center justify-between">
+                           <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-900 italic flex items-center">
+                              <SparklesIcon className="h-5 w-5 mr-3 text-blue-500" />
+                              Engine Intelligence Logs
+                           </CardTitle>
+                           <Badge variant="outline" className="font-mono text-[9px] tracking-widest uppercase py-1 px-3 italic">{account.suggestedEntries?.length || 0} LOGS</Badge>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                           <Table>
+                              <TableHeader className="bg-slate-50/50">
+                                 <TableRow className="border-none">
+                                    <TableHead className="px-8 font-black uppercase text-[10px] tracking-widest text-slate-900 h-14">Cycle</TableHead>
+                                    <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-900 h-14">Log Entry</TableHead>
+                                    <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-900 h-14 text-right px-8 font-black">Magnitude</TableHead>
+                                 </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                 {account.suggestedEntries?.length === 0 ? (
+                                    <TableRow>
+                                       <TableCell colSpan={3} className="py-20 text-center">
+                                          <SparklesIcon className="h-10 w-10 text-slate-200 mx-auto mb-4" />
+                                          <p className="text-xs font-black uppercase tracking-widest text-slate-400 italic">No Engine Records Found For This Instrument</p>
+                                       </TableCell>
+                                    </TableRow>
+                                 ) : (
+                                    account.suggestedEntries?.map((entry: any) => (
+                                       <TableRow key={entry.id} className="hover:bg-blue-50/10 transition-colors border-b border-slate-50 group">
+                                          <TableCell className="px-8 py-6">
+                                             <div className="space-y-1">
+                                                <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-none">
+                                                   {new Date(entry.periodStartDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                                                </p>
+                                                <p className="text-xs font-bold text-slate-400 italic">{entry.type}</p>
+                                             </div>
+                                          </TableCell>
+                                          <TableCell className="max-w-xs overflow-hidden">
+                                             <span className="text-xs font-medium text-slate-600 italic leading-none">{entry.description || 'System-generated entry'}</span>
+                                          </TableCell>
+                                          <TableCell className="px-8 text-right">
+                                             <div className="space-y-1">
+                                                <p className="text-lg font-black italic tracking-tighter text-slate-900">{formatCurrency(entry.amount)}</p>
+                                                <Badge className={`uppercase font-black text-[9px] tracking-[0.15em] px-2 py-0 border ${entry.status === 'approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100'}`}>
+                                                   {entry.status}
+                                                </Badge>
+                                             </div>
+                                          </TableCell>
+                                       </TableRow>
+                                    ))
+                                 )}
+                              </TableBody>
+                           </Table>
+                        </CardContent>
+                     </Card>
+                  </div>
+
+               </div>
+            </div>
+         </div>
+      </DashboardLayout>
+   )
 }
 
-export default function AccountView() {
-  const router = useRouter()
-  const params = useParams()
-  const [account, setAccount] = useState<Account | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-
-  const fetchAccount = async () => {
-    try {
-      setLoading(true)
-      const response = await fetch(`/api/accounts/${params.id}`)
-      if (response.ok) {
-        const data = await response.json()
-        setAccount(data.account)
-      } else {
-        router.push('/dashboard/accounts')
-      }
-    } catch (error) {
-      console.error('Failed to fetch account:', error)
-      router.push('/dashboard/accounts')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (params.id) {
-      fetchAccount()
-    }
-  }, [params.id])
-
-  const handleDelete = async () => {
-    try {
-      const response = await fetch(`/api/accounts/${params.id}`, {
-        method: "DELETE",
-      })
-      
-      if (response.ok) {
-        router.push("/dashboard/accounts")
-      } else {
-        const data = await response.json()
-        alert(data.error || "Failed to delete account.")
-      }
-    } catch (error) {
-      console.error("Failed to delete account:", error)
-      alert("An error occurred while deleting the account.")
-    } finally {
-      setShowDeleteDialog(false)
-    }
-  }
-
-  const getAccountTypeColor = (type: string) => {
-    switch (type) {
-      case 'fd': return 'bg-blue-100 text-blue-700'
-      case 'rd': return 'bg-green-100 text-green-700'
-      case 'loan': return 'bg-red-100 text-red-700'
-      default: return 'bg-gray-100 text-gray-700'
-    }
-  }
-
-  const getAccountTypeIcon = (type: string) => {
-    switch (type) {
-      case 'fd': return '💰'
-      case 'rd': return '🔄'
-      case 'loan': return '💳'
-      default: return '🏦'
-    }
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-700'
-      case 'matured': return 'bg-yellow-100 text-yellow-700'
-      case 'closed': return 'bg-red-100 text-red-700'
-      default: return 'bg-gray-100 text-gray-700'
-    }
-  }
-
-  const getTransactionTypeColor = (type: string) => {
-    switch (type) {
-      case 'deposit':
-      case 'interest':
-        return 'text-green-600'
-      case 'withdrawal':
-      case 'penalty':
-        return 'text-red-600'
-      case 'payment':
-        return 'text-blue-600'
-      case 'disbursement':
-        return 'text-purple-600'
-      default:
-        return 'text-gray-600'
-    }
-  }
-
-  if (loading && !account) {
-    return (
-      <DashboardLayout>
-        <div className="p-6 min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading account details...</p>
-          </div>
-        </div>
-      </DashboardLayout>
-    )
-  }
-
-  if (!account && !loading) {
-    return (
-      <DashboardLayout>
-        <div className="p-6 min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 flex items-center justify-center">
-          <div className="text-center">
-            <BanknotesIcon className="mx-auto h-16 w-16 text-gray-400" />
-            <h3 className="mt-4 text-lg font-medium text-gray-900">Account not found</h3>
-            <p className="mt-2 text-sm text-gray-500">
-              The account you're looking for doesn't exist or may have been deleted.
-            </p>
-            <Button
-              onClick={() => router.push('/dashboard/accounts')}
-              className="mt-4 bg-gradient-to-r from-blue-600 to-purple-600"
-            >
-              Back to Accounts
-            </Button>
-          </div>
-        </div>
-      </DashboardLayout>
-    )
-  }
-
-  return (
-    <DashboardLayout>
-      <div className="p-6 min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
-        <div className="max-w-6xl mx-auto">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push('/dashboard/accounts')}
-                className="h-10 w-10 p-0 rounded-full hover:bg-blue-50 transition-colors"
-              >
-                <ArrowLeftIcon className="h-5 w-5" />
-              </Button>
-              <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Account Details
-                </h1>
-                <p className="text-gray-600 mt-2 flex items-center">
-                  <SparklesIcon className="h-4 w-4 mr-2 text-blue-500" />
-                  View and manage account information
-                </p>
-              </div>
+function RuleEntry({ label, value, icon }: { label: string, value: string, icon: React.ReactNode }) {
+   return (
+      <div className="flex items-center justify-between group">
+         <div className="flex items-center">
+            <div className="h-8 w-8 rounded-lg bg-slate-50 flex items-center justify-center mr-4 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
+               {icon}
             </div>
-            <div className="flex items-center space-x-3">
-              <Badge className={getStatusColor(account!.state)}>
-                {account!.state}
-              </Badge>
-              <Button
-                onClick={() => router.push(`/dashboard/accounts/${account!.id}/edit`)}
-                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg h-12 px-6"
-              >
-                <PencilIcon className="h-5 w-5 mr-2" />
-                Edit Account
-              </Button>
-              <Button
-                onClick={() => setShowDeleteDialog(true)}
-                className="bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 shadow-lg h-12 px-6"
-              >
-                <TrashIcon className="h-5 w-5 mr-2" />
-                Delete
-              </Button>
-            </div>
-          </div>
-
-          {account && (
-            <>
-              {/* Account Info Header */}
-              <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow mb-6">
-                <div className="flex items-center space-x-4">
-                  <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
-                    <span className="text-white font-bold text-xl">
-                      {getAccountTypeIcon(account.accountType)}
-                    </span>
-                  </div>
-                  <div className="flex-1">
-                    <h2 className="text-2xl font-bold text-gray-900">{account.accountNumber}</h2>
-                    <p className="text-gray-600">{account.customer.name}</p>
-                    <div className="flex items-center space-x-3 mt-2">
-                      <Badge className={`text-xs font-semibold px-3 py-1 ${getAccountTypeColor(account.accountType)}`}>
-                        <span className="mr-1.5">{getAccountTypeIcon(account.accountType)}</span>
-                        {account.accountType.toUpperCase()}
-                      </Badge>
-                      <span className="text-sm text-gray-500">
-                        Created {new Date(account.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Account Details */}
-                <div className="lg:col-span-2 space-y-6">
-                  {/* Basic Information */}
-                  <Card className="bg-white/60 backdrop-blur-sm">
-                    <CardHeader>
-                      <CardTitle className="flex items-center">
-                        <BanknotesIcon className="h-5 w-5 mr-2" />
-                        Account Information
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm text-gray-500">Principal Amount</p>
-                          <p className="font-semibold text-gray-900">
-                            ₹{account.principalAmount.toLocaleString()}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Interest Rate</p>
-                          <p className="font-semibold text-gray-900">{account.interestRate}%</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Tenure</p>
-                          <p className="font-semibold text-gray-900">{account.tenure} months</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Start Date</p>
-                          <p className="font-semibold text-gray-900">
-                            {new Date(account.startDate).toLocaleDateString()}
-                          </p>
-                        </div>
-                        {account.maturityDate && (
-                          <div>
-                            <p className="text-sm text-gray-500">Maturity Date</p>
-                            <p className="font-semibold text-gray-900">
-                              {new Date(account.maturityDate).toLocaleDateString()}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Customer Information */}
-                  <Card className="bg-white/60 backdrop-blur-sm">
-                    <CardHeader>
-                      <CardTitle className="flex items-center">
-                        <UserIcon className="h-5 w-5 mr-2" />
-                        Customer Information
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm text-gray-500">Name</p>
-                          <p className="font-semibold text-gray-900">{account.customer.name}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Email</p>
-                          <p className="font-semibold text-gray-900">{account.customer.email}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Phone</p>
-                          <p className="font-semibold text-gray-900">{account.customer.phone}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Recent Transactions */}
-                  <Card className="bg-white/60 backdrop-blur-sm">
-                    <CardHeader>
-                      <CardTitle className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <ArrowPathIcon className="h-5 w-5 mr-2" />
-                          Recent Transactions
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => router.push(`/dashboard/accounts/${account.id}/transactions`)}
-                        >
-                          View All
-                        </Button>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {account.transactions.length === 0 ? (
-                        <p className="text-center text-gray-500 py-8">No transactions yet</p>
-                      ) : (
-                        <div className="space-y-3">
-                          {account.transactions.map((transaction) => (
-                            <div key={transaction.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                              <div>
-                                <p className="font-medium text-gray-900">{transaction.description}</p>
-                                <p className="text-sm text-gray-500">
-                                  {new Date(transaction.createdAt).toLocaleDateString()}
-                                </p>
-                              </div>
-                              <div className="text-right">
-                                <p className={`font-semibold ${getTransactionTypeColor(transaction.type)}`}>
-                                  {transaction.type === 'deposit' || transaction.type === 'interest' ? '+' : '-'}
-                                  ₹{transaction.amount.toLocaleString()}
-                                </p>
-                                {transaction.balance && (
-                                  <p className="text-sm text-gray-500">
-                                    Balance: ₹{transaction.balance.toLocaleString()}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Account Rules */}
-                <div className="space-y-6">
-                  <Card className="bg-white/60 backdrop-blur-sm">
-                    <CardHeader>
-                      <CardTitle className="flex items-center">
-                        <SparklesIcon className="h-5 w-5 mr-2" />
-                        Account Rules
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {account.accountRules ? (
-                        <>
-                          <div>
-                            <p className="text-sm text-gray-500">Interest Mode</p>
-                            <p className="font-semibold text-gray-900 capitalize">
-                              {account.accountRules.interestMode}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-500">Payout Mode</p>
-                            <p className="font-semibold text-gray-900 capitalize">
-                              {account.accountRules.payoutMode}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-500">Rounding</p>
-                            <p className="font-semibold text-gray-900 capitalize">
-                              {account.accountRules.roundingMode} ({account.accountRules.roundingPrecision} decimals)
-                            </p>
-                          </div>
-                          
-                          {account.accountType === 'loan' && account.accountRules.loanMethod && (
-                            <>
-                              <Separator />
-                              <div>
-                                <p className="text-sm text-gray-500">Loan Method</p>
-                                <p className="font-semibold text-gray-900 capitalize">
-                                  {account.accountRules.loanMethod}
-                                </p>
-                              </div>
-                              {account.accountRules.emiAmount && (
-                                <div>
-                                  <p className="text-sm text-gray-500">EMI Amount</p>
-                                  <p className="font-semibold text-gray-900">
-                                    ₹{account.accountRules.emiAmount.toLocaleString()}
-                                  </p>
-                                </div>
-                              )}
-                              {account.accountRules.emiDueDay && (
-                                <div>
-                                  <p className="text-sm text-gray-500">EMI Due Day</p>
-                                  <p className="font-semibold text-gray-900">
-                                    {account.accountRules.emiDueDay}{account.accountRules.emiDueDay === 1 ? 'st' : account.accountRules.emiDueDay === 2 ? 'nd' : account.accountRules.emiDueDay === 3 ? 'rd' : 'th'} of month
-                                  </p>
-                                </div>
-                              )}
-                              {account.accountRules.gracePeriodDays !== undefined && (
-                                <div>
-                                  <p className="text-sm text-gray-500">Grace Period</p>
-                                  <p className="font-semibold text-gray-900">
-                                    {account.accountRules.gracePeriodDays} days
-                                  </p>
-                                </div>
-                              )}
-                            </>
-                          )}
-                        </>
-                      ) : (
-                        <p className="text-center text-gray-500 py-4">No rules configured</p>
-                      )}
-                    </CardContent>
-                  </Card>
-
-                  {/* Quick Stats */}
-                  <Card className="bg-white/60 backdrop-blur-sm">
-                    <CardHeader>
-                      <CardTitle>Quick Stats</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <p className="text-sm text-gray-500">Total Transactions</p>
-                        <p className="text-2xl font-bold text-gray-900">
-                          {account._count.transactions}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500">Account Status</p>
-                        <Badge className={getStatusColor(account.state)}>
-                          {account.state}
-                        </Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-slate-900 transition-colors">{label}</p>
+         </div>
+         <p className="text-sm font-black italic text-slate-900">{value}</p>
       </div>
-
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure you want to delete this account?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the account 
-              <span className="font-semibold text-foreground"> {account?.accountNumber}</span> and remove all associated data.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </DashboardLayout>
-  )
+   )
 }

@@ -455,7 +455,7 @@ export default function UsersPage() {
 
           {/* Create User Modal */}
           {showCreateModal && (
-            <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
               <Card className="w-full max-w-md m-4 bg-white shadow-xl rounded-xl">
                 <CardHeader>
                   <CardTitle>Create New User</CardTitle>
@@ -527,7 +527,7 @@ export default function UsersPage() {
 
           {/* Edit User Modal */}
           {showEditModal && selectedUser && (
-            <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
               <Card className="w-full max-w-md m-4 bg-white shadow-xl rounded-xl">
                 <CardHeader>
                   <CardTitle>Edit User</CardTitle>

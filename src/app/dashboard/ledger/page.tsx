@@ -70,7 +70,9 @@ export default function LedgerPage() {
     type: 'deposit',
     amount: '',
     description: '',
-    reference: ''
+    reference: '',
+    date: new Date().toISOString().split('T')[0],
+    paymentMethod: 'cash'
   })
 
   const [accounts, setAccounts] = useState<any[]>([])
@@ -193,7 +195,9 @@ export default function LedgerPage() {
           type: newTransaction.type,
           amount: parseFloat(newTransaction.amount),
           description: newTransaction.description,
-          reference: newTransaction.reference
+          reference: newTransaction.reference,
+          date: newTransaction.date,
+          paymentMethod: newTransaction.paymentMethod
         })
       })
 
@@ -205,7 +209,9 @@ export default function LedgerPage() {
           type: 'deposit',
           amount: '',
           description: '',
-          reference: ''
+          reference: '',
+          date: new Date().toISOString().split('T')[0],
+          paymentMethod: 'cash'
         })
         fetchTransactions()
       } else {
@@ -835,6 +841,33 @@ export default function LedgerPage() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="date">Transaction Date</Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={newTransaction.date}
+                    onChange={(e) => setNewTransaction({...newTransaction, date: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="paymentMethod">Payment Method</Label>
+                  <Select value={newTransaction.paymentMethod} onValueChange={(value) => setNewTransaction({...newTransaction, paymentMethod: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="online">Online</SelectItem>
+                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="bank">Bank</SelectItem>
+                      <SelectItem value="neft">NEFT</SelectItem>
+                      <SelectItem value="rtgs">RTGS</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div>

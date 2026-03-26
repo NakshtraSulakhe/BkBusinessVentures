@@ -13,9 +13,14 @@ export async function GET(
       include: {
         customer: true,
         accountRules: true,
-        transactions: {
-          orderBy: { createdAt: 'desc' },
-          take: 10
+        suggestedEntries: {
+          orderBy: { runDate: 'desc' }
+        },
+        installmentEntries: {
+          orderBy: { installmentDate: 'desc' }
+        },
+        emiEntries: {
+          orderBy: { dueDate: 'asc' }
         },
         _count: {
           select: { transactions: true }

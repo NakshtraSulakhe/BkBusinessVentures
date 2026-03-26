@@ -8,20 +8,27 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/contexts/auth-context"
 import { 
-  UserIcon,
-  BuildingLibraryIcon,
-  CurrencyDollarIcon,
-  ChartBarIcon,
-  ArrowTrendingUpIcon,
-  ArrowTrendingDownIcon,
-  BanknotesIcon,
-  CreditCardIcon,
-  SparklesIcon,
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
+  BuildingLibraryIcon, 
+  CurrencyDollarIcon, 
+  ChartBarIcon, 
+  ArrowTrendingUpIcon, 
+  ArrowTrendingDownIcon, 
+  BanknotesIcon, 
+  CreditCardIcon, 
+  SparklesIcon, 
+  CheckCircleIcon, 
+  ExclamationTriangleIcon, 
   PlusIcon,
   ArrowRightIcon,
-  CalendarIcon
+  CalendarIcon,
+  ClockIcon,
+  ShieldCheckIcon,
+  NoSymbolIcon,
+  RocketLaunchIcon,
+  FunnelIcon,
+  ArrowPathIcon,
+  QueueListIcon,
+  UserIcon as UserGroupIcon
 } from "@heroicons/react/24/outline"
 
 import {
@@ -34,199 +41,224 @@ import {
 } from "@/components/ui/table"
 
 export default function Dashboard() {
-
   const { user } = useAuth()
   const router = useRouter()
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState<any>(null)
+  
+  // Quick Month/Year Selection for Suggestions Run
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+  const [running, setRunning] = useState(false)
 
   useEffect(() => {
     if (!user) router.push("/login")
-  }, [user, router])
+    else fetchSummary()
+  }, [user])
 
-  const showMessage = (text: string, type: 'success' | 'error') => {
-    setMessage({ text, type })
-    setTimeout(() => setMessage(null), 5000)
+  const fetchSummary = async () => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/dashboard/summary')
+      if (res.ok) {
+        const d = await res.json()
+        setData(d)
+      }
+    } catch (error) {
+       console.error(error)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  if (!user) return <div>Loading...</div>
+  const handleQuickRun = async () => {
+    try {
+      setRunning(true)
+      const res = await fetch('/api/suggestions/run-monthly', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ month: selectedMonth, year: selectedYear })
+      })
+      if (res.ok) {
+        fetchSummary()
+        router.push('/dashboard/operations/suggestions')
+      }
+    } catch (error) {
+       console.error(error)
+    } finally {
+      setRunning(false)
+    }
+  }
 
+  if (!user || loading) return (
+     <DashboardLayout>
+        <div className="p-6 min-h-screen bg-slate-50 flex items-center justify-center">
+           <div className="text-center">
+              <div className="h-10 w-10 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin mx-auto" />
+              <p className="mt-4 text-slate-400 font-black uppercase tracking-widest text-xs italic">Syncing Financial Core...</p>
+           </div>
+        </div>
+     </DashboardLayout>
+  )
+
+  const summary = data?.summary || { totalBalance: 0, loanOutstanding: 0, depositsCount: 0, loanCount: 0, pendingSuggestions: 0, overdueEMI: 0, dueTodayEMI: 0 }
 
   const stats = [
     {
-      title: "Total Balance",
-      value: "₹45,231",
-      growth: "+20%",
+      title: "Portfolio Deposits",
+      value: `₹${summary.totalBalance.toLocaleString()}`,
+      count: `${summary.depositsCount} Active Accounts`,
       icon: BanknotesIcon,
-      color: "from-indigo-500 to-blue-600",
-      description: "All accounts combined"
+      color: "from-blue-600 to-indigo-600",
+      description: "FD & RD Combined Exposure"
     },
     {
-      title: "Active Deposits",
-      value: "3",
-      growth: "+10%",
-      icon: CreditCardIcon,
-      color: "from-green-500 to-emerald-600",
-      description: "FD & RD accounts"
+      title: "Loan Book",
+      value: `₹${summary.loanOutstanding.toLocaleString()}`,
+      count: `${summary.loanCount} active loans`,
+      icon: CurrencyDollarIcon,
+      color: "from-purple-600 to-indigo-700",
+      description: "Overall System Exposure"
     },
     {
-      title: "Active Loans",
-      value: "2",
-      growth: "-5%",
-      icon: ChartBarIcon,
+      title: "Overdue Alerts",
+      value: `${summary.overdueEMI}`,
+      count: "Critical Overdue EMIs",
+      icon: ExclamationTriangleIcon,
       color: "from-red-500 to-rose-600",
-      description: "Personal & business loans"
+      description: "Immediate Recovery Req",
+      highlight: summary.overdueEMI > 0
     },
     {
-      title: "Monthly Savings",
-      value: "₹1,234",
-      growth: "+12%",
-      icon: ArrowTrendingUpIcon,
-      color: "from-purple-500 to-indigo-600",
-      description: "This month's deposits"
+      title: "Pending Discovery",
+      value: `${summary.pendingSuggestions}`,
+      count: "Awaiting Verification",
+      icon: ClockIcon,
+      color: "from-amber-400 to-orange-500",
+      description: "Engine-generated Logs",
+      highlight: summary.pendingSuggestions > 0
     }
   ]
 
-
-  const transactions = [
-    { id: 1, item: "Deposit to RD", amount: "+₹500", type: "credit", date: "2024-03-15" },
-    { id: 2, item: "Loan EMI", amount: "-₹250", type: "debit", date: "2024-03-14" },
-    { id: 3, item: "FD Interest", amount: "+₹45", type: "credit", date: "2024-03-13" },
-    { id: 4, item: "Maintenance Fee", amount: "-₹10", type: "debit", date: "2024-03-12" },
-  ]
-
-
-
   return (
-
     <DashboardLayout>
-
       <div className="p-6 min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
         <div className="max-w-7xl mx-auto space-y-6">
-          {/* Message */}
-          {message && (
-            <div className={`rounded-xl p-4 flex items-start space-x-3 shadow-sm border ${
-              message.type === 'success' 
-                ? 'bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 text-green-800' 
-                : 'bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 text-red-800'
-            }`}>
-              <div className={`flex-shrink-0 ${
-                message.type === 'success' ? 'text-green-600' : 'text-red-600'
-              }`}>
-                {message.type === 'success' ? (
-                  <CheckCircleIcon className="h-6 w-6" />
-                ) : (
-                  <ExclamationTriangleIcon className="h-6 w-6" />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm">{message.text}</p>
-                <p className="text-xs mt-1 opacity-75">
-                  {message.type === 'success' ? 'Operation completed successfully' : 'Please try again'}
-                </p>
-              </div>
-              <button
-                onClick={() => setMessage(null)}
-                className="flex-shrink-0 p-1 rounded-lg hover:bg-black/5 transition-colors"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          )}
-
-          {/* Header */}
-          <div className="flex items-center justify-between">
+          
+          {/* Main Header with Actions */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Welcome back, {user.name}
+              <h1 className="text-4xl font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent italic tracking-tighter">
+                Executive Overview
               </h1>
-              <p className="text-gray-600 mt-2 flex items-center">
+              <p className="text-gray-500 mt-2 flex items-center font-bold text-sm">
                 <SparklesIcon className="h-4 w-4 mr-2 text-blue-500" />
-                Here's your financial overview today
+                Logged in as <span className="text-slate-900 mx-1">{user.name}</span> • Portfolio Operational
               </p>
             </div>
-            <div className="flex items-center space-x-3">
-              <Badge variant="outline" className="px-3 py-1.5 bg-white/80 backdrop-blur-sm border-green-200 text-green-700">
-                <CheckCircleIcon className="h-3 w-3 mr-1" />
-                Account Active
-              </Badge>
-              <Button
+            
+            <div className="flex flex-wrap items-center gap-3">
+               <div className="flex bg-white/60 backdrop-blur-sm p-1.5 rounded-2xl border border-slate-200 shadow-sm items-center">
+                  <div className="flex items-center px-4 space-x-2 border-r border-slate-100">
+                     <CalendarIcon className="h-4 w-4 text-blue-500" />
+                     <select 
+                        value={selectedMonth} 
+                        onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                        className="bg-transparent text-xs font-black uppercase tracking-widest outline-none pr-2"
+                     >
+                        {Array.from({length: 12}, (_, i) => (
+                           <option key={i+1} value={i+1}>{new Date(2000, i).toLocaleString('en-US', { month: 'short' })}</option>
+                        ))}
+                     </select>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    disabled={running}
+                    onClick={handleQuickRun}
+                    className="ml-2 h-9 px-4 rounded-xl text-blue-600 font-black text-[10px] tracking-widest uppercase hover:bg-blue-600 hover:text-white transition-all italic"
+                  >
+                     {running ? <ArrowPathIcon className="h-4 w-4 animate-spin mr-2" /> : <RocketLaunchIcon className="h-4 w-4 mr-2" />}
+                     Generate SUGGESTIONS
+                  </Button>
+               </div>
+               
+               <Button
                 onClick={() => router.push('/dashboard/customers/create')}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg h-12 px-6"
-              >
-                <BanknotesIcon className="h-5 w-5 mr-2" />
-                Quick Deposit
-              </Button>
+                className="bg-slate-900 hover:bg-black text-white shadow-xl h-12 px-8 font-black uppercase tracking-widest italic rounded-2xl active:scale-95 transition-all"
+               >
+                 <PlusIcon className="h-5 w-5 mr-3" />
+                 New Account
+               </Button>
             </div>
           </div>
 
-          {/* Stats Cards */}
+          {/* Core Institutional Stats */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {stats.map((stat) => (
-              <div key={stat.title} className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 mb-2">{stat.title}</p>
-                    <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
-                    <p className="text-xs text-gray-500 mt-2">{stat.description}</p>
-                    <div className="flex items-center mt-2">
-                      <span className={`text-sm font-medium ${
-                        stat.growth.includes("+") ? "text-green-600" : "text-red-600"
-                      }`}>
-                        {stat.growth}
-                      </span>
-                      <span className="text-xs text-gray-500 ml-1">this month</span>
-                    </div>
-                  </div>
-                  <div className={`h-14 w-14 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-lg`}>
-                    <stat.icon className="h-7 w-7 text-white" />
-                  </div>
-                </div>
-              </div>
+            {stats.map((stat, i) => (
+              <Card key={i} className={`bg-white/60 backdrop-blur-sm border-slate-200 shadow-sm transition-all hover:shadow-xl ${stat.highlight ? 'ring-2 ring-red-500 ring-offset-2 scale-105' : ''}`}>
+                <CardContent className="p-6">
+                   <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">{stat.title}</p>
+                         <p className="text-3xl font-black text-slate-900 tabular-nums italic tracking-tighter">{stat.value}</p>
+                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic flex items-center">
+                            {stat.count}
+                         </p>
+                      </div>
+                      <div className={`h-14 w-14 rounded-2xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-lg border-4 border-white`}>
+                        <stat.icon className="h-7 w-7 text-white" />
+                      </div>
+                   </div>
+                   <div className="mt-4 pt-4 border-t border-slate-50">
+                      <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest flex items-center">
+                         <ShieldCheckIcon className="h-3 w-3 mr-2" />
+                         {stat.description}
+                      </p>
+                   </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
 
-          {/* Main Content Grid */}
-          <div className="grid lg:grid-cols-3 gap-6">
-            {/* Recent Transactions */}
-            <Card className="lg:col-span-2 bg-white/60 backdrop-blur-sm">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-xl font-semibold">Recent Transactions</CardTitle>
-                <Button variant="outline" size="sm" onClick={() => router.push('/dashboard/ledger')}>
-                  View All
+          {/* Operational Intelligence Grid */}
+          <div className="grid lg:grid-cols-3 gap-8 pb-12">
+            
+            {/* Real-time Ledger Stream */}
+            <Card className="lg:col-span-2 bg-white/60 backdrop-blur-sm border-slate-200 overflow-hidden rounded-3xl">
+              <CardHeader className="flex flex-row items-center justify-between h-20 bg-white/40 border-b border-slate-100 px-8">
+                <CardTitle className="text-lg font-black italic uppercase tracking-widest text-slate-900 flex items-center">
+                   <QueueListIcon className="h-5 w-5 mr-3 text-blue-500" />
+                   Recent Ledger Stream
+                </CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => router.push('/dashboard/reports')} className="text-blue-600 font-bold uppercase tracking-widest text-xs h-9 px-4 rounded-xl hover:bg-blue-50">
+                   Master Report <ArrowRightIcon className="h-3 w-3 ml-2" />
                 </Button>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-0">
                 <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Transaction</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
+                  <TableHeader className="bg-slate-50/50">
+                    <TableRow className="border-none">
+                      <TableHead className="px-8 font-black uppercase text-[10px] tracking-widest text-slate-900 h-14">Identity Domain</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-900 h-14">Type</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-900 h-14 text-right px-8">Magnitude</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {transactions.map((t) => (
-                      <TableRow key={t.id} className="hover:bg-gray-50/50">
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-full ${
-                              t.type === "credit" ? "bg-green-100" : "bg-red-100"
-                            }`}>
-                              {t.type === "credit" ? (
-                                <ArrowTrendingUpIcon className="h-4 w-4 text-green-600" />
-                              ) : (
-                                <ArrowTrendingDownIcon className="h-4 w-4 text-red-600" />
-                              )}
-                            </div>
-                            <span className="font-medium">{t.item}</span>
+                    {data?.recentTransactions.map((t: any) => (
+                      <TableRow key={t.id} className="hover:bg-white/80 transition-colors border-b border-slate-50">
+                        <TableCell className="px-8 py-6">
+                          <div className="space-y-1">
+                             <p className="text-lg font-black text-slate-900 italic tracking-tighter leading-none">{t.customer}</p>
+                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">{t.date} • {t.item}</p>
                           </div>
                         </TableCell>
-                        <TableCell className="text-gray-500">{t.date}</TableCell>
-                        <TableCell className={`text-right font-medium ${
-                          t.type === "credit" ? "text-green-600" : "text-red-600"
-                        }`}>
+                        <TableCell>
+                           <Badge className={`uppercase font-black text-[9px] tracking-widest px-3 py-1 rounded-sm border ${t.type === 'credit' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-rose-50 text-rose-700 border-rose-100'}`}>
+                              {t.type}
+                           </Badge>
+                        </TableCell>
+                        <TableCell className={`text-right px-8 text-xl font-black italic tabular-nums tracking-tighter ${t.type === 'credit' ? 'text-emerald-600' : 'text-rose-600'}`}>
                           {t.amount}
                         </TableCell>
                       </TableRow>
@@ -236,103 +268,90 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            {/* Quick Actions */}
-            <Card className="bg-white/60 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-xl font-semibold">Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start h-12"
-                  onClick={() => router.push('/dashboard/customers')}
-                >
-                  <UserIcon className="h-5 w-5 mr-3" />
-                  View Customers
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start h-12"
-                  onClick={() => router.push('/dashboard/accounts')}
-                >
-                  <BuildingLibraryIcon className="h-5 w-5 mr-3" />
-                  Manage Accounts
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start h-12"
-                  onClick={() => router.push('/dashboard/suggestions')}
-                >
-                  <ChartBarIcon className="h-5 w-5 mr-3" />
-                  Review Suggestions
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start h-12"
-                  onClick={() => router.push('/dashboard/ledger')}
-                >
-                  <BanknotesIcon className="h-5 w-5 mr-3" />
-                  View Ledger
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Additional Info Cards */}
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card className="bg-white/60 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-xl font-semibold">Account Summary</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Total Deposits</span>
-                    <span className="font-semibold">₹42,500</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Total Loans</span>
-                    <span className="font-semibold text-red-600">₹8,000</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Net Worth</span>
-                    <span className="font-semibold text-green-600">₹34,500</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white/60 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-xl font-semibold">Upcoming Payments</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
-                    <div>
-                      <p className="font-medium text-orange-900">Loan EMI</p>
-                      <p className="text-sm text-orange-700">Due in 3 days</p>
+            {/* Strategic Quick-Links & Status Alerts */}
+            <div className="space-y-6">
+               <Card className="bg-white/60 backdrop-blur-sm border-slate-200 rounded-3xl overflow-hidden">
+                 <CardHeader className="bg-white/40 p-6 border-b border-slate-100">
+                   <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-500 flex items-center italic">
+                      <ExclamationTriangleIcon className="h-5 w-5 mr-3 text-red-500" />
+                      Critical Alerts
+                   </CardTitle>
+                 </CardHeader>
+                 <CardContent className="p-6 space-y-4">
+                    <div className="p-4 bg-red-50/50 border border-red-100 rounded-2xl flex items-center justify-between">
+                       <div>
+                          <p className="text-xs font-black uppercase tracking-widest text-red-600">Overdue EMIs</p>
+                          <p className="text-lg font-black text-slate-900 italic">{summary.overdueEMI} Default Recorded</p>
+                       </div>
+                       <Button size="sm" className="bg-red-600 text-white font-bold h-10 w-10 p-0 rounded-xl hover:bg-red-700 shadow-lg shadow-red-600/10" onClick={() => router.push('/dashboard/loans')}>
+                          <ArrowRightIcon className="h-5 w-5" />
+                       </Button>
                     </div>
-                    <span className="font-semibold text-orange-900">₹250</span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                    <div>
-                      <p className="font-medium text-blue-900">RD Deposit</p>
-                      <p className="text-sm text-blue-700">Due in 7 days</p>
+                    <div className="p-4 bg-amber-50/50 border border-amber-100 rounded-2xl flex items-center justify-between">
+                       <div>
+                          <p className="text-xs font-black uppercase tracking-widest text-amber-600">Due Today</p>
+                          <p className="text-lg font-black text-slate-900 italic">{summary.dueTodayEMI} Collections Open</p>
+                       </div>
+                       <Button size="sm" className="bg-amber-600 text-white font-bold h-10 w-10 p-0 rounded-xl hover:bg-amber-700 shadow-lg shadow-amber-600/10" onClick={() => router.push('/dashboard/operations/suggestions')}>
+                          <ArrowRightIcon className="h-5 w-5" />
+                       </Button>
                     </div>
-                    <span className="font-semibold text-blue-900">₹500</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                 </CardContent>
+               </Card>
 
+               <Card className="bg-white/60 backdrop-blur-sm border-slate-200 rounded-3xl overflow-hidden">
+                 <CardHeader className="bg-white/40 p-6 border-b border-slate-100">
+                    <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-500 flex items-center italic">
+                       <FunnelIcon className="h-5 w-5 mr-3 text-indigo-500" />
+                       Strategic Routes
+                    </CardTitle>
+                 </CardHeader>
+                 <CardContent className="p-6 grid grid-cols-2 gap-3">
+                    <QuickActionBtn 
+                        title="Registry" 
+                        icon={<UserIcon className="h-5 w-5" />} 
+                        onClick={() => router.push('/dashboard/customers')} 
+                    />
+                    <QuickActionBtn 
+                        title="Audit" 
+                        icon={<ClockIcon className="h-5 w-5" />} 
+                        onClick={() => router.push('/dashboard/operations/suggestions')} 
+                    />
+                    <QuickActionBtn 
+                        title="Master" 
+                        icon={<BuildingLibraryIcon className="h-5 w-5" />} 
+                        onClick={() => router.push('/dashboard/loans')} 
+                    />
+                    <QuickActionBtn 
+                        title="BI Docs" 
+                        icon={<ChartBarIcon className="h-5 w-5" />} 
+                        onClick={() => router.push('/dashboard/reports')} 
+                    />
+                 </CardContent>
+               </Card>
+            </div>
+          </div>
         </div>
-
       </div>
-
     </DashboardLayout>
-
   )
+}
 
+function QuickActionBtn({ title, icon, onClick }: { title: string, icon: React.ReactNode, onClick: () => void }) {
+   return (
+      <Button 
+         variant="outline" 
+         onClick={onClick}
+         className="flex flex-col items-center justify-center h-28 border-slate-100 bg-white/40 hover:bg-white hover:border-blue-200 hover:shadow-lg transition-all rounded-2xl gap-3 group"
+      >
+         <div className="h-10 w-10 rounded-xl bg-slate-50 text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 flex items-center justify-center transition-colors">
+            {icon}
+         </div>
+         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 group-hover:text-slate-900">{title}</span>
+      </Button>
+   )
+}
+
+function UserIcon({ className }: { className?: string }) {
+    return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
 }
