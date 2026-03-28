@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { StatCard } from "@/components/ui/stat-card"
+import { PageHeader } from "@/components/ui/page-header"
 import {
   ArrowLeftIcon,
   MagnifyingGlassIcon,
@@ -18,7 +20,8 @@ import {
   EyeIcon,
   FunnelIcon,
   ChevronLeftIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
+  XMarkIcon
 } from "@heroicons/react/24/outline"
 
 interface Customer {
@@ -69,16 +72,6 @@ interface CustomerLedgerSummary {
   }[]
 }
 
-interface PaginatedResponse {
-  customers: CustomerLedgerSummary[]
-  pagination: {
-    page: number
-    limit: number
-    total: number
-    pages: number
-  }
-}
-
 export default function CustomerLedger() {
   const router = useRouter()
   const [customers, setCustomers] = useState<CustomerLedgerSummary[]>([])
@@ -99,19 +92,16 @@ export default function CustomerLedger() {
     setMounted(true)
   }, [])
 
-
   const fetchCustomers = async () => {
     try {
       setLoading(true)
       
-      // First fetch all customers
       const customersResponse = await fetch('/api/customers')
       if (!customersResponse.ok) return
       
       const customersData = await customersResponse.json()
       const allCustomers = customersData.customers || []
       
-      // Then fetch ledger data for each customer
       const ledgerPromises = allCustomers.map(async (customer: Customer) => {
         try {
           const ledgerResponse = await fetch(`/api/customers/${customer.id}/ledger`)
@@ -130,9 +120,8 @@ export default function CustomerLedger() {
       })
       
       const ledgerResults = await Promise.all(ledgerPromises)
-      const validLedgers = ledgerResults.filter(result => result !== null)
+      const validLedgers = ledgerResults.filter(result => result !== null) as CustomerLedgerSummary[]
       
-      // Apply filters
       let filteredLedgers = validLedgers
       
       if (searchTerm) {
@@ -173,7 +162,6 @@ export default function CustomerLedger() {
         })
       }
       
-      // Pagination
       const total = filteredLedgers.length
       const limit = 10
       const pages = Math.ceil(total / limit)
@@ -195,32 +183,11 @@ export default function CustomerLedger() {
     fetchCustomers()
   }, [currentPage, searchTerm, accountTypeFilter, balanceFilter])
 
-  const handleSearch = (value: string) => {
-    setSearchTerm(value)
-    setCurrentPage(1)
-  }
-
-  const handleAccountTypeFilter = (value: string) => {
-    setAccountTypeFilter(value)
-    setCurrentPage(1)
-  }
-
-  const handleBalanceFilter = (value: string) => {
-    setBalanceFilter(value)
-    setCurrentPage(1)
-  }
-
-  const clearFilters = () => {
-    setSearchTerm('')
-    setAccountTypeFilter('all')
-    setBalanceFilter('all')
-    setCurrentPage(1)
-  }
-
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'INR'
+      currency: 'INR',
+      maximumFractionDigits: 0
     }).format(amount)
   }
 
@@ -233,356 +200,264 @@ export default function CustomerLedger() {
   }
 
   const getAccountTypeBadge = (accountType: string) => {
-    const variants: Record<string, { color: string; label: string }> = {
-      'FD': { color: 'bg-blue-100 text-blue-800', label: 'FD' },
-      'RD': { color: 'bg-green-100 text-green-800', label: 'RD' },
-      'LOAN': { color: 'bg-red-100 text-red-800', label: 'LOAN' }
+    switch (accountType.toUpperCase()) {
+      case 'FD': return 'badge-type-fd'
+      case 'RD': return 'badge-type-rd'
+      case 'LOAN': return 'badge-type-loan'
+      case 'SAVINGS': return 'badge-type-savings'
+      default: return 'badge-type-current'
     }
-    return variants[accountType] || { color: 'bg-gray-100 text-gray-800', label: accountType }
   }
 
   const getNetWorthColor = (netWorth: number) => {
-    if (netWorth > 0) return 'text-green-600'
-    if (netWorth < 0) return 'text-red-600'
-    return 'text-gray-600'
-  }
-
-  const getNetWorthIcon = (netWorth: number) => {
-    if (netWorth > 0) return <ArrowTrendingUpIcon className="h-4 w-4" />
-    if (netWorth < 0) return <ArrowTrendingDownIcon className="h-4 w-4" />
-    return <CurrencyDollarIcon className="h-4 w-4" />
+    if (netWorth > 0) return 'text-emerald-600'
+    if (netWorth < 0) return 'text-rose-600'
+    return 'text-slate-600'
   }
 
   if (!mounted) return null
 
   return (
     <DashboardLayout>
-      <div className="p-6 min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center space-x-4">
+      <div className="space-y-6 animate-fade-in-up">
+        <PageHeader
+          title="Customer Ledger"
+          subtitle="Unified view of all client accounts and net worth"
+          actions={
+            <Button
+              variant="outline"
+              onClick={() => router.push('/dashboard/customers')}
+              className="h-9 border-slate-200 text-slate-700 rounded-xl px-4 hover:bg-slate-50 transition-all font-medium"
+            >
+              <ArrowLeftIcon className="h-4 w-4 mr-2" />
+              Back to Master
+            </Button>
+          }
+        />
+
+        {/* Unified Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+          <StatCard
+            title="Total Customers"
+            value={pagination.total}
+            subtitle="Registered in system"
+            icon={<UserIcon />}
+            iconVariant="primary"
+            borderVariant="primary"
+          />
+          <StatCard
+            title="Total Deposits"
+            value={formatCurrency(customers.reduce((sum, c) => sum + c.financialSummary.totalDeposits, 0))}
+            subtitle="Total customer assets"
+            icon={<ArrowTrendingUpIcon />}
+            iconVariant="success"
+            borderVariant="success"
+          />
+          <StatCard
+            title="Total Loans"
+            value={formatCurrency(customers.reduce((sum, c) => sum + c.financialSummary.totalLoans, 0))}
+            subtitle="Total exposure"
+            icon={<ArrowTrendingDownIcon />}
+            iconVariant="danger"
+            borderVariant="danger"
+          />
+          <StatCard
+            title="Portfolio Net Worth"
+            value={formatCurrency(customers.reduce((sum, c) => sum + c.financialSummary.netWorth, 0))}
+            subtitle="Adjusted total wealth"
+            icon={<CurrencyDollarIcon />}
+            iconVariant="teal"
+            borderVariant="teal"
+          />
+        </div>
+
+        {/* Advanced Filters */}
+        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+          <div className="flex flex-col lg:flex-row gap-4">
+            <div className="flex-1 relative">
+              <MagnifyingGlassIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Input
+                placeholder="Search by name, email, or phone..."
+                value={searchTerm}
+                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                className="pl-10 h-10 border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white rounded-lg text-sm transition-all"
+              />
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <select
+                value={accountTypeFilter}
+                onChange={(e) => { setAccountTypeFilter(e.target.value); setCurrentPage(1); }}
+                className="h-10 px-3 border border-slate-200 bg-slate-50/50 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary/20 transition-all"
+              >
+                <option value="all">All Account Types</option>
+                <option value="fd">Active FD</option>
+                <option value="rd">Active RD</option>
+                <option value="loan">Active Loans</option>
+              </select>
+              <select
+                value={balanceFilter}
+                onChange={(e) => { setBalanceFilter(e.target.value); setCurrentPage(1); }}
+                className="h-10 px-3 border border-slate-200 bg-slate-50/50 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary/20 transition-all"
+              >
+                <option value="all">All Net Worths</option>
+                <option value="positive">Positive Assets</option>
+                <option value="negative">Debt Exposure</option>
+                <option value="zero">Closed / Zero</option>
+              </select>
               <Button
                 variant="ghost"
-                size="sm"
-                onClick={() => router.push('/dashboard/customers')}
-                className="h-10 w-10 p-0 rounded-full hover:bg-blue-50 transition-colors"
+                onClick={() => { setSearchTerm(''); setAccountTypeFilter('all'); setBalanceFilter('all'); setCurrentPage(1); }}
+                className="h-10 px-3 text-slate-500 hover:text-primary hover:bg-slate-50 rounded-lg text-xs"
               >
-                <ArrowLeftIcon className="h-5 w-5" />
+                <XMarkIcon className="h-4 w-4 mr-1.5" />
+                Clear
               </Button>
-              <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Customer Ledger
-                </h1>
-                <p className="text-gray-600 mt-2 flex items-center">
-                  <UserIcon className="h-4 w-4 mr-2 text-blue-500" />
-                  View all customer accounts and balances
-                </p>
-              </div>
             </div>
           </div>
+        </div>
 
-          {/* Filters */}
-          <Card className="bg-white/60 backdrop-blur-sm mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center text-lg">
-                <FunnelIcon className="h-5 w-5 mr-2" />
-                Filters
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Search Customers
-                  </label>
-                  <div className="relative">
-                    <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                    <Input
-                      placeholder="Search by name, email, phone..."
-                      value={searchTerm}
-                      onChange={(e) => handleSearch(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Account Type
-                  </label>
-                  <select
-                    value={accountTypeFilter}
-                    onChange={(e) => handleAccountTypeFilter(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="all">All Types</option>
-                    <option value="fd">FD Accounts Only</option>
-                    <option value="rd">RD Accounts Only</option>
-                    <option value="loan">Loan Accounts Only</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Net Worth
-                  </label>
-                  <select
-                    value={balanceFilter}
-                    onChange={(e) => handleBalanceFilter(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="all">All Balances</option>
-                    <option value="positive">Positive Only</option>
-                    <option value="negative">Negative Only</option>
-                    <option value="zero">Zero Balance</option>
-                  </select>
-                </div>
-
-                <div className="flex items-end">
-                  <Button
-                    variant="outline"
-                    onClick={clearFilters}
-                    className="w-full"
-                  >
-                    Clear Filters
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Summary Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-blue-600 text-sm font-medium">Total Customers</p>
-                    <p className="text-2xl font-bold text-blue-900">{pagination.total}</p>
-                  </div>
-                  <UserIcon className="h-8 w-8 text-blue-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-green-600 text-sm font-medium">Total Deposits</p>
-                    <p className="text-2xl font-bold text-green-900">
-                      {formatCurrency(customers.reduce((sum, c) => sum + c.financialSummary.totalDeposits, 0))}
-                    </p>
-                  </div>
-                  <ArrowTrendingUpIcon className="h-8 w-8 text-green-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-red-600 text-sm font-medium">Total Loans</p>
-                    <p className="text-2xl font-bold text-red-900">
-                      {formatCurrency(customers.reduce((sum, c) => sum + c.financialSummary.totalLoans, 0))}
-                    </p>
-                  </div>
-                  <ArrowTrendingDownIcon className="h-8 w-8 text-red-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-purple-600 text-sm font-medium">Total Net Worth</p>
-                    <p className="text-2xl font-bold text-purple-900">
-                      {formatCurrency(customers.reduce((sum, c) => sum + c.financialSummary.netWorth, 0))}
-                    </p>
-                  </div>
-                  <CurrencyDollarIcon className="h-8 w-8 text-purple-500" />
-                </div>
-              </CardContent>
-            </Card>
+        {/* Ledger List */}
+        <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-slate-800">
+              Customer Portfolio Summary <span className="ml-1 text-xs font-normal text-slate-400">({pagination.total})</span>
+            </h2>
           </div>
 
-          {/* Customer Ledger List */}
-          <Card className="bg-white/60 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center">
-                  <BuildingLibraryIcon className="h-5 w-5 mr-2" />
-                  Customer Accounts Summary
-                </span>
-                <Badge variant="outline">
-                  {customers.length} customers
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="divide-y divide-slate-100">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-20 bg-slate-50/30">
+                <ArrowPathIcon className="h-8 w-8 text-primary/40 animate-spin mb-3" />
+                <p className="text-xs text-slate-400 font-medium">Aggregating customer ledgers...</p>
+              </div>
+            ) : customers.length === 0 ? (
+              <div className="text-center py-20 bg-slate-50/30">
+                <div className="h-14 w-14 rounded-2xl finance-icon-bg flex items-center justify-center mx-auto mb-4">
+                  <UserIcon className="h-7 w-7" />
                 </div>
-              ) : customers.length === 0 ? (
-                <div className="text-center py-12">
-                  <UserIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No customers found</h3>
-                  <p className="text-gray-500 mb-4">Try adjusting your search or filters</p>
-                  <Button
-                    onClick={clearFilters}
-                    variant="outline"
-                  >
-                    Clear Filters
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {customers.map((customerLedger) => (
-                    <Card key={customerLedger.customer.id} className="hover:shadow-md transition-shadow">
-                      <CardContent className="p-6">
-                        <div className="flex items-start justify-between">
-                          {/* Customer Info */}
-                          <div className="flex-1">
-                            <div className="flex items-center mb-3">
-                              <UserIcon className="h-5 w-5 mr-2 text-blue-500" />
-                              <h3 className="text-lg font-semibold text-gray-900">
-                                {customerLedger.customer.name}
-                              </h3>
-                              <Badge variant="outline" className="ml-3">
-                                {customerLedger.accountSummary.totalAccounts} accounts
-                              </Badge>
-                            </div>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                              <div className="text-sm">
-                                <span className="text-gray-500">Email:</span>
-                                <div className="font-medium text-gray-900">{customerLedger.customer.email}</div>
-                              </div>
-                              <div className="text-sm">
-                                <span className="text-gray-500">Phone:</span>
-                                <div className="font-medium text-gray-900">{customerLedger.customer.phone}</div>
-                              </div>
-                              <div className="text-sm">
-                                <span className="text-gray-500">Member Since:</span>
-                                <div className="font-medium text-gray-900">
-                                  {formatDate(customerLedger.customer.createdAt)}
-                                </div>
-                              </div>
-                              <div className="text-sm">
-                                <span className="text-gray-500">Location:</span>
-                                <div className="font-medium text-gray-900">
-                                  {customerLedger.customer.city || 'N/A'}, {customerLedger.customer.state || 'N/A'}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Account Summary */}
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                              <div className="bg-blue-50 p-3 rounded-lg">
-                                <div className="text-blue-600 text-xs font-medium">FD Accounts</div>
-                                <div className="text-blue-900 text-lg font-bold">
-                                  {customerLedger.accountSummary.fdAccounts}
-                                </div>
-                              </div>
-                              <div className="bg-green-50 p-3 rounded-lg">
-                                <div className="text-green-600 text-xs font-medium">RD Accounts</div>
-                                <div className="text-green-900 text-lg font-bold">
-                                  {customerLedger.accountSummary.rdAccounts}
-                                </div>
-                              </div>
-                              <div className="bg-red-50 p-3 rounded-lg">
-                                <div className="text-red-600 text-xs font-medium">Loan Accounts</div>
-                                <div className="text-red-900 text-lg font-bold">
-                                  {customerLedger.accountSummary.loanAccounts}
-                                </div>
-                              </div>
-                              <div className="bg-purple-50 p-3 rounded-lg">
-                                <div className="text-purple-600 text-xs font-medium">Total Balance</div>
-                                <div className={`text-lg font-bold flex items-center ${getNetWorthColor(customerLedger.financialSummary.netWorth)}`}>
-                                  {getNetWorthIcon(customerLedger.financialSummary.netWorth)}
-                                  <span className="ml-1">{formatCurrency(customerLedger.financialSummary.netWorth)}</span>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Recent Accounts */}
-                            <div className="flex items-center space-x-2">
-                              <span className="text-sm text-gray-500">Accounts:</span>
-                              {customerLedger.accounts.slice(0, 3).map((account) => (
-                                <Badge
-                                  key={account.id}
-                                  className={getAccountTypeBadge(account.accountType).color}
-                                >
-                                  {account.accountNumber}
-                                </Badge>
-                              ))}
-                              {customerLedger.accounts.length > 3 && (
-                                <Badge variant="outline">
-                                  +{customerLedger.accounts.length - 3} more
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Actions */}
-                          <div className="flex flex-col space-y-2 ml-4">
-                            <Button
-                              onClick={() => router.push(`/dashboard/customers/${customerLedger.customer.id}`)}
-                              size="sm"
-                              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                            >
-                              <EyeIcon className="h-4 w-4 mr-2" />
-                              View Details
-                            </Button>
+                <h3 className="text-sm font-semibold text-slate-800">No customers found</h3>
+                <p className="text-xs text-slate-400 mt-1 max-w-[240px] mx-auto">Try refining your search or filter parameters to find customers.</p>
+              </div>
+            ) : (
+              customers.map((ledger) => (
+                <div key={ledger.customer.id} className="p-5 hover:bg-slate-50/80 transition-all group">
+                  <div className="flex flex-col lg:flex-row lg:items-center gap-6">
+                    {/* Customer Identity */}
+                    <div className="lg:w-1/4">
+                      <div className="flex items-center gap-3 mb-1">
+                        <div className="h-9 w-9 rounded-xl finance-icon-bg flex items-center justify-center flex-shrink-0">
+                          <UserIcon className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors cursor-pointer" onClick={() => router.push(`/dashboard/customers/${ledger.customer.id}`)}>
+                            {ledger.customer.name}
+                          </h3>
+                          <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
+                            Since {formatDate(ledger.customer.createdAt)}
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
+                      </div>
+                      <div className="pl-12 space-y-0.5">
+                        <div className="text-xs text-slate-500 overflow-hidden text-ellipsis whitespace-nowrap">{ledger.customer.email}</div>
+                        <div className="text-xs text-slate-500">{ledger.customer.phone}</div>
+                      </div>
+                    </div>
 
-              {/* Pagination */}
-              {pagination.pages > 1 && (
-                <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-200">
-                  <div className="text-sm text-gray-700">
-                    Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
-                    {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
-                    {pagination.total} customers
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(pagination.page - 1)}
-                      disabled={pagination.page === 1}
-                    >
-                      <ChevronLeftIcon className="h-4 w-4" />
-                      Previous
-                    </Button>
-                    <span className="text-sm text-gray-700">
-                      Page {pagination.page} of {pagination.pages}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(pagination.page + 1)}
-                      disabled={pagination.page === pagination.pages}
-                    >
-                      Next
-                      <ChevronRightIcon className="h-4 w-4" />
-                    </Button>
+                    {/* Account counts */}
+                    <div className="lg:w-1/4 grid grid-cols-3 gap-2">
+                      <div className="bg-slate-50 rounded-lg p-2 text-center border border-slate-100">
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mb-0.5">FD</div>
+                        <div className="text-sm font-black text-slate-800">{ledger.accountSummary.fdAccounts}</div>
+                      </div>
+                      <div className="bg-slate-50 rounded-lg p-2 text-center border border-slate-100">
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mb-0.5">RD</div>
+                        <div className="text-sm font-black text-slate-800">{ledger.accountSummary.rdAccounts}</div>
+                      </div>
+                      <div className="bg-slate-50 rounded-lg p-2 text-center border border-slate-100">
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mb-0.5">Loan</div>
+                        <div className="text-sm font-black text-slate-800">{ledger.accountSummary.loanAccounts}</div>
+                      </div>
+                    </div>
+
+                    {/* Financial Snapshot */}
+                    <div className="flex-1 grid grid-cols-2 gap-4">
+                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 group-hover:border-primary/10 transition-colors">
+                        <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                          Assets Value
+                          <ArrowTrendingUpIcon className="h-3 w-3 text-emerald-500" />
+                        </div>
+                        <div className="text-base font-black text-slate-900">{formatCurrency(ledger.financialSummary.totalDeposits)}</div>
+                      </div>
+                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 group-hover:border-primary/10 transition-colors">
+                        <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 text-rose-400">
+                          Liabilities
+                          <ArrowTrendingDownIcon className="h-3 w-3 text-rose-500" />
+                        </div>
+                        <div className="text-base font-black text-rose-700">{formatCurrency(ledger.financialSummary.totalLoans)}</div>
+                      </div>
+                    </div>
+
+                    {/* Net Worth & Actions */}
+                    <div className="lg:w-1/5 flex flex-row lg:flex-col items-center lg:items-end justify-between gap-4">
+                      <div className="text-right">
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Net Worth</div>
+                        <div className={`text-lg font-black tracking-tight ${getNetWorthColor(ledger.financialSummary.netWorth)}`}>
+                          {formatCurrency(ledger.financialSummary.netWorth)}
+                        </div>
+                      </div>
+                      <Button
+                        onClick={() => router.push(`/dashboard/customers/${ledger.customer.id}`)}
+                        size="sm"
+                        className="finance-gradient-primary text-white h-8 px-4 rounded-lg text-xs font-bold shadow-md shadow-primary/10"
+                      >
+                        <EyeIcon className="h-3.5 w-3.5 mr-1.5" />
+                        Details
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              ))
+            )}
+          </div>
+
+          {/* Pagination */}
+          {!loading && pagination.pages > 1 && (
+            <div className="px-5 py-4 border-t border-slate-100 flex items-center justify-between bg-white">
+              <div className="text-xs font-medium text-slate-400">
+                Page <span className="text-slate-900 font-bold">{pagination.page}</span> of {pagination.pages}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(pagination.page - 1)}
+                  disabled={pagination.page === 1}
+                  className="h-8 border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 disabled:opacity-50"
+                >
+                  <ChevronLeftIcon className="h-4 w-4 mr-1.5" /> Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(pagination.page + 1)}
+                  disabled={pagination.page === pagination.pages}
+                  className="h-8 border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Next <ChevronRightIcon className="h-4 w-4 ml-1.5" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>
+  )
+}
+
+function ArrowPathIcon({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+    </svg>
   )
 }

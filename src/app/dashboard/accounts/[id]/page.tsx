@@ -6,359 +6,335 @@ import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { StatCard } from "@/components/ui/stat-card"
+import { PageHeader } from "@/components/ui/page-header"
 import {
-   ArrowLeftIcon,
-   BuildingLibraryIcon,
-   UserIcon,
-   CalendarIcon,
-   CurrencyDollarIcon,
-   ClockIcon,
-   DocumentDuplicateIcon,
-   ChartBarIcon,
-   ShieldCheckIcon,
-   ArrowPathIcon,
-   ExclamationTriangleIcon,
-   SparklesIcon,
-   CheckCircleIcon,
-   PresentationChartBarIcon,
-   QueueListIcon,
-   BanknotesIcon
+  ArrowLeftIcon,
+  BuildingLibraryIcon,
+  UserIcon,
+  CalendarIcon,
+  CurrencyDollarIcon,
+  ClockIcon,
+  DocumentDuplicateIcon,
+  ChartBarIcon,
+  ShieldCheckIcon,
+  ArrowPathIcon,
+  ExclamationTriangleIcon,
+  SparklesIcon,
+  CheckCircleIcon,
+  PresentationChartBarIcon,
+  QueueListIcon,
+  BanknotesIcon,
+  CircleStackIcon,
+  ReceiptPercentIcon,
+  InformationCircleIcon,
+  PencilIcon
 } from "@heroicons/react/24/outline"
 import {
-   Table,
-   TableBody,
-   TableCell,
-   TableHead,
-   TableHeader,
-   TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table"
 
 export default function AccountDetailsPage({ params }: { params: Promise<{ id: string }> }) {
-   const accountId = use(params).id
-   const router = useRouter()
-   const [account, setAccount] = useState<any>(null)
-   const [loading, setLoading] = useState(true)
+  const accountId = use(params).id
+  const router = useRouter()
+  const [account, setAccount] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
-   useEffect(() => {
-      fetchAccountDetails()
-   }, [accountId])
+  useEffect(() => {
+    fetchAccountDetails()
+  }, [accountId])
 
-   const fetchAccountDetails = async () => {
-      try {
-         setLoading(true)
-         const res = await fetch(`/api/accounts/${accountId}`)
-         if (res.ok) {
-            const d = await res.json()
-            setAccount(d.account)
-         }
-      } catch (error) {
-         console.error(error)
-      } finally {
-         setLoading(false)
+  const fetchAccountDetails = async () => {
+    try {
+      setLoading(true)
+      const res = await fetch(`/api/accounts/${accountId}`)
+      if (res.ok) {
+        const d = await res.json()
+        setAccount(d.account)
       }
-   }
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
-   const formatCurrency = (amount: number) => {
-      return new Intl.NumberFormat('en-IN', {
-         style: 'currency', currency: 'INR'
-      }).format(amount)
-   }
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(amount)
+  }
 
-   if (loading) return (
-      <DashboardLayout>
-         <div className="p-6 min-h-screen bg-slate-50 flex items-center justify-center">
-            <div className="text-center">
-               <div className="h-10 w-10 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin mx-auto" />
-               <p className="mt-4 text-slate-400 font-black uppercase tracking-widest text-xs italic tracking-[0.2em]">Syncing Account DNA...</p>
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    })
+  }
+
+  if (loading) return (
+    <DashboardLayout>
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <div className="h-12 w-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4" />
+        <p className="text-slate-500 font-medium italic">Loading account details...</p>
+      </div>
+    </DashboardLayout>
+  )
+
+  if (!account) return (
+    <DashboardLayout>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+        <div className="h-20 w-20 rounded-3xl bg-slate-100 flex items-center justify-center mb-6">
+          <ExclamationTriangleIcon className="h-10 w-10 text-slate-400" />
+        </div>
+        <h2 className="text-xl font-bold text-slate-900 uppercase tracking-tight">Account Not Found</h2>
+        <p className="text-slate-500 mt-2 max-w-xs">We couldn't find this account. Please check the link and try again.</p>
+        <Button onClick={() => router.push('/dashboard/accounts')} className="mt-8 finance-gradient-primary">
+          Back to Accounts
+        </Button>
+      </div>
+    </DashboardLayout>
+  )
+
+  const isLoan = account.accountType === 'LOAN'
+  const rules = account.accountRules || {}
+  const totalYield = account.principalAmount * (account.interestRate / 100) * (account.tenure / 12)
+
+  return (
+    <DashboardLayout>
+      <div className="space-y-6 animate-fade-in-up pb-20">
+        {/* Page Header */}
+        <PageHeader
+          title="Account Details"
+          subtitle={`${account.accountType} account for ${account.customer.name}`}
+          actions={
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                onClick={() => router.push('/dashboard/accounts')}
+                className="h-9 border-slate-200 text-slate-700 rounded-xl px-4 hover:bg-slate-50 transition-all font-medium"
+              >
+                <ArrowLeftIcon className="h-4 w-4 mr-2" />
+                Back
+              </Button>
+              <Button className="h-9 bg-slate-800 hover:bg-slate-900 text-white rounded-xl px-4 font-bold transition-all shadow-sm">
+                <PencilIcon className="h-3.5 w-3.5 mr-2" />
+                Modify Settings
+              </Button>
             </div>
-         </div>
-      </DashboardLayout>
-   )
+          }
+        />
 
-   if (!account) return (
-      <DashboardLayout>
-         <div className="p-6 min-h-screen bg-slate-50 flex items-center justify-center">
-            <div className="text-center text-red-500 font-bold italic uppercase tracking-widest">ERROR: Account Domain Not Resolved</div>
-         </div>
-      </DashboardLayout>
-   )
+        {/* Top Primary Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <StatCard
+            title="Deposit Amount"
+            value={formatCurrency(account.principalAmount)}
+            icon={<BanknotesIcon />}
+            trend={{ value: "Current Balance", isPositive: true }}
+            className="border-blue-500"
+          />
+          <StatCard
+            title="Interest Rate"
+            value={`${account.interestRate}%`}
+            icon={<ReceiptPercentIcon />}
+            trend={{ value: rules.interestMode || "Per Year", isPositive: true }}
+            className="border-indigo-500"
+          />
+          <StatCard
+            title="Duration"
+            value={`${account.tenure} Months`}
+            icon={<ClockIcon />}
+            trend={{ value: `Matures: ${formatDate(account.maturityDate)}`, isPositive: true }}
+            className="border-slate-800"
+          />
+          <StatCard
+            title="Account Status"
+            value="Verified"
+            icon={<ShieldCheckIcon />}
+            trend={{ value: "KYC Done", isPositive: true }}
+            className="border-emerald-500"
+          >
+            <Badge className="badge-status-active absolute top-4 right-4 text-[9px] px-2 py-0.5">ACTIVE</Badge>
+          </StatCard>
+        </div>
 
-   const isLoan = account.accountType === 'LOAN'
-   const rules = account.accountRules || {}
-
-   return (
-      <DashboardLayout>
-         <div className="p-6 min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
-            <div className="max-w-7xl mx-auto space-y-6">
-
-               {/* Header */}
-               <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                     <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => router.back()}
-                        className="h-10 w-10 p-0 rounded-full hover:bg-white transition-colors"
-                     >
-                        <ArrowLeftIcon className="h-5 w-5 text-gray-400" />
-                     </Button>
-                     <div>
-                        <h1 className="text-4xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent italic tracking-tighter">
-                           Instrument Intelligence
-                        </h1>
-                        <p className="text-gray-500 mt-2 flex items-center font-bold text-sm">
-                           <Badge variant="outline" className="mr-3 font-mono text-[10px] tracking-widest border-blue-100 bg-blue-50/50 text-blue-600 italic">ID: {account.accountNumber}</Badge>
-                           {account.customer.name} • Active Exposure
-                        </p>
-                     </div>
+        <div className="grid lg:grid-cols-12 gap-6">
+          {/* Rules & Metadata Column */}
+          <div className="lg:col-span-4 space-y-6">
+            <Card className="border-slate-200 shadow-sm overflow-hidden">
+              <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-4">
+                <CardTitle className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
+                  <ArrowPathIcon className="h-4 w-4 mr-2 text-primary" />
+                  Account Settings
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-6">
+                <ParameterEntry label="Interest Payment" value={rules.interestMode || 'MATURITY'} icon={SparklesIcon} color="text-amber-500" />
+                <ParameterEntry label="Payout Method" value={rules.payoutMode || 'REINVEST'} icon={CurrencyDollarIcon} color="text-emerald-500" />
+                {isLoan && <ParameterEntry label="Loan Method" value={rules.loanMethod || 'FLAT'} icon={ChartBarIcon} color="text-rose-500" />}
+                {rules.emiAmount && <ParameterEntry label="Monthly EMI" value={formatCurrency(rules.emiAmount)} icon={CalendarIcon} color="text-indigo-500" />}
+                <ParameterEntry label="Rounding" value={rules.roundingMode || 'Standard'} icon={ReceiptPercentIcon} color="text-slate-400" />
+                
+                <div className="pt-6 border-t border-slate-100 mt-2">
+                  <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100/50 flex gap-3">
+                    <InformationCircleIcon className="h-5 w-5 text-blue-500 flex-shrink-0" />
+                    <p className="text-[11px] font-medium text-blue-700 leading-relaxed italic">
+                      Interest is calculated using the <span className="font-black">{rules.roundingMode}</span> rounding method and is processed at the end of each month.
+                    </p>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
 
-                  <div className="flex items-center space-x-3">
-                     <Button variant="outline" className="h-11 px-6 font-bold border-slate-200 bg-white/60 hover:bg-white shadow-sm italic text-xs rounded-xl">
-                        <DocumentDuplicateIcon className="h-4 w-4 mr-2" />
-                        Clone Rules
-                     </Button>
-                     <Button className="bg-slate-900 text-white h-11 px-8 font-black uppercase tracking-widest italic rounded-xl shadow-xl active:scale-95 transition-all">
-                        Edit Parameter Suite
-                     </Button>
-                  </div>
-               </div>
+            <Card className="bg-slate-900 border-slate-800 rounded-3xl overflow-hidden shadow-2xl relative">
+              <div className="absolute top-0 right-0 p-8 opacity-10">
+                <CircleStackIcon className="h-24 w-24 text-white" />
+              </div>
+              <CardContent className="p-8">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Total Interest You'll Earn</p>
+                <p className="text-3xl font-black text-white tracking-tight italic">
+                  {formatCurrency(totalYield)}
+                </p>
+                <div className="mt-6 flex items-center gap-2">
+                  <Badge className="bg-white/10 text-white border-white/20 text-[10px] py-0.5 font-bold">ESTIMATED GROWTH</Badge>
+                </div>
+                <p className="text-xs text-slate-400 font-medium italic mt-4 leading-relaxed">
+                  Estimated interest over {account.tenure} months at {account.interestRate}% per year.
+                </p>
+                <Button className="w-full mt-8 bg-white text-slate-900 font-black uppercase tracking-widest text-[10px] h-11 rounded-xl hover:bg-slate-100 transition-all shadow-lg active:scale-95">
+                  Request Interest Summary
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
 
-               {/* Core DNA Stats */}
-               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                  <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
-                     <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                           <div className="space-y-1">
-                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Yield Configuration</p>
-                              <p className="text-3xl font-black text-slate-900 tabular-nums italic tracking-tighter">{account.interestRate}%</p>
-                              <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest italic flex items-center">
-                                 APY Guaranteed
-                              </p>
-                           </div>
-                           <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg border-2 border-white">
-                              <PresentationChartBarIcon className="h-7 w-7 text-white" />
-                           </div>
-                        </div>
-                     </CardContent>
-                  </Card>
-                  <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
-                     <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                           <div className="space-y-1">
-                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Principal Depth</p>
-                              <p className="text-2xl font-black text-slate-900 tabular-nums italic tracking-tighter">{formatCurrency(account.principalAmount)}</p>
-                              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest italic flex items-center">
-                                 Contracted Capital
-                              </p>
-                           </div>
-                           <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-indigo-400 to-blue-500 flex items-center justify-center shadow-lg border-2 border-white">
-                              <BanknotesIcon className="h-7 w-7 text-white" />
-                           </div>
-                        </div>
-                     </CardContent>
-                  </Card>
-                  <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
-                     <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                           <div className="space-y-1">
-                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Lifecycle Duration</p>
-                              <p className="text-2xl font-black text-slate-900 mt-1">{account.tenure} Months</p>
-                              <p className="text-[10px) font-bold text-gray-500 uppercase tracking-widest italic flex items-center">
-                                 {new Date(account.maturityDate).toLocaleDateString()} Final
-                              </p>
-                           </div>
-                           <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center shadow-lg border-2 border-white">
-                              <ClockIcon className="h-7 w-7 text-white" />
-                           </div>
-                        </div>
-                     </CardContent>
-                  </Card>
-                  <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
-                     <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                           <div className="space-y-1">
-                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Compliance State</p>
-                              <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100 font-black italic rounded-sm text-[10px] tracking-widest uppercase mt-2">Verified ACTIVE</Badge>
-                              <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest italic flex items-center mt-2">
-                                 <ShieldCheckIcon className="h-3 w-3 mr-1" /> Tier 1 Risk OK
-                              </p>
-                           </div>
-                           <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg border-2 border-white">
-                              <ShieldCheckIcon className="h-7 w-7 text-white" />
-                           </div>
-                        </div>
-                     </CardContent>
-                  </Card>
-               </div>
+          {/* Activity Logs / Amortization Column */}
+          <div className="lg:col-span-8 space-y-6">
+            {/* EMI Schedule for Loans */}
+            {isLoan && (
+              <Card className="border-slate-200 shadow-sm overflow-hidden">
+                <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-8 h-16 flex flex-row items-center justify-between">
+                  <CardTitle className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
+                    <CalendarIcon className="h-4 w-4 mr-2 text-rose-500" />
+                    Amortization Schedule
+                  </CardTitle>
+                  <Badge className="bg-slate-200 text-slate-700 border-none font-bold text-[10px]">{account.emiEntries?.length || 0} CYCLES</Badge>
+                </CardHeader>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader className="bg-slate-50/30">
+                      <TableRow>
+                        <TableHead className="px-8 text-[10px] font-black uppercase text-slate-400 h-10 tracking-widest">EMI No.</TableHead>
+                        <TableHead className="text-[10px] font-black uppercase text-slate-400 h-10 tracking-widest">Due Date</TableHead>
+                        <TableHead className="text-[10px] font-black uppercase text-slate-400 h-10 tracking-widest text-right">Principal</TableHead>
+                        <TableHead className="text-[10px] font-black uppercase text-slate-400 h-10 tracking-widest text-right">Interest</TableHead>
+                        <TableHead className="px-8 text-[10px] font-black uppercase text-slate-400 h-10 tracking-widest text-center">Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {account.emiEntries?.map((emi: any) => (
+                        <TableRow key={emi.id} className="hover:bg-slate-50/50 transition-colors border-b border-slate-50 group">
+                          <TableCell className="px-8 py-4">
+                            <div className="h-7 w-7 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center font-black text-[10px] italic transition-all group-hover:bg-rose-500 group-hover:text-white">
+                              {emi.emiNumber}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-xs font-bold text-slate-900">{formatDate(emi.dueDate)}</TableCell>
+                          <TableCell className="text-right text-xs font-bold text-slate-700">{formatCurrency(emi.principalAmount)}</TableCell>
+                          <TableCell className="text-right text-xs font-bold text-slate-700">{formatCurrency(emi.interestAmount)}</TableCell>
+                          <TableCell className="px-8 text-center">
+                            <Badge className={`text-[9px] font-black tracking-widest px-2 py-0.5 border-none ${
+                                emi.status === 'PAID' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
+                              }`}>
+                              {emi.status}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </Card>
+            )}
 
-               <div className="grid lg:grid-cols-3 gap-8">
-
-                  {/* Left: Rules & Parameters */}
-                  <div className="space-y-6 lg:sticky lg:top-24 h-fit">
-                     <Card className="bg-white/60 backdrop-blur-sm border-slate-200 rounded-3xl overflow-hidden shadow-sm">
-                        <CardHeader className="bg-white/40 border-b border-slate-100 px-8 h-20 flex flex-row items-center">
-                           <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-900 italic flex items-center">
-                              <ArrowPathIcon className="h-5 w-5 mr-3 text-blue-600" />
-                              Operational Parameters
-                           </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-8 space-y-6">
-                           <RuleEntry label="Interest Protocol" value={rules.interestMode || 'MATURITY'} icon={<SparklesIcon className="h-4 w-4 text-blue-500" />} />
-                           <RuleEntry label="Payout Strategy" value={rules.payoutMode || 'REINVEST'} icon={<ClockIcon className="h-4 w-4 text-indigo-500" />} />
-                           {isLoan && <RuleEntry label="Amortization" value={rules.loanMethod || 'FLAT'} icon={<ChartBarIcon className="h-4 w-4 text-rose-500" />} />}
-                           {rules.emiAmount && <RuleEntry label="Periodic Due" value={formatCurrency(rules.emiAmount)} icon={<CalendarIcon className="h-4 w-4 text-emerald-500" />} />}
-                           <RuleEntry label="Rounding" value={`${rules.roundingMode} (${rules.roundingPrecision}px)`} icon={<SparklesIcon className="h-4 w-4 text-slate-400" />} />
-                           <div className="pt-6 border-t border-slate-50">
-                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic mb-2">Internal Meta</p>
-                              <p className="text-xs text-slate-600 leading-relaxed font-medium italic">All interest calculations are finalized at month-end based on the established {rules.roundingMode} rounding protocol at 2 decimal points of precision.</p>
-                           </div>
-                        </CardContent>
-                     </Card>
-
-                     <Card className="bg-slate-900 border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
-                        <CardContent className="p-8">
-                           <div className="flex items-center space-x-4 mb-6">
-                              <div className="h-12 w-12 rounded-2xl bg-white/10 flex items-center justify-center">
-                                 <QueueListIcon className="h-6 w-6 text-white" />
-                              </div>
-                              <div>
-                                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Lifecycle Yield</p>
-                                 <p className="text-2xl font-black text-white italic">₹{(account.principalAmount * (account.interestRate / 100) * (account.tenure / 12)).toLocaleString()}</p>
-                              </div>
-                           </div>
-                           <p className="text-xs text-slate-400 font-medium italic mb-6">Projected growth based on contractual APY and {account.tenure}-month period.</p>
-                           <Button className="w-full bg-white text-slate-900 font-black uppercase tracking-widest italic h-12 rounded-xl hover:bg-slate-100 transition-all">
-                              Forecasting Suite
-                           </Button>
-                        </CardContent>
-                     </Card>
-                  </div>
-
-                  {/* Right: Dynamic Intelligence Tables (Schedule / Suggestions) */}
-                  <div className="lg:col-span-2 space-y-8 pb-20">
-
-                     {/* Schedule Table (ONLY FOR LOANS) */}
-                     {isLoan && (
-                        <Card className="bg-white/60 backdrop-blur-sm border-slate-200 rounded-3xl overflow-hidden shadow-sm">
-                           <CardHeader className="bg-white/40 border-b border-slate-100 px-8 h-20 flex flex-row items-center justify-between">
-                              <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-900 italic flex items-center">
-                                 <CalendarIcon className="h-5 w-5 mr-3 text-rose-500" />
-                                 EMI Amortization Schedule
-                              </CardTitle>
-                              <Badge variant="outline" className="font-mono text-[9px] tracking-widest uppercase py-1 px-3 italic">{account.emiEntries?.length || 0} PERIODS</Badge>
-                           </CardHeader>
-                           <CardContent className="p-0">
-                              <Table>
-                                 <TableHeader className="bg-slate-50/50">
-                                    <TableRow className="border-none">
-                                       <TableHead className="px-8 font-black uppercase text-[10px] tracking-widest text-slate-900 h-14">Period #</TableHead>
-                                       <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-900 h-14">Target Date</TableHead>
-                                       <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-900 h-14 text-right">Principal</TableHead>
-                                       <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-900 h-14 text-right">Yield</TableHead>
-                                       <TableHead className="px-8 font-black uppercase text-[10px] tracking-widest text-slate-900 h-14 text-center">Status</TableHead>
-                                    </TableRow>
-                                 </TableHeader>
-                                 <TableBody>
-                                    {account.emiEntries?.map((emi: any) => (
-                                       <TableRow key={emi.id} className="hover:bg-rose-50/10 transition-colors border-b border-slate-50 group">
-                                          <TableCell className="px-8 py-5">
-                                             <div className="h-8 w-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center font-black text-xs italic group-hover:bg-rose-600 group-hover:text-white transition-all">
-                                                {emi.emiNumber}
-                                             </div>
-                                          </TableCell>
-                                          <TableCell className="text-xs font-bold text-slate-600 uppercase tracking-widest">
-                                             {new Date(emi.dueDate).toLocaleDateString()}
-                                          </TableCell>
-                                          <TableCell className="text-right text-sm font-black italic">{formatCurrency(emi.principalAmount)}</TableCell>
-                                          <TableCell className="text-right text-sm font-black italic">{formatCurrency(emi.interestAmount)}</TableCell>
-                                          <TableCell className="px-8 text-center text-xs">
-                                             <Badge className={`uppercase font-black text-[9px] tracking-widest px-3 py-1 rounded-sm border ${emi.status === 'PAID' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-rose-50 text-rose-700 border-rose-100'}`}>
-                                                {emi.status}
-                                             </Badge>
-                                          </TableCell>
-                                       </TableRow>
-                                    ))}
-                                 </TableBody>
-                              </Table>
-                           </CardContent>
-                        </Card>
-                     )}
-
-                     {/* Suggestions History */}
-                     <Card className="bg-white/60 backdrop-blur-sm border-slate-200 rounded-3xl overflow-hidden shadow-sm">
-                        <CardHeader className="bg-white/40 border-b border-slate-100 px-8 h-20 flex flex-row items-center justify-between">
-                           <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-900 italic flex items-center">
-                              <SparklesIcon className="h-5 w-5 mr-3 text-blue-500" />
-                              Engine Intelligence Logs
-                           </CardTitle>
-                           <Badge variant="outline" className="font-mono text-[9px] tracking-widest uppercase py-1 px-3 italic">{account.suggestedEntries?.length || 0} LOGS</Badge>
-                        </CardHeader>
-                        <CardContent className="p-0">
-                           <Table>
-                              <TableHeader className="bg-slate-50/50">
-                                 <TableRow className="border-none">
-                                    <TableHead className="px-8 font-black uppercase text-[10px] tracking-widest text-slate-900 h-14">Cycle</TableHead>
-                                    <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-900 h-14">Log Entry</TableHead>
-                                    <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-900 h-14 text-right px-8 font-black">Magnitude</TableHead>
-                                 </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                 {account.suggestedEntries?.length === 0 ? (
-                                    <TableRow>
-                                       <TableCell colSpan={3} className="py-20 text-center">
-                                          <SparklesIcon className="h-10 w-10 text-slate-200 mx-auto mb-4" />
-                                          <p className="text-xs font-black uppercase tracking-widest text-slate-400 italic">No Engine Records Found For This Instrument</p>
-                                       </TableCell>
-                                    </TableRow>
-                                 ) : (
-                                    account.suggestedEntries?.map((entry: any) => (
-                                       <TableRow key={entry.id} className="hover:bg-blue-50/10 transition-colors border-b border-slate-50 group">
-                                          <TableCell className="px-8 py-6">
-                                             <div className="space-y-1">
-                                                <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-none">
-                                                   {new Date(entry.periodStartDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-                                                </p>
-                                                <p className="text-xs font-bold text-slate-400 italic">{entry.type}</p>
-                                             </div>
-                                          </TableCell>
-                                          <TableCell className="max-w-xs overflow-hidden">
-                                             <span className="text-xs font-medium text-slate-600 italic leading-none">{entry.description || 'System-generated entry'}</span>
-                                          </TableCell>
-                                          <TableCell className="px-8 text-right">
-                                             <div className="space-y-1">
-                                                <p className="text-lg font-black italic tracking-tighter text-slate-900">{formatCurrency(entry.amount)}</p>
-                                                <Badge className={`uppercase font-black text-[9px] tracking-[0.15em] px-2 py-0 border ${entry.status === 'approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100'}`}>
-                                                   {entry.status}
-                                                </Badge>
-                                             </div>
-                                          </TableCell>
-                                       </TableRow>
-                                    ))
-                                 )}
-                              </TableBody>
-                           </Table>
-                        </CardContent>
-                     </Card>
-                  </div>
-
-               </div>
-            </div>
-         </div>
-      </DashboardLayout>
-   )
+            {/* General Log Activity */}
+            <Card className="border-slate-200 shadow-sm overflow-hidden">
+              <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-8 h-16 flex flex-row items-center justify-between">
+                <CardTitle className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
+                  <QueueListIcon className="h-4 w-4 mr-2 text-primary" />
+                  Transaction History
+                </CardTitle>
+                <div className="flex gap-2">
+                  <Badge className="bg-blue-50 text-blue-700 border-none font-bold text-[10px] uppercase">{account.suggestedEntries?.length || 0} ENTRIES</Badge>
+                </div>
+              </CardHeader>
+              <div className="min-h-[200px] overflow-x-auto">
+                <Table>
+                  <TableHeader className="bg-slate-50/30">
+                    <TableRow>
+                      <TableHead className="px-8 text-[10px] font-black uppercase text-slate-400 h-10 tracking-widest">Date</TableHead>
+                      <TableHead className="text-[10px] font-black uppercase text-slate-400 h-10 tracking-widest">Description</TableHead>
+                      <TableHead className="text-[10px] font-black uppercase text-slate-400 h-10 tracking-widest text-right px-8">Amount</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {account.suggestedEntries?.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={3} className="py-20 text-center">
+                          <p className="text-xs text-slate-400 italic">No historical engine logs found for this instrument.</p>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      account.suggestedEntries?.map((entry: any) => (
+                        <TableRow key={entry.id} className="hover:bg-slate-50/50 transition-colors border-b border-slate-50">
+                          <TableCell className="px-8 py-5">
+                            <div className="text-xs font-bold text-slate-900">{formatDate(entry.periodStartDate)}</div>
+                            <div className="text-[9px] font-medium text-slate-400 uppercase tracking-tighter mt-0.5">{entry.type}</div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-xs text-slate-600 italic max-w-xs truncate">{entry.description || 'Interest calculated automatically'}</div>
+                          </TableCell>
+                          <TableCell className="px-8 text-right">
+                            <div className="text-sm font-black text-slate-900 italic tracking-tight">{formatCurrency(entry.amount)}</div>
+                            <Badge className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0 mt-1 ${
+                                entry.status === 'approved' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
+                              }`}>
+                              {entry.status}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </DashboardLayout>
+  )
 }
 
-function RuleEntry({ label, value, icon }: { label: string, value: string, icon: React.ReactNode }) {
-   return (
-      <div className="flex items-center justify-between group">
-         <div className="flex items-center">
-            <div className="h-8 w-8 rounded-lg bg-slate-50 flex items-center justify-center mr-4 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
-               {icon}
-            </div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-slate-900 transition-colors">{label}</p>
-         </div>
-         <p className="text-sm font-black italic text-slate-900">{value}</p>
+function ParameterEntry({ label, value, icon: Icon, color }: { label: string, value: string, icon: any, color: string }) {
+  return (
+    <div className="flex items-center justify-between group">
+      <div className="flex items-center gap-3">
+        <div className={`h-8 w-8 rounded-lg bg-slate-50 flex items-center justify-center transition-all group-hover:bg-white group-hover:shadow-sm`}>
+          <Icon className={`h-4 w-4 ${color}`} />
+        </div>
+        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest transition-colors group-hover:text-slate-900">{label}</p>
       </div>
-   )
+      <p className="text-xs font-black italic text-slate-900 tabular-nums">{value}</p>
+    </div>
+  )
 }

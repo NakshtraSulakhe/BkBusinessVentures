@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { PageHeader } from "@/components/ui/page-header"
+import { StatCard } from "@/components/ui/stat-card"
 import {
   Select,
   SelectContent,
@@ -25,8 +27,19 @@ import {
   DocumentTextIcon,
   FunnelIcon,
   ChevronLeftIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
+  CreditCardIcon,
+  BanknotesIcon,
+  ArrowPathIcon
 } from "@heroicons/react/24/outline"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 
 interface Transaction {
   id: string
@@ -59,6 +72,7 @@ interface PaginatedResponse {
 
 export default function EMIList() {
   const router = useRouter()
+  const [mounted, setMounted] = useState(false)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -72,6 +86,10 @@ export default function EMIList() {
     total: 0,
     pages: 0
   })
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const fetchTransactions = async () => {
     try {
@@ -89,7 +107,12 @@ export default function EMIList() {
       const response = await fetch(`/api/transactions?${params}`)
       if (response.ok) {
         const data: PaginatedResponse = await response.json()
-        setTransactions(data.transactions || [])
+        // Filter specifically for EMI transactions if API doesn't do it perfectly
+        const emiOnly = (data.transactions || []).filter(t => 
+          t.account.accountType === 'LOAN' && 
+          (t.description?.toLowerCase().includes('emi') || t.reference?.toLowerCase().includes('emi'))
+        )
+        setTransactions(emiOnly)
         setPagination(data.pagination)
       }
     } catch (error) {
@@ -100,366 +123,216 @@ export default function EMIList() {
   }
 
   useEffect(() => {
-    fetchTransactions()
-  }, [currentPage, searchTerm, selectedCustomer, selectedAccount, dateFilter])
-
-  const handleSearch = (value: string) => {
-    setSearchTerm(value)
-    setCurrentPage(1)
-  }
-
-  const handleCustomerFilter = (value: string) => {
-    setSelectedCustomer(value)
-    setCurrentPage(1)
-  }
-
-  const handleAccountFilter = (value: string) => {
-    setSelectedAccount(value)
-    setCurrentPage(1)
-  }
-
-  const handleDateFilter = (value: string) => {
-    setDateFilter(value)
-    setCurrentPage(1)
-  }
-
-  const clearFilters = () => {
-    setSearchTerm('')
-    setSelectedCustomer('')
-    setSelectedAccount('')
-    setDateFilter('')
-    setCurrentPage(1)
-  }
+    if (mounted) fetchTransactions()
+  }, [mounted, currentPage, searchTerm, selectedCustomer, selectedAccount, dateFilter])
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'INR'
+      currency: 'INR',
+      maximumFractionDigits: 0
     }).format(amount)
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    })
-  }
+  const totalAmount = transactions.reduce((sum, t) => sum + t.amount, 0)
+  const uniqueBorrowers = new Set(transactions.map(t => t.account.customer.name)).size
 
-  const isEMITransaction = (transaction: Transaction) => {
-    return transaction.type === 'deposit' && 
-           transaction.account.accountType === 'LOAN' &&
-           (transaction.description.toLowerCase().includes('emi') || 
-            transaction.reference.toLowerCase().includes('emi'))
-  }
-
-  const filteredTransactions = transactions.filter(isEMITransaction)
+  if (!mounted) return null
 
   return (
     <DashboardLayout>
-      <div className="p-6 min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center space-x-4">
+      <div className="space-y-6 animate-fade-in-up pb-20">
+        <PageHeader
+          title="EMI Portfolio Management"
+          subtitle="Systematic tracking of debt repayment instruments and inward flows"
+          actions={
+            <div className="flex items-center gap-3">
               <Button
-                variant="ghost"
-                size="sm"
+                variant="outline"
                 onClick={() => router.push('/dashboard/loans')}
-                className="h-10 w-10 p-0 rounded-full hover:bg-blue-50 transition-colors"
+                className="h-9 border-slate-200 text-slate-700 rounded-xl px-4 hover:bg-slate-50 font-medium"
               >
-                <ArrowLeftIcon className="h-5 w-5" />
+                <ArrowLeftIcon className="h-4 w-4 mr-2" />
+                Back to Loans
               </Button>
-              <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  EMI Payments
-                </h1>
-                <p className="text-gray-600 mt-2 flex items-center">
-                  <DocumentTextIcon className="h-4 w-4 mr-2 text-blue-500" />
-                  View and manage all EMI payments
-                </p>
-              </div>
+              <Button
+                onClick={() => router.push('/dashboard/loans/emi/create')}
+                className="h-9 finance-gradient-primary text-white rounded-xl px-4 font-bold transition-all shadow-md hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <PlusIcon className="h-4 w-4 mr-2" />
+                Record EMI Payment
+              </Button>
             </div>
-            <Button
-              onClick={() => router.push('/dashboard/loans/emi/create')}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
-            >
-              <PlusIcon className="h-5 w-5 mr-2" />
-              Record EMI
+          }
+        />
+
+        {/* Dashboard Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <StatCard
+            title="Inward EMI Volume"
+            value={formatCurrency(totalAmount)}
+            icon={BanknotesIcon}
+            trend={{ value: "Total recovered", isPositive: true }}
+            className="border-primary"
+          />
+          <StatCard
+            title="Active Collections"
+            value={transactions.length}
+            icon={DocumentTextIcon}
+            trend={{ value: "Verified payments", isPositive: true }}
+            className="border-blue-500"
+          />
+          <StatCard
+            title="Borrower Reach"
+            value={uniqueBorrowers}
+            icon={UserIcon}
+            trend={{ value: "Unique beneficiaries", isPositive: true }}
+            className="border-indigo-500"
+          />
+          <StatCard
+            title="Sync Status"
+            value="Real-time"
+            icon={ArrowPathIcon}
+            trend={{ value: "Protocol Active", isPositive: true }}
+            className="border-emerald-500"
+          />
+        </div>
+
+        {/* Filter Toolbar */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-wrap items-center gap-4">
+          <div className="relative flex-1 min-w-[300px]">
+            <MagnifyingGlassIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Input
+              placeholder="Search by instrument ID, borrower name, or narrative..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 h-10 border-slate-200 bg-slate-50/50 focus:bg-white rounded-xl text-sm transition-all"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Input 
+              placeholder="Filter by Account#" 
+              value={selectedAccount} 
+              onChange={e => setSelectedAccount(e.target.value)}
+              className="h-10 w-40 border-slate-200 bg-slate-50/50 rounded-xl text-xs font-bold"
+            />
+            <div className="flex items-center border border-slate-200 rounded-xl bg-slate-50/50 px-2 h-10">
+              <CalendarIcon className="h-4 w-4 text-slate-400 mr-2" />
+              <input 
+                type="date" 
+                value={dateFilter} 
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="bg-transparent border-none text-xs font-bold text-slate-700 outline-none w-32"
+              />
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => { setSearchTerm(''); setSelectedAccount(''); setDateFilter(''); }} className="h-10 px-3 text-slate-500 hover:text-primary transition-colors">
+              Reset
             </Button>
           </div>
-
-          {/* Filters */}
-          <Card className="bg-white/60 backdrop-blur-sm mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center text-lg">
-                <FunnelIcon className="h-5 w-5 mr-2" />
-                Filters
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Search
-                  </label>
-                  <div className="relative">
-                    <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                    <Input
-                      placeholder="Search EMI payments..."
-                      value={searchTerm}
-                      onChange={(e) => handleSearch(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Customer
-                  </label>
-                  <Input
-                    placeholder="Customer name..."
-                    value={selectedCustomer}
-                    onChange={(e) => handleCustomerFilter(e.target.value)}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Account
-                  </label>
-                  <Input
-                    placeholder="Account number..."
-                    value={selectedAccount}
-                    onChange={(e) => handleAccountFilter(e.target.value)}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Date
-                  </label>
-                  <Input
-                    type="date"
-                    value={dateFilter}
-                    onChange={(e) => handleDateFilter(e.target.value)}
-                  />
-                </div>
-
-                <div className="flex items-end">
-                  <Button
-                    variant="outline"
-                    onClick={clearFilters}
-                    className="w-full"
-                  >
-                    Clear Filters
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Summary Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-blue-600 text-sm font-medium">Total EMI Payments</p>
-                    <p className="text-2xl font-bold text-blue-900">{filteredTransactions.length}</p>
-                  </div>
-                  <DocumentTextIcon className="h-8 w-8 text-blue-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-green-600 text-sm font-medium">Total Amount</p>
-                    <p className="text-2xl font-bold text-green-900">
-                      {formatCurrency(filteredTransactions.reduce((sum, t) => sum + t.amount, 0))}
-                    </p>
-                  </div>
-                  <CurrencyDollarIcon className="h-8 w-8 text-green-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-purple-600 text-sm font-medium">This Month</p>
-                    <p className="text-2xl font-bold text-purple-900">
-                      {filteredTransactions.filter(t => {
-                        const transactionDate = new Date(t.createdAt)
-                        const now = new Date()
-                        return transactionDate.getMonth() === now.getMonth() && 
-                               transactionDate.getFullYear() === now.getFullYear()
-                      }).length}
-                    </p>
-                  </div>
-                  <CalendarIcon className="h-8 w-8 text-purple-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-orange-600 text-sm font-medium">Unique Customers</p>
-                    <p className="text-2xl font-bold text-orange-900">
-                      {new Set(filteredTransactions.map(t => t.account.customer.name)).size}
-                    </p>
-                  </div>
-                  <UserIcon className="h-8 w-8 text-orange-500" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* EMI List */}
-          <Card className="bg-white/60 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center">
-                  <DocumentTextIcon className="h-5 w-5 mr-2" />
-                  EMI Payment History
-                </span>
-                <Badge variant="outline">
-                  {filteredTransactions.length} payments
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                </div>
-              ) : filteredTransactions.length === 0 ? (
-                <div className="text-center py-12">
-                  <DocumentTextIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No EMI payments found</h3>
-                  <p className="text-gray-500 mb-4">Get started by recording your first EMI payment</p>
-                  <Button
-                    onClick={() => router.push('/dashboard/loans/emi/create')}
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                  >
-                    <PlusIcon className="h-5 w-5 mr-2" />
-                    Record EMI Payment
-                  </Button>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-4 font-medium text-gray-700">Date</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700">Account</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700">Customer</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700">Amount</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700">Balance</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700">Reference</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700">Description</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredTransactions.map((transaction) => (
-                        <tr key={transaction.id} className="border-b border-gray-100 hover:bg-gray-50">
-                          <td className="py-3 px-4">
-                            <div className="flex items-center">
-                              <CalendarIcon className="h-4 w-4 mr-2 text-gray-400" />
-                              {formatDate(transaction.createdAt)}
-                            </div>
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="flex items-center">
-                              <BuildingLibraryIcon className="h-4 w-4 mr-2 text-blue-500" />
-                              <div>
-                                <div className="font-medium text-gray-900">{transaction.account.accountNumber}</div>
-                                <Badge variant="outline" className="text-xs mt-1">LOAN</Badge>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="flex items-center">
-                              <UserIcon className="h-4 w-4 mr-2 text-gray-400" />
-                              <div>
-                                <div className="font-medium text-gray-900">{transaction.account.customer.name}</div>
-                                <div className="text-sm text-gray-500">{transaction.account.customer.email}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="flex items-center">
-                              <CurrencyDollarIcon className="h-4 w-4 mr-2 text-green-500" />
-                              <span className="font-semibold text-green-600">
-                                {formatCurrency(transaction.amount)}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className="font-medium text-gray-900">
-                              {formatCurrency(transaction.balance)}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <Badge variant="outline" className="text-xs">
-                              {transaction.reference || 'N/A'}
-                            </Badge>
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="max-w-xs truncate" title={transaction.description}>
-                              {transaction.description}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-
-              {/* Pagination */}
-              {pagination.pages > 1 && (
-                <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-200">
-                  <div className="text-sm text-gray-700">
-                    Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
-                    {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
-                    {pagination.total} results
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(pagination.page - 1)}
-                      disabled={pagination.page === 1}
-                    >
-                      <ChevronLeftIcon className="h-4 w-4" />
-                      Previous
-                    </Button>
-                    <span className="text-sm text-gray-700">
-                      Page {pagination.page} of {pagination.pages}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(pagination.page + 1)}
-                      disabled={pagination.page === pagination.pages}
-                    >
-                      Next
-                      <ChevronRightIcon className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </div>
+
+        {/* EMI List Table */}
+        <Card className="border-slate-200 shadow-sm overflow-hidden">
+          <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-8 h-16 flex flex-row items-center justify-between">
+            <CardTitle className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
+              <CreditCardIcon className="h-4 w-4 mr-2 text-primary" />
+              Systematic Repayment Logs
+            </CardTitle>
+            <Badge className="bg-blue-50 text-blue-700 border-none font-bold text-[10px] uppercase">
+              {pagination.total} Total Transmissions
+            </Badge>
+          </CardHeader>
+          <div className="overflow-x-auto">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-4">
+                <div className="h-10 w-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Querying Portfolio...</p>
+              </div>
+            ) : transactions.length === 0 ? (
+              <div className="text-center py-20">
+                <div className="h-16 w-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <DocumentTextIcon className="h-8 w-8 text-slate-300" />
+                </div>
+                <h3 className="text-sm font-bold text-slate-900 uppercase">No inward EMI flows resolved</h3>
+                <p className="text-xs text-slate-500 mt-2 max-w-xs mx-auto leading-relaxed">Adjust your search parameters ortemporal markers to locate specific repayment records.</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader className="bg-slate-50/30">
+                  <TableRow>
+                    <TableHead className="px-8 text-[10px] font-black uppercase text-slate-400 h-12 tracking-widest">Temporal Marker</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase text-slate-400 h-12 tracking-widest">Instrument / Identifier</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase text-slate-400 h-12 tracking-widest">Borrower Identity</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase text-slate-400 h-12 tracking-widest text-right">Inward Magnitude</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase text-slate-400 h-12 tracking-widest text-right">Remaining Balance</TableHead>
+                    <TableHead className="px-8 text-[10px] font-black uppercase text-slate-400 h-12 tracking-widest">Narrative</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {transactions.map((tx) => (
+                    <TableRow key={tx.id} className="hover:bg-slate-50/50 transition-colors border-b border-slate-50">
+                      <TableCell className="px-8 py-4">
+                        <div className="text-xs font-bold text-slate-900">
+                          {new Date(tx.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </div>
+                        <div className="text-[10px] font-medium text-slate-400 tracking-tighter mt-0.5 uppercase">
+                          Cycle Synced
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="h-8 w-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                            <BuildingLibraryIcon className="h-4 w-4 text-blue-600" />
+                          </div>
+                          <div>
+                            <div className="text-[10px] font-black text-primary uppercase tracking-widest font-mono line-clamp-1">{tx.account.accountNumber}</div>
+                            <Badge className="bg-slate-100 text-slate-600 border-none text-[8px] font-black uppercase px-1 h-3.5 mt-0.5">LOAN PORTFOLIO</Badge>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-xs font-bold text-slate-900">{tx.account.customer.name}</div>
+                        <div className="text-[10px] font-medium text-slate-500 line-clamp-1">{tx.account.customer.email}</div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="text-xs font-black text-emerald-600 tracking-tight">
+                          +{formatCurrency(tx.amount)}
+                        </div>
+                        <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Verified Inflow</div>
+                      </TableCell>
+                      <TableCell className="text-right text-xs font-black text-slate-900 tracking-tight">
+                        {formatCurrency(tx.balance)}
+                      </TableCell>
+                      <TableCell className="px-8 max-w-[200px]">
+                        <div className="text-[11px] text-slate-600 leading-relaxed truncate group-hover:whitespace-normal">
+                          {tx.description || tx.reference || 'Automated Portfolio Recovery'}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+          {/* Pagination */}
+          {pagination.pages > 1 && (
+            <div className="bg-slate-50/50 px-8 py-4 border-t border-slate-100 flex items-center justify-between">
+              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                Showing {((pagination.page - 1) * pagination.limit) + 1}—{Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => p - 1)} disabled={pagination.page === 1} className="h-8 px-3 rounded-lg border-slate-200 text-slate-600">
+                  <ChevronLeftIcon className="h-3 w-3 mr-1" /> Prev
+                </Button>
+                <div className="px-3 text-[10px] font-black text-slate-900">Page {pagination.page} / {pagination.pages}</div>
+                <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => p + 1)} disabled={pagination.page === pagination.pages} className="h-8 px-3 rounded-lg border-slate-200 text-slate-600">
+                  Next <ChevronRightIcon className="h-3 w-3 ml-1" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </Card>
       </div>
     </DashboardLayout>
   )

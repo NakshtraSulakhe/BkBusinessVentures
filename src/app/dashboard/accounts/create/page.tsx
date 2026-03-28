@@ -7,11 +7,10 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { CustomerSelectionTab, AccountDetailsTab, AccountRulesTab, ReviewTab } from "@/components/account-tabs"
+import { PageHeader } from "@/components/ui/page-header"
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -36,7 +35,6 @@ import {
   InformationCircleIcon,
   SparklesIcon,
   CreditCardIcon,
-  CalculatorIcon,
   DocumentTextIcon,
   ShieldCheckIcon,
   ClockIcon,
@@ -44,8 +42,8 @@ import {
   BanknotesIcon,
   UsersIcon,
   Cog6ToothIcon,
-  AcademicCapIcon,
-  BriefcaseIcon
+  ReceiptPercentIcon,
+  CircleStackIcon
 } from "@heroicons/react/24/outline"
 
 interface Customer {
@@ -53,27 +51,6 @@ interface Customer {
   name: string
   email: string
   phone: string
-  address?: string
-  city?: string
-  state?: string
-  occupation?: string
-  annualIncome?: number
-}
-
-interface AccountSummary {
-  type: string
-  principal: number
-  interest: number
-  maturity: number
-  emi?: number
-  totalPayable?: number
-}
-
-interface FormProgress {
-  customer: boolean
-  account: boolean
-  rules: boolean
-  review: boolean
 }
 
 function CreateAccountComponent() {
@@ -83,38 +60,25 @@ function CreateAccountComponent() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
-  const [accountSummary, setAccountSummary] = useState<AccountSummary | null>(null)
-  const [activeTab, setActiveTab] = useState<'customer' | 'account' | 'rules' | 'review'>('customer')
-  const [progress, setProgress] = useState<FormProgress>({
-    customer: false,
-    account: false,
-    rules: false,
-    review: false
-  })
-  const [showCalculator, setShowCalculator] = useState(false)
-  const [showPreview, setShowPreview] = useState(false)
+  
   const [formData, setFormData] = useState({
     customerId: searchParams.get('customerId') || '',
-    accountType: 'FD',
+    accountType: 'FD' as 'FD' | 'RD' | 'LOAN',
     principalAmount: '',
     interestRate: '',
     tenure: '',
     startDate: new Date().toISOString().split('T')[0],
-    numberingTemplateId: '', // Add numbering template
-    // FD specific fields
+    numberingTemplateId: '',
     interestMode: 'monthly' as 'monthly' | 'maturity-only',
     payoutMode: 'reinvest' as 'reinvest' | 'paid-out',
-    // RD specific fields
     monthlyInstallment: '',
     interestMethod: 'installment_weighted' as 'installment_weighted' | 'monthly_balance',
     rdBalanceDateRule: 'month_end' as 'month_end' | 'fixed_day',
     rdBalanceDay: '10',
-    // Loan specific fields
     loanMethod: 'reducing' as 'flat' | 'reducing',
     emiDueDay: '1',
     gracePeriodDays: '0',
     penaltyRate: '1.0',
-    // Common fields
     roundingMode: 'nearest' as 'nearest' | 'up' | 'down',
     roundingPrecision: '2'
   })
@@ -126,21 +90,13 @@ function CreateAccountComponent() {
       if (response.ok) {
         const data = await response.json()
         setCustomers(data.customers || [])
+        if (formData.customerId) {
+          const found = data.customers.find((c: Customer) => c.id === formData.customerId)
+          if (found) setSelectedCustomer(found)
+        }
       }
     } catch (error) {
       console.error('Failed to fetch customers:', error)
-    }
-  }
-
-  const fetchCustomerDetails = async (customerId: string) => {
-    try {
-      const response = await fetch(`/api/customers/${customerId}`)
-      if (response.ok) {
-        const data = await response.json()
-        setSelectedCustomer(data.customer)
-      }
-    } catch (error) {
-      console.error('Failed to fetch customer details:', error)
     }
   }
 
@@ -148,845 +104,392 @@ function CreateAccountComponent() {
     fetchCustomers()
   }, [])
 
-  useEffect(() => {
-    if (formData.customerId) {
-      fetchCustomerDetails(formData.customerId)
-      setProgress(prev => ({ ...prev, customer: true }))
-    } else {
-      setSelectedCustomer(null)
-      setProgress(prev => ({ ...prev, customer: false }))
-    }
-  }, [formData.customerId])
-
-  useEffect(() => {
-    // Update progress based on form data
-    const accountComplete = formData.accountType && 
-      (formData.principalAmount || formData.monthlyInstallment) && 
-      formData.interestRate && 
-      formData.tenure && 
-      formData.startDate
-    
-    setProgress(prev => ({ ...prev, account: !!accountComplete }))
-    
-    // Calculate account summary
-    if (accountComplete) {
-      calculateAccountSummary()
-    }
-  }, [formData])
-
-  const calculateAccountSummary = () => {
-    if (!formData.accountType) return
-
-    const principal = formData.accountType === 'RD' 
-      ? parseFloat(formData.monthlyInstallment || '0') * parseInt(formData.tenure || '0')
-      : parseFloat(formData.principalAmount || '0')
-    
-    const rate = parseFloat(formData.interestRate || '0')
-    const tenure = parseInt(formData.tenure || '0')
-    
-    let summary: AccountSummary = {
-      type: formData.accountType,
-      principal,
-      interest: 0,
-      maturity: principal
-    }
-
-    if (formData.accountType === 'FD') {
-      // Simple interest for FD
-      summary.interest = principal * (rate / 100) * (tenure / 12)
-      summary.maturity = principal + summary.interest
-    } else if (formData.accountType === 'RD') {
-      // Compound interest for RD (simplified)
-      summary.interest = principal * (rate / 100) * (tenure / 12) * 0.5 // Approximation
-      summary.maturity = principal + summary.interest
-    } else if (formData.accountType === 'LOAN') {
-      // EMI calculation
-      const monthlyRate = rate / 12 / 100
-      const emi = principal * monthlyRate * Math.pow(1 + monthlyRate, tenure) / (Math.pow(1 + monthlyRate, tenure) - 1)
-      summary.emi = isNaN(emi) ? 0 : emi
-      summary.totalPayable = emi * tenure
-      summary.interest = summary.totalPayable - principal
-    }
-
-    setAccountSummary(summary)
-  }
-
-  const showMessage = (text: string, type: 'success' | 'error') => {
-    setMessage({ text, type })
-    setTimeout(() => setMessage(null), 5000)
-  }
-
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {}
-
-    if (!formData.customerId) newErrors.customerId = 'Customer is required'
-    if (!formData.accountType) newErrors.accountType = 'Account type is required'
-
-    // Common validations
-    if (!formData.principalAmount || parseFloat(formData.principalAmount) <= 0) {
-      newErrors.principalAmount = 'Principal amount must be greater than 0'
-    }
-    if (!formData.interestRate || parseFloat(formData.interestRate) <= 0 || parseFloat(formData.interestRate) > 100) {
-      newErrors.interestRate = 'Interest rate must be between 0 and 100'
-    }
-    if (!formData.tenure || parseInt(formData.tenure) <= 0) {
-      newErrors.tenure = 'Tenure must be greater than 0'
-    }
-    if (!formData.startDate) newErrors.startDate = 'Start date is required'
-
-    // Account type specific validations
-    if (formData.accountType === 'RD' && (!formData.monthlyInstallment || parseFloat(formData.monthlyInstallment) <= 0)) {
-      newErrors.monthlyInstallment = 'Monthly installment must be greater than 0'
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
   const calculateMaturityDate = () => {
-    if (formData.startDate && formData.tenure) {
-      const startDate = new Date(formData.startDate)
-      const tenureMonths = parseInt(formData.tenure)
-      const maturityDate = new Date(startDate)
-      maturityDate.setMonth(maturityDate.getMonth() + tenureMonths)
-      return maturityDate.toISOString().split('T')[0]
-    }
-    return ''
+    if (!formData.startDate || !formData.tenure) return ''
+    const d = new Date(formData.startDate)
+    d.setMonth(d.getMonth() + parseInt(formData.tenure))
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
   }
 
   const calculateEMI = () => {
-    if (formData.accountType === 'LOAN' && formData.principalAmount && formData.interestRate && formData.tenure) {
-      const principal = parseFloat(formData.principalAmount)
-      const rate = parseFloat(formData.interestRate)
-      const tenure = parseInt(formData.tenure)
-      
-      if (formData.loanMethod === 'flat') {
-        // Flat rate: simple interest on principal
-        const totalInterest = principal * (rate / 100) * (tenure / 12)
-        return (principal + totalInterest) / tenure
-      } else {
-        // Reducing balance: standard EMI formula
-        const monthlyRate = rate / 12 / 100
-        const emi = principal * monthlyRate * Math.pow(1 + monthlyRate, tenure) / (Math.pow(1 + monthlyRate, tenure) - 1)
-        return isNaN(emi) ? 0 : emi
-      }
+    const principal = parseFloat(formData.principalAmount) || 0
+    const rate = parseFloat(formData.interestRate) || 0
+    const tenure = parseInt(formData.tenure) || 0
+    if (!principal || !rate || !tenure) return 0
+    
+    if (formData.loanMethod === 'flat') {
+      const totalInterest = principal * (rate / 100) * (tenure / 12)
+      return (principal + totalInterest) / tenure
+    } else {
+      const monthlyRate = rate / 12 / 100
+      const emi = principal * monthlyRate * Math.pow(1 + monthlyRate, tenure) / (Math.pow(1 + monthlyRate, tenure) - 1)
+      return isNaN(emi) ? 0 : emi
     }
-    return 0
   }
 
-  const calculateTotalAmount = () => {
-    if (formData.accountType === 'RD' && formData.monthlyInstallment && formData.tenure) {
-      return parseFloat(formData.monthlyInstallment) * parseInt(formData.tenure)
-    }
-    return parseFloat(formData.principalAmount) || 0
+  const calculateYield = () => {
+    const principal = formData.accountType === 'RD' 
+      ? (parseFloat(formData.monthlyInstallment) || 0) * (parseInt(formData.tenure) || 0)
+      : (parseFloat(formData.principalAmount) || 0)
+    const rate = parseFloat(formData.interestRate) || 0
+    const tenure = parseInt(formData.tenure) || 0
+    if (!principal || !rate || !tenure) return 0
+    return principal * (rate / 100) * (tenure / 12)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    if (!validateForm()) return
+    if (!formData.customerId || !formData.principalAmount && !formData.monthlyInstallment) {
+      setErrors({ customerId: !formData.customerId ? 'Required' : '', amount: 'Required' })
+      return
+    }
 
     try {
       setLoading(true)
-      
-      // Prepare account data based on account type
-      const originalAccountType = formData.accountType
-      const accountType = originalAccountType.toLowerCase().trim()
-      console.log('Original account type:', JSON.stringify(originalAccountType))
-      console.log('Converted account type:', JSON.stringify(accountType))
-      
-      let accountData: any = {
+      const accountType = formData.accountType.toLowerCase()
+      const data: any = {
         customerId: formData.customerId,
-        accountType: accountType, // Convert to lowercase
-        principalAmount: accountType === 'rd' ? calculateTotalAmount() : parseFloat(formData.principalAmount),
+        accountType,
+        principalAmount: accountType === 'rd' ? (parseFloat(formData.monthlyInstallment) * parseInt(formData.tenure)) : parseFloat(formData.principalAmount),
         interestRate: parseFloat(formData.interestRate),
         tenure: parseInt(formData.tenure),
         startDate: formData.startDate,
-        maturityDate: calculateMaturityDate(),
+        maturityDate: new Date(new Date(formData.startDate).setMonth(new Date(formData.startDate).getMonth() + parseInt(formData.tenure))).toISOString(),
         roundingPrecision: parseInt(formData.roundingPrecision)
       }
 
-      // Add account type specific fields
       if (accountType === 'fd') {
-        accountData.interestMode = formData.interestMode
-        accountData.payoutMode = formData.payoutMode
+        data.interestMode = formData.interestMode
+        data.payoutMode = formData.payoutMode
       } else if (accountType === 'rd') {
-        accountData.monthlyInstallment = parseFloat(formData.monthlyInstallment)
-        accountData.interestMethod = formData.interestMethod
-        accountData.rdBalanceDateRule = formData.rdBalanceDateRule
-        accountData.rdBalanceDay = parseInt(formData.rdBalanceDay)
+        data.monthlyInstallment = parseFloat(formData.monthlyInstallment)
+        data.interestMethod = formData.interestMethod
+        data.rdBalanceDateRule = formData.rdBalanceDateRule
+        data.rdBalanceDay = parseInt(formData.rdBalanceDay)
       } else if (accountType === 'loan') {
-        accountData.emiAmount = calculateEMI()
-        accountData.loanMethod = formData.loanMethod
-        accountData.emiDueDay = parseInt(formData.emiDueDay)
-        accountData.gracePeriodDays = parseInt(formData.gracePeriodDays)
-        accountData.penaltyRate = parseFloat(formData.penaltyRate)
+        data.emiAmount = calculateEMI()
+        data.loanMethod = formData.loanMethod
+        data.emiDueDay = parseInt(formData.emiDueDay)
+        data.gracePeriodDays = parseInt(formData.gracePeriodDays)
+        data.penaltyRate = parseFloat(formData.penaltyRate)
       }
-
-      console.log('Final account data being sent:', JSON.stringify(accountData, null, 2))
 
       const response = await fetch('/api/accounts', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(accountData),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
       })
 
       if (response.ok) {
-        const result = await response.json()
-        showMessage(`Account created successfully! Account ID: ${result.account?.accountNumber || 'N/A'}`, 'success')
-        setTimeout(() => {
-          router.push('/dashboard/accounts')
-        }, 2000)
+        setMessage({ type: 'success', text: 'Account provisioned successfully' })
+        setTimeout(() => router.push('/dashboard/accounts'), 2000)
       } else {
-        const errorData = await response.json()
-        showMessage(errorData.error || 'Failed to create account', 'error')
+        const err = await response.json()
+        setMessage({ type: 'error', text: err.error || 'Failed to create instrument' })
       }
     } catch (error) {
-      console.error('Failed to create account:', error)
-      showMessage('Failed to create account', 'error')
+      setMessage({ type: 'error', text: 'Network failure during provisioning' })
     } finally {
       setLoading(false)
     }
   }
 
-  const maturityDate = calculateMaturityDate()
-  const emi = calculateEMI()
-  const totalAmount = calculateTotalAmount()
-  const totalPayable = emi * parseInt(formData.tenure || '0')
+  const formatCurrency = (amt: number) => {
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amt)
+  }
 
   return (
-    <DashboardLayout>
-      <div className="p-6 min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
-        <div className="max-w-6xl mx-auto">
-          {/* Message */}
-          {message && (
-            <div className={`rounded-xl p-4 flex items-start space-x-3 shadow-sm border mb-6 ${
-              message.type === 'success' 
-                ? 'bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 text-green-800' 
-                : 'bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 text-red-800'
-            }`}>
-              <div className={`flex-shrink-0 ${
-                message.type === 'success' ? 'text-green-600' : 'text-red-600'
-              }`}>
-                {message.type === 'success' ? (
-                  <CheckCircleIcon className="h-6 w-6" />
-                ) : (
-                  <ExclamationTriangleIcon className="h-6 w-6" />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm">{message.text}</p>
-                <p className="text-xs mt-1 opacity-75">
-                  {message.type === 'success' ? 'Operation completed successfully' : 'Please try again'}
-                </p>
-              </div>
-              <button
-                onClick={() => setMessage(null)}
-                className="flex-shrink-0 p-1 rounded-lg hover:bg-black/5 transition-colors"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          )}
+    <div className="space-y-6 animate-fade-in-up pb-20">
+      <PageHeader
+        title="Provision New Account"
+        subtitle="Initialize a financial instrument for a verified client"
+        actions={
+          <Button
+            variant="outline"
+            onClick={() => router.push('/dashboard/accounts')}
+            className="h-9 border-slate-200 text-slate-700 rounded-xl px-4 hover:bg-slate-50 font-medium"
+          >
+            Cancel setup
+          </Button>
+        }
+      />
 
-          {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push('/dashboard/accounts')}
-                className="h-10 w-10 p-0 rounded-full hover:bg-blue-50 transition-colors"
-              >
-                <ArrowLeftIcon className="h-5 w-5" />
-              </Button>
-              <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Create Account
-                </h1>
-                <p className="text-gray-600 mt-2 flex items-center">
-                  <SparklesIcon className="h-4 w-4 mr-2 text-blue-500" />
-                  Open a new account with guided setup
-                </p>
-              </div>
-            </div>
-          </div>
+      {message && (
+        <div className={`p-4 rounded-xl border flex items-start gap-3 shadow-lg animate-in fade-in slide-in-from-top-4 duration-300 ${
+          message.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-800' : 'bg-rose-50 border-rose-100 text-rose-800'
+        }`}>
+          {message.type === 'success' ? <CheckCircleIcon className="h-5 w-5 mt-0.5" /> : <ExclamationTriangleIcon className="h-5 w-5 mt-0.5" />}
+          <div className="text-sm font-bold">{message.text}</div>
+        </div>
+      )}
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Customer Selection */}
-              <Card className="bg-white/60 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <UserIcon className="h-5 w-5 mr-2" />
-                    Customer Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Select Customer <span className="text-red-500">*</span>
-                    </label>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button 
-                          variant="outline" 
-                          className={`w-full justify-between ${errors.customerId ? 'border-red-500' : ''}`}
-                        >
-                          {selectedCustomer ? selectedCustomer.name : 'Choose a customer...'}
-                          <ChevronDownIcon className="h-4 w-4 opacity-50" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-full max-h-60">
-                        <DropdownMenuLabel>Customers</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        {customers.length === 0 ? (
-                          <DropdownMenuItem disabled>
-                            Loading customers...
-                          </DropdownMenuItem>
-                        ) : (
-                          customers.map((customer) => (
-                            <DropdownMenuItem 
-                              key={customer.id}
-                              onClick={() => setFormData(prev => ({ ...prev, customerId: customer.id }))}
-                              className="cursor-pointer"
-                            >
-                              <div className="flex flex-col w-full">
-                                <span className="font-medium">{customer.name}</span>
-                                <span className="text-sm text-muted-foreground">
-                                  {customer.email}
-                                </span>
-                              </div>
-                            </DropdownMenuItem>
-                          ))
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                    {errors.customerId && (
-                      <p className="text-red-500 text-sm mt-1">{errors.customerId}</p>
-                    )}
-                    {customers.length === 0 && (
-                      <p className="text-gray-500 text-xs mt-1">No customers found. Please add customers first.</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Account Type <span className="text-red-500">*</span>
-                    </label>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button 
-                          variant="outline" 
-                          className={`w-full justify-between ${errors.accountType ? 'border-red-500' : ''}`}
-                        >
-                          {formData.accountType === 'FD' ? 'Fixed Deposit' : 
-                           formData.accountType === 'RD' ? 'Recurring Deposit' : 
-                           formData.accountType === 'LOAN' ? 'Loan' : 
-                           'Select account type...'}
-                          <ChevronDownIcon className="h-4 w-4 opacity-50" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-full max-h-60">
-                        <DropdownMenuLabel>Account Types</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem 
-                          onClick={() => setFormData(prev => ({ ...prev, accountType: 'FD' }))}
-                          className="cursor-pointer"
-                        >
-                          <BuildingLibraryIcon className="h-4 w-4 mr-2" />
-                          Fixed Deposit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => setFormData(prev => ({ ...prev, accountType: 'RD' }))}
-                          className="cursor-pointer"
-                        >
-                          <CurrencyDollarIcon className="h-4 w-4 mr-2" />
-                          Recurring Deposit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => setFormData(prev => ({ ...prev, accountType: 'LOAN' }))}
-                          className="cursor-pointer"
-                        >
-                          <CreditCardIcon className="h-4 w-4 mr-2" />
-                          Loan
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                    {errors.accountType && (
-                      <p className="text-red-500 text-sm mt-1">{errors.accountType}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Numbering Template <span className="text-gray-400">(Optional)</span>
-                    </label>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button 
-                          variant="outline" 
-                          className="w-full justify-between"
-                        >
-                          {formData.numberingTemplateId === '1' ? 'FD Default' : 
-                           formData.numberingTemplateId === '2' ? 'RD Default' : 
-                           formData.numberingTemplateId === '3' ? 'Loan Default' : 
-                           'Use default template'}
-                          <ChevronDownIcon className="h-4 w-4 opacity-50" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-full max-h-60">
-                        <DropdownMenuLabel>Templates</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem 
-                          onClick={() => setFormData(prev => ({ ...prev, numberingTemplateId: '' }))}
-                          className="cursor-pointer"
-                        >
-                          <Cog6ToothIcon className="h-4 w-4 mr-2" />
-                          Use default template
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => setFormData(prev => ({ ...prev, numberingTemplateId: '1' }))}
-                          className="cursor-pointer"
-                        >
-                          <BuildingLibraryIcon className="h-4 w-4 mr-2" />
-                          FD Default
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => setFormData(prev => ({ ...prev, numberingTemplateId: '2' }))}
-                          className="cursor-pointer"
-                        >
-                          <CurrencyDollarIcon className="h-4 w-4 mr-2" />
-                          RD Default
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => setFormData(prev => ({ ...prev, numberingTemplateId: '3' }))}
-                          className="cursor-pointer"
-                        >
-                          <CreditCardIcon className="h-4 w-4 mr-2" />
-                          Loan Default
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Account Details */}
-              <Card className="bg-white/60 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <BuildingLibraryIcon className="h-5 w-5 mr-2" />
-                    Account Details
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {formData.accountType === 'RD' ? (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Monthly Installment (₹) <span className="text-red-500">*</span>
-                      </label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={formData.monthlyInstallment}
-                        onChange={(e) => setFormData(prev => ({ ...prev, monthlyInstallment: e.target.value }))}
-                        className={errors.monthlyInstallment ? 'border-red-500' : ''}
-                        placeholder="Enter monthly installment amount"
-                      />
-                      {errors.monthlyInstallment && (
-                        <p className="text-red-500 text-sm mt-1">{errors.monthlyInstallment}</p>
-                      )}
-                    </div>
-                  ) : (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Principal Amount (₹) <span className="text-red-500">*</span>
-                      </label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={formData.principalAmount}
-                        onChange={(e) => setFormData(prev => ({ ...prev, principalAmount: e.target.value }))}
-                        className={errors.principalAmount ? 'border-red-500' : ''}
-                        placeholder="Enter principal amount"
-                      />
-                      {errors.principalAmount && (
-                        <p className="text-red-500 text-sm mt-1">{errors.principalAmount}</p>
-                      )}
-                    </div>
-                  )}
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Interest Rate (%) <span className="text-red-500">*</span>
-                    </label>
-                    <Input
-                      type="number"
-                      step="0.1"
-                      value={formData.interestRate}
-                      onChange={(e) => setFormData(prev => ({ ...prev, interestRate: e.target.value }))}
-                      className={errors.interestRate ? 'border-red-500' : ''}
-                      placeholder="Enter interest rate"
-                    />
-                    {errors.interestRate && (
-                      <p className="text-red-500 text-sm mt-1">{errors.interestRate}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tenure (months) <span className="text-red-500">*</span>
-                    </label>
-                    <Input
-                      type="number"
-                      value={formData.tenure}
-                      onChange={(e) => setFormData(prev => ({ ...prev, tenure: e.target.value }))}
-                      className={errors.tenure ? 'border-red-500' : ''}
-                      placeholder="Enter tenure in months"
-                    />
-                    {errors.tenure && (
-                      <p className="text-red-500 text-sm mt-1">{errors.tenure}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Start Date <span className="text-red-500">*</span>
-                    </label>
-                    <Input
-                      type="date"
-                      value={formData.startDate}
-                      onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
-                      className={errors.startDate ? 'border-red-500' : ''}
-                    />
-                    {errors.startDate && (
-                      <p className="text-red-500 text-sm mt-1">{errors.startDate}</p>
-                    )}
-                  </div>
-
-                  {/* Calculated Values */}
-                  {formData.accountType === 'FD' && formData.principalAmount && (
-                    <div className="bg-blue-50 p-3 rounded-lg">
-                      <p className="text-sm font-medium text-blue-800">
-                        <CurrencyDollarIcon className="h-4 w-4 inline mr-1" />
-                        Principal: ₹{parseFloat(formData.principalAmount).toLocaleString()}
-                      </p>
-                    </div>
-                  )}
-
-                  {formData.accountType === 'RD' && totalAmount > 0 && (
-                    <div className="bg-blue-50 p-3 rounded-lg">
-                      <p className="text-sm font-medium text-blue-800">
-                        <CurrencyDollarIcon className="h-4 w-4 inline mr-1" />
-                        Total Amount: ₹{totalAmount.toLocaleString()}
-                      </p>
-                    </div>
-                  )}
-
-                  {formData.accountType === 'LOAN' && emi > 0 && (
-                    <div className="bg-blue-50 p-3 rounded-lg">
-                      <p className="text-sm font-medium text-blue-800">
-                        <CreditCardIcon className="h-4 w-4 inline mr-1" />
-                        Calculated EMI: ₹{emi.toLocaleString()}
-                      </p>
-                    </div>
-                  )}
-
-                  {totalPayable > 0 && formData.accountType === 'LOAN' && (
-                    <div className="bg-green-50 p-3 rounded-lg">
-                      <p className="text-sm font-medium text-green-800">
-                        <CurrencyDollarIcon className="h-4 w-4 inline mr-1" />
-                        Total Payable: ₹{totalPayable.toLocaleString()}
-                      </p>
-                    </div>
-                  )}
-
-                  {maturityDate && (
-                    <div className="bg-orange-50 p-3 rounded-lg">
-                      <p className="text-sm font-medium text-orange-800">
-                        <CalendarIcon className="h-4 w-4 inline mr-1" />
-                        Maturity Date: {new Date(maturityDate).toLocaleDateString()}
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Account Type Specific Rules */}
-            <Card className="bg-white/60 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <InformationCircleIcon className="h-5 w-5 mr-2" />
-                  Account Rules
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {formData.accountType === 'FD' && (
-                    <>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Interest Posting
-                        </label>
-                        <Select
-                          value={formData.interestMode}
-                          onValueChange={(value: 'monthly' | 'maturity-only') => 
-                            setFormData(prev => ({ ...prev, interestMode: value }))
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="monthly">Monthly</SelectItem>
-                            <SelectItem value="maturity-only">Maturity Only</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Payout Mode
-                        </label>
-                        <Select
-                          value={formData.payoutMode}
-                          onValueChange={(value: 'reinvest' | 'paid-out') => 
-                            setFormData(prev => ({ ...prev, payoutMode: value }))
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="reinvest">Reinvest</SelectItem>
-                            <SelectItem value="paid-out">Paid Out</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </>
-                  )}
-
-                  {formData.accountType === 'RD' && (
-                    <>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Interest Method
-                        </label>
-                        <Select
-                          value={formData.interestMethod}
-                          onValueChange={(value: 'installment_weighted' | 'monthly_balance') => 
-                            setFormData(prev => ({ ...prev, interestMethod: value }))
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="installment_weighted">Installment Weighted</SelectItem>
-                            <SelectItem value="monthly_balance">Monthly Balance</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Balance Date Rule
-                        </label>
-                        <Select
-                          value={formData.rdBalanceDateRule}
-                          onValueChange={(value: 'month_end' | 'fixed_day') => 
-                            setFormData(prev => ({ ...prev, rdBalanceDateRule: value }))
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="month_end">Month End</SelectItem>
-                            <SelectItem value="fixed_day">Fixed Day</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {formData.rdBalanceDateRule === 'fixed_day' && (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Balance Day
-                          </label>
-                          <Select
-                            value={formData.rdBalanceDay}
-                            onValueChange={(value) => setFormData(prev => ({ ...prev, rdBalanceDay: value }))}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {[...Array(28)].map((_, i) => (
-                                <SelectItem key={i + 1} value={(i + 1).toString()}>
-                                  {i + 1}{i === 0 ? 'st' : i === 1 ? 'nd' : i === 2 ? 'rd' : 'th'}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div className="lg:col-span-8 space-y-6">
+          {/* Section 1: Entity Linkage */}
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-4">
+              <CardTitle className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
+                <UsersIcon className="h-4 w-4 mr-2 text-primary" />
+                1. Entity Linkage
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Verified Client</label>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="w-full h-11 justify-between border-slate-200 rounded-lg bg-slate-50/30 hover:bg-white transition-all text-slate-900 font-bold">
+                        <div className="flex items-center gap-2">
+                          <UserIcon className="h-4 w-4 text-slate-400" />
+                          {selectedCustomer ? selectedCustomer.name : "Select account holder..."}
                         </div>
-                      )}
-                    </>
-                  )}
+                        <ChevronDownIcon className="h-4 w-4 text-slate-400" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-[400px] max-h-[300px] overflow-y-auto">
+                      <DropdownMenuLabel className="text-[10px] uppercase font-black tracking-widest text-slate-400">Search Results</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {customers.map(c => (
+                        <DropdownMenuItem key={c.id} className="py-3 px-4 flex flex-col items-start gap-1 cursor-pointer hover:bg-slate-50" onClick={() => { setSelectedCustomer(c); setFormData(p => ({ ...p, customerId: c.id })) }}>
+                          <span className="font-bold text-slate-900">{c.name}</span>
+                          <span className="text-[10px] text-slate-500 font-medium">#{c.id.slice(-8).toUpperCase()} • {c.phone}</span>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  {errors.customerId && <p className="text-[10px] text-rose-500 font-bold ml-1">Client selection is mandatory</p>}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-                  {formData.accountType === 'LOAN' && (
-                    <>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Loan Method
-                        </label>
-                        <Select
-                          value={formData.loanMethod}
-                          onValueChange={(value: 'flat' | 'reducing') => 
-                            setFormData(prev => ({ ...prev, loanMethod: value }))
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="flat">Flat Rate</SelectItem>
-                            <SelectItem value="reducing">Reducing Balance</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          EMI Due Day
-                        </label>
-                        <Select
-                          value={formData.emiDueDay}
-                          onValueChange={(value) => setFormData(prev => ({ ...prev, emiDueDay: value }))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {[...Array(28)].map((_, i) => (
-                              <SelectItem key={i + 1} value={(i + 1).toString()}>
-                                {i + 1}{i === 0 ? 'st' : i === 1 ? 'nd' : i === 2 ? 'rd' : 'th'}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Grace Period (days)
-                        </label>
-                        <Select
-                          value={formData.gracePeriodDays}
-                          onValueChange={(value) => setFormData(prev => ({ ...prev, gracePeriodDays: value }))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="0">0 days</SelectItem>
-                            <SelectItem value="3">3 days</SelectItem>
-                            <SelectItem value="5">5 days</SelectItem>
-                            <SelectItem value="7">7 days</SelectItem>
-                            <SelectItem value="10">10 days</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Penalty Rate (%)
-                        </label>
-                        <Select
-                          value={formData.penaltyRate}
-                          onValueChange={(value) => setFormData(prev => ({ ...prev, penaltyRate: value }))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="0.5">0.5%</SelectItem>
-                            <SelectItem value="1.0">1.0%</SelectItem>
-                            <SelectItem value="1.5">1.5%</SelectItem>
-                            <SelectItem value="2.0">2.0%</SelectItem>
-                            <SelectItem value="2.5">2.5%</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </>
-                  )}
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Decimal Places
-                    </label>
-                    <Select
-                      value={formData.roundingPrecision}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, roundingPrecision: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="0">0 (Rupees)</SelectItem>
-                        <SelectItem value="2">2 (Paise)</SelectItem>
-                      </SelectContent>
-                    </Select>
+          {/* Section 2: Financial Parameters */}
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-4">
+              <CardTitle className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
+                <CurrencyDollarIcon className="h-4 w-4 mr-2 text-primary" />
+                2. Financial Parameters
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Instrument Type</label>
+                  <Select value={formData.accountType} onValueChange={v => setFormData(p => ({ ...p, accountType: v as any }))}>
+                    <SelectTrigger className="h-11 border-slate-200 bg-slate-50/30 font-bold">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="FD">Fixed Deposit (FD)</SelectItem>
+                      <SelectItem value="RD">Recurring Deposit (RD)</SelectItem>
+                      <SelectItem value="LOAN">Loan Account</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Commencement Date</label>
+                  <div className="relative">
+                    <CalendarIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Input type="date" value={formData.startDate} onChange={e => setFormData(p => ({ ...p, startDate: e.target.value }))} className="pl-10 h-11 border-slate-200 bg-slate-50/30 font-medium" />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
 
-            {/* Action Buttons */}
-            <div className="flex items-center justify-end space-x-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.push('/dashboard/accounts')}
-                className="h-12 px-8"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={loading}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg h-12 px-8"
-              >
-                {loading ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">
+                    {formData.accountType === 'RD' ? "Monthly Installment (₹)" : "Principal (₹)"}
+                  </label>
+                  <div className="relative">
+                    <BanknotesIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Input type="number" placeholder="0.00" value={formData.accountType === 'RD' ? formData.monthlyInstallment : formData.principalAmount} onChange={e => setFormData(p => ({ ...p, [formData.accountType === 'RD' ? 'monthlyInstallment' : 'principalAmount']: e.target.value }))} className="pl-10 h-11 border-slate-200 bg-slate-50/30 font-black tracking-tight" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Annual Yield (%)</label>
+                  <div className="relative">
+                    <ReceiptPercentIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Input type="number" placeholder="0.00" value={formData.interestRate} onChange={e => setFormData(p => ({ ...p, interestRate: e.target.value }))} className="pl-10 h-11 border-slate-200 bg-slate-50/30 font-black tracking-tight" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Duration (Months)</label>
+                  <div className="relative">
+                    <ClockIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Input type="number" placeholder="0" value={formData.tenure} onChange={e => setFormData(p => ({ ...p, tenure: e.target.value }))} className="pl-10 h-11 border-slate-200 bg-slate-50/30 font-black tracking-tight" />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Section 3: Operational Rules */}
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-4">
+              <CardTitle className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
+                <Cog6ToothIcon className="h-4 w-4 mr-2 text-primary" />
+                3. Operational Protocol
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {formData.accountType === 'FD' && (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Creating Account...
-                  </>
-                ) : (
-                  <>
-                    <BuildingLibraryIcon className="h-5 w-5 mr-2" />
-                    Create Account
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Interest Posting</label>
+                      <Select value={formData.interestMode} onValueChange={v => setFormData(p => ({ ...p, interestMode: v as any }))}>
+                        <SelectTrigger className="h-11 border-slate-200 bg-slate-50/30">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="monthly">Monthly Accrual</SelectItem>
+                          <SelectItem value="maturity-only">Maturity Finalization</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Payout Protocol</label>
+                      <Select value={formData.payoutMode} onValueChange={v => setFormData(p => ({ ...p, payoutMode: v as any }))}>
+                        <SelectTrigger className="h-11 border-slate-200 bg-slate-50/30">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="reinvest">Auto Reinvest (Cumulative)</SelectItem>
+                          <SelectItem value="paid-out">Liquid Payout (Non-cumulative)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </>
                 )}
-              </Button>
-            </div>
-          </form>
+
+                {formData.accountType === 'LOAN' && (
+                  <>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Amortization Logic</label>
+                      <Select value={formData.loanMethod} onValueChange={v => setFormData(p => ({ ...p, loanMethod: v as any }))}>
+                        <SelectTrigger className="h-11 border-slate-200 bg-slate-50/30 font-bold">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="flat">Flat Interest Rate</SelectItem>
+                          <SelectItem value="reducing">Reducing Balance EMI</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Penalty / Overdue (%)</label>
+                      <Input type="number" step="0.1" value={formData.penaltyRate} onChange={e => setFormData(p => ({ ...p, penaltyRate: e.target.value }))} className="h-11 border-slate-200 bg-slate-50/30 font-bold" />
+                    </div>
+                  </>
+                )}
+
+                {formData.accountType === 'RD' && (
+                  <>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Yield Calculation</label>
+                      <Select value={formData.interestMethod} onValueChange={v => setFormData(p => ({ ...p, interestMethod: v as any }))}>
+                        <SelectTrigger className="h-11 border-slate-200 bg-slate-50/30">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="installment_weighted">Installment Weighted</SelectItem>
+                          <SelectItem value="monthly_balance">Daily Balance Average</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Balance Cut-off Day</label>
+                      <Input type="number" min="1" max="28" value={formData.rdBalanceDay} onChange={e => setFormData(p => ({ ...p, rdBalanceDay: e.target.value }))} className="h-11 border-slate-200 bg-slate-50/30 font-bold" />
+                    </div>
+                  </>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      </div>
-    </DashboardLayout>
+
+        {/* Right Sidebar: Summary Intelligence */}
+        <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-6">
+          <Card className="bg-slate-900 border-slate-800 rounded-3xl overflow-hidden shadow-2xl relative">
+            <div className="absolute top-0 right-0 p-8 opacity-10">
+              <CircleStackIcon className="h-24 w-24 text-white" />
+            </div>
+            <CardHeader className="px-8 pt-8 pb-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Account Projection</p>
+              <CardTitle className="text-white tracking-tight text-xl mt-1">Instrument Preview</CardTitle>
+            </CardHeader>
+            <CardContent className="px-8 pb-8 space-y-6">
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold text-slate-500 uppercase">
+                  {formData.accountType === 'LOAN' ? "Standard Monthly EMI" : "Estimated Lifecycle Yield"}
+                </p>
+                <p className="text-3xl font-black text-white tracking-tighter">
+                  {formData.accountType === 'LOAN' ? formatCurrency(calculateEMI()) : formatCurrency(calculateYield())}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Maturity Date</p>
+                  <p className="text-xs font-bold text-slate-300">{calculateMaturityDate() || "TBD"}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Net Exposure</p>
+                  <p className="text-xs font-bold text-slate-300">
+                    {formData.accountType === 'RD' ? formatCurrency((parseFloat(formData.monthlyInstallment) || 0) * (parseInt(formData.tenure) || 0)) : formatCurrency(parseFloat(formData.principalAmount) || 0)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-6 border-t border-white/10">
+                <div className="flex items-center gap-2 mb-4">
+                  <ShieldCheckIcon className="h-4 w-4 text-emerald-400" />
+                  <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Compliance Ready</span>
+                </div>
+                <Button type="submit" disabled={loading} className="w-full finance-gradient-primary text-white font-black uppercase tracking-widest h-14 rounded-2xl shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">
+                  {loading ? (
+                    <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                    Provisioning...
+                    </div>
+                  ) : "Provision Instrument"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="bg-white border border-slate-200 rounded-2xl p-6">
+            <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-4 flex items-center">
+              <InformationCircleIcon className="h-4 w-4 mr-2 text-primary" />
+              Provisioning Guidelines
+            </h4>
+            <div className="space-y-3">
+              {[
+                "Account IDs are generated based on active templates",
+                "Start date determines initial yield accrual period",
+                "Interest protocols cannot be modified after creation",
+                "System performs automated KYC depth check"
+              ].map((text, idx) => (
+                <div key={idx} className="flex gap-2 text-[10px] font-bold text-slate-500 leading-tight">
+                  <div className="h-1 w-1 bg-slate-300 rounded-full mt-1.5 flex-shrink-0" />
+                  {text}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
   )
 }
 
 export default function CreateAccount() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <CreateAccountComponent />
-    </Suspense>
+    <DashboardLayout>
+      <Suspense fallback={<div>Loading setup...</div>}>
+        <CreateAccountComponent />
+      </Suspense>
+    </DashboardLayout>
   )
 }

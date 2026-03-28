@@ -125,7 +125,7 @@ export default function RejectedSuggestionsPage() {
 
           <Card className="bg-white/60 backdrop-blur-sm shadow-sm border-slate-200 overflow-hidden">
             <CardHeader className="border-b border-slate-100 bg-white/40 h-20 flex flex-row items-center px-8">
-               <CardTitle className="text-lg font-bold flex items-center text-slate-900 tracking-tight italic">
+               <CardTitle className="text-lg font-bold flex items-center text-slate-900 tracking-tight">
                   <ShieldExclamationIcon className="h-6 w-6 mr-3 text-red-500" />
                   Exception Logs
                </CardTitle>
@@ -139,7 +139,7 @@ export default function RejectedSuggestionsPage() {
                ) : filtered.length === 0 ? (
                   <div className="py-24 text-center">
                      <ArchiveBoxXMarkIcon className="h-16 w-16 text-slate-200 mx-auto mb-4" />
-                     <h3 className="text-xl font-bold text-slate-600 tracking-tight italic">Clean History</h3>
+                     <h3 className="text-xl font-bold text-slate-600 tracking-tight">Clean History</h3>
                      <p className="text-slate-400 font-medium">No system rejections found for the current filter.</p>
                   </div>
                ) : (
@@ -161,8 +161,8 @@ export default function RejectedSuggestionsPage() {
                              </TableCell>
                              <TableCell>
                                 <div>
-                                   <p className="font-bold text-slate-900 group-hover:text-red-700 transition-colors italic">{item.account.customer.name}</p>
-                                   <Badge variant="outline" className="text-[10px] tracking-widest text-slate-300 uppercase border-slate-100 font-mono italic">{item.account.accountNumber}</Badge>
+                                   <p className="font-bold text-slate-900 group-hover:text-red-700 transition-colors">{item.account.customer.name}</p>
+                                   <Badge variant="outline" className="text-[10px] tracking-widest text-slate-300 uppercase border-slate-100 font-mono">{item.account.accountNumber}</Badge>
                                 </div>
                              </TableCell>
                              <TableCell>
@@ -179,7 +179,7 @@ export default function RejectedSuggestionsPage() {
                                       <NoSymbolIcon className="h-4 w-4 text-red-500" />
                                       <span className="text-[9px] font-black uppercase tracking-widest text-red-600">Prevention Logged</span>
                                    </div>
-                                   <p className="text-xs font-bold text-slate-700 leading-tight tracking-tight italic">
+                                   <p className="text-xs font-bold text-slate-700 leading-tight tracking-tight">
                                       {item.rejectionReason || 'Manually Overridden by Audit Staff'}
                                    </p>
                                 </div>

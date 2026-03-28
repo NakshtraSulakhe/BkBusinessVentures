@@ -1,8 +1,10 @@
-/* Professional Finance Theme Utilities */
+/* ════════════════════════════════════════════════════════
+   Professional Finance Theme Utilities
+   ════════════════════════════════════════════════════════ */
 
-/* Finance-specific color utilities */
+/* ─── Gradient backgrounds ─────────────────────────────── */
 .finance-gradient-primary {
-  background: linear-gradient(135deg, hsl(220 90% 18%) 0%, hsl(220 85% 25%) 100%);
+  background: linear-gradient(135deg, hsl(220 90% 18%) 0%, hsl(220 85% 26%) 100%);
 }
 
 .finance-gradient-success {
@@ -17,98 +19,95 @@
   background: linear-gradient(135deg, hsl(220 13% 11%) 0%, hsl(215 28% 17%) 100%);
 }
 
-/* Professional card shadows */
+/* ─── Shadows ──────────────────────────────────────────── */
 .finance-shadow-sm {
-  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
 }
 
 .finance-shadow-md {
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.08);
 }
 
 .finance-shadow-lg {
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08);
 }
 
-/* Finance status colors */
+/* ─── Hover lift ───────────────────────────────────────── */
+.finance-hover-lift {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.finance-hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -4px rgb(0 0 0 / 0.12);
+}
+
+/* ─── Status text + bg ─────────────────────────────────── */
 .finance-success {
-  color: hsl(160 84% 39%);
-  background-color: hsl(160 84% 39% / 0.1);
+  color: hsl(160 84% 32%);
+  background-color: hsl(160 60% 95%);
 }
 
 .finance-warning {
-  color: hsl(38 92% 50%);
-  background-color: hsl(38 92% 50% / 0.1);
+  color: hsl(32 90% 38%);
+  background-color: hsl(38 90% 95%);
 }
 
 .finance-danger {
-  color: hsl(0 72% 51%);
-  background-color: hsl(0 72% 51% / 0.1);
+  color: hsl(0 72% 45%);
+  background-color: hsl(0 72% 97%);
 }
 
 .finance-info {
-  color: hsl(217 91% 60%);
-  background-color: hsl(217 91% 60% / 0.1);
+  color: hsl(217 80% 45%);
+  background-color: hsl(217 80% 96%);
 }
 
-/* Dark mode finance colors */
 .dark .finance-success {
-  color: hsl(160 84% 44%);
-  background-color: hsl(160 84% 44% / 0.2);
+  color: hsl(160 84% 55%);
+  background-color: hsl(160 50% 15%);
 }
 
 .dark .finance-warning {
-  color: hsl(38 92% 55%);
-  background-color: hsl(38 92% 55% / 0.2);
+  color: hsl(38 92% 65%);
+  background-color: hsl(38 60% 15%);
 }
 
 .dark .finance-danger {
-  color: hsl(0 62% 31%);
-  background-color: hsl(0 62% 31% / 0.2);
+  color: hsl(0 70% 60%);
+  background-color: hsl(0 50% 15%);
 }
 
 .dark .finance-info {
-  color: hsl(217 91% 65%);
-  background-color: hsl(217 91% 65% / 0.2);
+  color: hsl(217 91% 70%);
+  background-color: hsl(217 50% 15%);
 }
 
-/* Professional text gradients */
+/* ─── Text gradient ────────────────────────────────────── */
 .finance-text-gradient {
-  background: linear-gradient(135deg, hsl(220 90% 18%) 0%, hsl(220 85% 25%) 100%);
+  background: linear-gradient(135deg, hsl(220 90% 18%) 0%, hsl(220 85% 32%) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* Professional hover effects */
-.finance-hover-lift {
-  transition: all 0.2s ease-in-out;
-}
-
-.finance-hover-lift:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-}
-
-/* Professional borders */
+/* ─── Borders & backgrounds ────────────────────────────── */
 .finance-border-subtle {
   border: 1px solid hsl(220 13% 91%);
 }
 
 .dark .finance-border-subtle {
-  border: 1px solid hsl(215 28% 17%);
+  border: 1px solid hsl(215 28% 20%);
 }
 
-/* Professional backgrounds */
 .finance-bg-subtle {
-  background-color: hsl(220 13% 95%);
+  background-color: hsl(210 20% 98%);
 }
 
 .dark .finance-bg-subtle {
-  background-color: hsl(215 28% 17%);
+  background-color: hsl(215 28% 14%);
 }
 
-/* Professional text colors */
 .finance-text-subtle {
   color: hsl(220 9% 46%);
 }
@@ -117,44 +116,153 @@
   color: hsl(217 10% 64%);
 }
 
-/* Professional icon backgrounds */
+/* ─── Icon pill backgrounds ────────────────────────────── */
+/* Navy / Primary */
 .finance-icon-bg {
-  background-color: hsl(220 90% 18% / 0.1);
-  color: hsl(220 90% 18%);
+  background-color: hsl(220 90% 18% / 0.08);
+  color: hsl(220 90% 24%);
 }
 
+/* Emerald / Success */
 .finance-icon-bg-success {
-  background-color: hsl(160 84% 39% / 0.1);
-  color: hsl(160 84% 39%);
+  background-color: hsl(160 60% 92%);
+  color: hsl(160 84% 30%);
 }
 
+/* Amber / Warning */
 .finance-icon-bg-warning {
-  background-color: hsl(38 92% 50% / 0.1);
-  color: hsl(38 92% 50%);
+  background-color: hsl(38 90% 92%);
+  color: hsl(32 90% 35%);
 }
 
+/* Red / Danger */
 .finance-icon-bg-danger {
-  background-color: hsl(0 72% 51% / 0.1);
-  color: hsl(0 72% 51%);
+  background-color: hsl(0 72% 95%);
+  color: hsl(0 72% 42%);
 }
 
-/* Dark mode icon backgrounds */
+/* Blue / Info — was missing, caused CSS warnings */
+.finance-icon-bg-info {
+  background-color: hsl(217 80% 94%);
+  color: hsl(217 80% 42%);
+}
+
+/* Teal / Accent */
+.finance-icon-bg-teal {
+  background-color: hsl(173 60% 92%);
+  color: hsl(173 80% 28%);
+}
+
+/* Dark mode icon pills */
 .dark .finance-icon-bg {
   background-color: hsl(220 90% 25% / 0.2);
-  color: hsl(220 90% 25%);
+  color: hsl(220 70% 70%);
 }
 
 .dark .finance-icon-bg-success {
-  background-color: hsl(160 84% 44% / 0.2);
-  color: hsl(160 84% 44%);
+  background-color: hsl(160 50% 18%);
+  color: hsl(160 70% 55%);
 }
 
 .dark .finance-icon-bg-warning {
-  background-color: hsl(38 92% 55% / 0.2);
-  color: hsl(38 92% 55%);
+  background-color: hsl(38 50% 18%);
+  color: hsl(38 80% 60%);
 }
 
 .dark .finance-icon-bg-danger {
-  background-color: hsl(0 62% 31% / 0.2);
-  color: hsl(0 62% 31%);
+  background-color: hsl(0 50% 18%);
+  color: hsl(0 70% 60%);
+}
+
+.dark .finance-icon-bg-info {
+  background-color: hsl(217 50% 18%);
+  color: hsl(217 70% 65%);
+}
+
+.dark .finance-icon-bg-teal {
+  background-color: hsl(173 50% 18%);
+  color: hsl(173 70% 55%);
+}
+
+/* ─── Badge system ─────────────────────────────────────── */
+
+/* Type badge — outline style (FD / RD / Loan label) */
+.badge-type {
+  display: inline-flex;
+  align-items: center;
+  height: 1.375rem;
+  padding: 0 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: 0.375rem;
+  border-width: 1px;
+  border-style: solid;
+  white-space: nowrap;
+}
+
+.badge-type-fd {
+  color: hsl(217 80% 42%);
+  background-color: hsl(217 80% 96%);
+  border-color: hsl(217 60% 82%);
+}
+
+.badge-type-rd {
+  color: hsl(173 80% 28%);
+  background-color: hsl(173 60% 94%);
+  border-color: hsl(173 50% 78%);
+}
+
+.badge-type-loan {
+  color: hsl(0 72% 42%);
+  background-color: hsl(0 72% 96%);
+  border-color: hsl(0 60% 82%);
+}
+
+.badge-type-savings {
+  color: hsl(160 84% 30%);
+  background-color: hsl(160 60% 95%);
+  border-color: hsl(160 50% 78%);
+}
+
+.badge-type-current {
+  color: hsl(220 90% 24%);
+  background-color: hsl(220 90% 96%);
+  border-color: hsl(220 60% 82%);
+}
+
+/* Status badge — filled style (Active / Closed / Overdue) */
+.badge-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  height: 1.375rem;
+  padding: 0 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-radius: 0.375rem;
+  white-space: nowrap;
+}
+
+.badge-status-active {
+  color: hsl(160 84% 28%);
+  background-color: hsl(160 60% 91%);
+}
+
+.badge-status-matured {
+  color: hsl(217 80% 40%);
+  background-color: hsl(217 80% 93%);
+}
+
+.badge-status-closed {
+  color: hsl(220 9% 40%);
+  background-color: hsl(220 13% 92%);
+}
+
+.badge-status-overdue {
+  color: hsl(0 72% 42%);
+  background-color: hsl(0 72% 94%);
 }

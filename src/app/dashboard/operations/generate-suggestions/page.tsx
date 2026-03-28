@@ -1,290 +1,218 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter } from "next/navigation"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  PlayIcon,
-  ArrowPathIcon,
-  MagnifyingGlassIcon,
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { PageHeader } from "@/components/ui/page-header"
+import { 
+  ArrowLeftIcon, 
+  RocketLaunchIcon, 
+  CalendarDaysIcon, 
+  SparklesIcon, 
+  InformationCircleIcon,
+  ShieldCheckIcon,
   CpuChipIcon,
-  ArrowRightIcon,
-  QueueListIcon,
-  ArrowLeftIcon,
-  SparklesIcon,
-  RocketLaunchIcon,
-  ChartBarIcon
+  ArrowPathIcon,
+  BoltIcon
 } from "@heroicons/react/24/outline"
-import { CheckBadgeIcon } from "@heroicons/react/24/solid"
 import { Badge } from "@/components/ui/badge"
 
-export default function GenerateSuggestionsPage() {
+function GenerateSuggestionsContent() {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<'monthly' | 'account'>('monthly')
-  const [running, setRunning] = useState(false)
-  const [results, setResults] = useState<{message: string, count: number} | null>(null)
+  const [mounted, setMounted] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
 
-  // Monthly Params
-  const [month, setMonth] = useState(new Date().getMonth() + 1)
-  const [year, setYear] = useState(new Date().getFullYear())
+  useEffect(() => { setMounted(true) }, [])
 
-  // Account Params
-  const [accountId, setAccountId] = useState('')
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0])
-  const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0])
-
-  const handleMonthlyRun = async () => {
+  const handleGenerate = async () => {
     try {
-      setRunning(true)
-      setResults(null)
+      setLoading(true)
       const response = await fetch('/api/suggestions/run-monthly', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ month, year })
+        body: JSON.stringify({
+          month: selectedMonth,
+          year: selectedYear
+        })
       })
+
       if (response.ok) {
-        const data = await response.json()
-        setResults(data)
+        router.push('/dashboard/operations/suggestions')
+      } else {
+        const error = await response.json()
+        alert(error.error || 'Engine execution failed.')
       }
     } catch (error) {
-       console.error(error)
+      console.error(error)
+      alert('Internal engine protocol error.')
     } finally {
-      setRunning(false)
+      setLoading(false)
     }
   }
 
-  const handleAccountRun = async () => {
-    try {
-      setRunning(true)
-      setResults(null)
-      const response = await fetch('/api/suggestions/run-account', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accountId, startDate, endDate })
-      })
-      if (response.ok) {
-        const data = await response.json()
-        setResults(data)
-      }
-    } catch (error) {
-       console.error(error)
-    } finally {
-      setRunning(false)
-    }
-  }
+  if (!mounted) return null
 
   return (
-    <DashboardLayout>
-      <div className="p-6 min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
-        <div className="max-w-5xl mx-auto space-y-8">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push('/dashboard/operations/suggestions')}
-                className="h-10 w-10 p-0 rounded-full hover:bg-white transition-colors"
-              >
-                <ArrowLeftIcon className="h-5 w-5 text-gray-400" />
-              </Button>
-              <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent italic">
-                   Engine Suite
-                </h1>
-                <p className="text-gray-600 mt-2 flex items-center">
-                  <SparklesIcon className="h-4 w-4 mr-2 text-blue-500" />
-                  Manual trigger suite for automated financial discovery
-                </p>
+    <div className="space-y-6 animate-fade-in-up pb-20">
+      <PageHeader
+        title="Instrument Lifecycle Engine"
+        subtitle="Initialize automated predictive discovery for monthly periodic instruments"
+        actions={
+          <Button
+            variant="outline"
+            onClick={() => router.push('/dashboard/operations/suggestions')}
+            className="h-9 border-slate-200 text-slate-700 rounded-xl px-4 hover:bg-slate-50 font-medium transition-all"
+          >
+            <ArrowLeftIcon className="h-4 w-4 mr-2" />
+            Queue
+          </Button>
+        }
+      />
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Generator Form */}
+        <div className="lg:col-span-7">
+          <Card className="border-slate-200 shadow-sm overflow-hidden rounded-3xl">
+            <CardHeader className="bg-slate-50/50 border-b border-slate-100 py-6 px-8 flex items-center justify-between">
+              <CardTitle className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center">
+                <CpuChipIcon className="h-4 w-4 mr-3 text-primary" />
+                Processing Parameters
+              </CardTitle>
+              <Badge className="bg-blue-50 text-blue-700 border-none font-bold text-[10px] uppercase h-5 px-2">Ready for Execution</Badge>
+            </CardHeader>
+            <CardContent className="p-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2">
+                    <CalendarDaysIcon className="h-3 w-3" />
+                    Target Operational Period
+                  </Label>
+                  <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
+                    <SelectTrigger className="h-14 border-slate-200 bg-slate-50/50 rounded-2xl font-black shadow-none px-6">
+                      <SelectValue placeholder="Select Month" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl border-slate-200">
+                      {Array.from({ length: 12 }, (_, i) => (
+                        <SelectItem key={i + 1} value={(i + 1).toString()} className="font-bold uppercase tracking-tight">
+                          {new Date(2000, i).toLocaleString('en-US', { month: 'long' })}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2">
+                    <BoltIcon className="h-3 w-3" />
+                    Institutional Year
+                  </Label>
+                  <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+                    <SelectTrigger className="h-14 border-slate-200 bg-slate-50/50 rounded-2xl font-black shadow-none px-6">
+                      <SelectValue placeholder="Select Year" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl border-slate-200">
+                      {[selectedYear - 1, selectedYear, selectedYear + 1].map(y => (
+                        <SelectItem key={y} value={y.toString()} className="font-bold">
+                          {y} Operational Cycle
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            </div>
-          </div>
 
-          {/* Selector - Master Styled */}
-          <div className="flex justify-center">
-            <div className="inline-flex p-1.5 bg-white/60 backdrop-blur-sm rounded-2xl ring-1 ring-slate-200 shadow-sm">
-                <button 
-                    onClick={() => setActiveTab('monthly')}
-                    className={`py-3 px-10 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${activeTab === 'monthly' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-700'}`}
+              <div className="mt-10 pt-8 border-t border-slate-100 flex flex-col items-center gap-6">
+                <div className="text-center space-y-2">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Verification Required</p>
+                  <p className="text-xs font-bold text-slate-500 leading-relaxed max-w-sm mx-auto">
+                    Initiating the engine will scan all active Recurring Deposits and Loan portfolios for the selected period.
+                  </p>
+                </div>
+                <Button
+                  onClick={handleGenerate}
+                  disabled={loading}
+                  className="h-16 w-full max-w-md bg-slate-900 hover:bg-slate-800 text-white rounded-[2rem] font-black uppercase text-xs tracking-[0.2em] shadow-2xl transition-all active:scale-[0.98] relative overflow-hidden group"
                 >
-                    Batch Generation
-                </button>
-                <button 
-                    onClick={() => setActiveTab('account')}
-                    className={`py-3 px-10 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${activeTab === 'account' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-700'}`}
-                >
-                    Targeted Audit
-                </button>
-            </div>
-          </div>
+                  {loading ? (
+                    <div className="flex items-center gap-4">
+                      <ArrowPathIcon className="h-6 w-6 animate-spin text-primary" />
+                      <span>Processing Pulse...</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-4 group-hover:scale-105 transition-transform">
+                      <RocketLaunchIcon className="h-6 w-6 text-primary group-hover:animate-bounce" />
+                      <span>Launch Discovery Protocol</span>
+                    </div>
+                  )}
+                  {/* Subtle shine effect */}
+                  <div className="absolute inset-x-0 top-0 h-px bg-white/20" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-          <div className="grid grid-cols-1 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
-            {activeTab === 'monthly' ? (
-              <Card className="bg-white/60 backdrop-blur-md border-none shadow-2xl ring-1 ring-slate-100 overflow-hidden rounded-[40px]">
-                <CardHeader className="p-12 pb-8">
-                  <div className="flex items-center space-x-4 mb-4">
-                    <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
-                       <QueueListIcon className="h-7 w-7 text-white" />
-                    </div>
-                    <div>
-                       <Badge className="bg-blue-50 text-blue-600 border-blue-100 uppercase text-[10px] tracking-widest font-black mb-1">Infrastructure Module</Badge>
-                       <CardTitle className="text-3xl font-black text-slate-900 tracking-tighter italic">Global Batch Processor</CardTitle>
-                    </div>
+        {/* Intelligence Sidebar */}
+        <div className="lg:col-span-5 space-y-6">
+          <Card className="bg-slate-900 border-none shadow-2xl rounded-[2.5rem] overflow-hidden">
+            <CardHeader className="p-8 pb-4">
+              <CardTitle className="text-white text-xl font-black tracking-tight flex items-center">
+                <SparklesIcon className="h-5 w-5 mr-3 text-primary animate-pulse" />
+                Discovery Insights
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-8 pt-0 space-y-6">
+              <p className="text-xs text-slate-400 font-bold leading-relaxed border-b border-white/10 pb-4">
+                The engine utilizes predictive logic to identify maturing installments and overdue liabilities.
+              </p>
+              
+              <div className="space-y-6">
+                <div className="flex gap-4 items-start">
+                  <div className="h-8 w-8 rounded-xl bg-white/10 flex items-center justify-center text-primary flex-shrink-0">
+                    <CalendarDaysIcon className="h-4 w-4" />
                   </div>
-                  <CardDescription className="text-slate-500 text-lg font-medium leading-relaxed italic">
-                    Scan all active and pending investment instruments across the entire institutional portfolio for the selected period.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-12 pt-4 space-y-10">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                     <div className="space-y-4">
-                        <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Target Month</label>
-                        <Select value={month.toString()} onValueChange={(v) => setMonth(parseInt(v))}>
-                            <SelectTrigger className="h-16 bg-white border-slate-100 text-slate-900 text-2xl font-black rounded-2xl shadow-sm focus:ring-indigo-500">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="bg-white border-slate-100 font-bold">
-                                {Array.from({length: 12}, (_, i) => (
-                                    <SelectItem key={i+1} value={(i+1).toString()} className="text-lg py-4 font-black italic">{new Date(2000, i).toLocaleString('en-US', { month: 'long' })}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                     </div>
-                     <div className="space-y-4">
-                        <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Cycle Year</label>
-                        <Input 
-                            type="number" 
-                            value={year}
-                            onChange={(e) => setYear(parseInt(e.target.value))}
-                            className="h-16 bg-white border-slate-100 text-slate-900 text-2xl font-black rounded-2xl shadow-sm focus:ring-indigo-500"
-                        />
-                     </div>
+                  <div>
+                    <h5 className="text-[10px] font-black text-white uppercase tracking-widest">Temporal Analysis</h5>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-1 leading-relaxed">Cross-references instrument opening dates with maturity cycles to verify installment accuracy.</p>
                   </div>
+                </div>
+                <div className="flex gap-4 items-start">
+                  <div className="h-8 w-8 rounded-xl bg-white/10 flex items-center justify-center text-blue-400 flex-shrink-0">
+                    <ShieldCheckIcon className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h5 className="text-[10px] font-black text-white uppercase tracking-widest">Audit Integrity</h5>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-1 leading-relaxed">Generated propositions are staged in a queue for human verification before ledger commitment.</p>
+                  </div>
+                </div>
+              </div>
 
-                  <Button 
-                    disabled={running}
-                    onClick={handleMonthlyRun}
-                    className="w-full h-16 bg-slate-900 hover:bg-slate-800 text-white text-xl font-black shadow-xl shadow-slate-900/10 active:scale-[0.98] transition-all rounded-2xl group italic uppercase tracking-tighter"
-                  >
-                    {running ? (
-                      <ArrowPathIcon className="h-8 w-8 animate-spin" />
-                    ) : (
-                      <>
-                         <RocketLaunchIcon className="h-7 w-7 mr-4 group-hover:scale-110 transition-transform text-indigo-400" />
-                         Launch Batch Discovery
-                      </>
-                    )}
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-               <Card className="bg-white/60 backdrop-blur-md border-none shadow-2xl ring-1 ring-slate-100 overflow-hidden rounded-[40px]">
-                <CardHeader className="p-12 pb-8">
-                  <div className="flex items-center space-x-4 mb-4">
-                    <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
-                       <ChartBarIcon className="h-7 w-7 text-white" />
-                    </div>
-                    <div>
-                       <Badge className="bg-purple-50 text-purple-600 border-purple-100 uppercase text-[10px] tracking-widest font-black mb-1">Targeted Engine</Badge>
-                       <CardTitle className="text-3xl font-black text-slate-900 tracking-tighter italic">Individual Entity Audit</CardTitle>
-                    </div>
-                  </div>
-                  <CardDescription className="text-slate-500 text-lg font-medium leading-relaxed italic">
-                    Execute a high-precision discovery scan on a specific account identification to resolve missing or unique accrual logs.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-12 pt-4 space-y-10">
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Account Primary ID</label>
-                    <div className="relative group">
-                       <MagnifyingGlassIcon className="absolute left-6 top-1/2 -translate-y-1/2 h-7 w-7 text-slate-300 group-focus-within:text-purple-500 transition-colors" />
-                       <Input 
-                            placeholder="Input Valid Account Format (e.g. LN-2026-0001)..."
-                            value={accountId}
-                            onChange={(e) => setAccountId(e.target.value)}
-                            className="h-16 pl-16 bg-white border-slate-100 text-slate-900 text-2xl font-black rounded-2xl shadow-sm focus:ring-purple-500"
-                        />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-10">
-                     <div className="space-y-4">
-                        <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Discovery Start</label>
-                        <Input 
-                            type="date" 
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
-                            className="h-14 bg-white border-slate-100 text-slate-900 text-lg font-black rounded-xl font-mono"
-                        />
-                     </div>
-                     <div className="space-y-4">
-                        <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Discovery End</label>
-                        <Input 
-                            type="date" 
-                            value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
-                            className="h-14 bg-white border-slate-100 text-slate-900 text-lg font-black rounded-xl font-mono"
-                        />
-                     </div>
-                  </div>
-
-                  <Button 
-                    disabled={running}
-                    onClick={handleAccountRun}
-                    className="w-full h-16 bg-slate-900 hover:bg-slate-800 text-white text-xl font-black shadow-xl shadow-slate-900/10 active:scale-[0.98] transition-all rounded-2xl group italic uppercase tracking-tighter"
-                  >
-                    {running ? (
-                      <ArrowPathIcon className="h-8 w-8 animate-spin" />
-                    ) : (
-                      <>
-                         <CpuChipIcon className="h-7 w-7 mr-4 group-hover:scale-110 transition-transform text-purple-400" />
-                         Execute Precision Discovery
-                      </>
-                    )}
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Run Outcome Dashboard - Master Styled */}
-            {results && (
-              <Card className="bg-white border-none shadow-2xl ring-1 ring-emerald-100 overflow-hidden p-2 rounded-[40px]">
-                 <div className="bg-emerald-50/40 p-12 flex flex-col md:flex-row items-center justify-between rounded-[32px] gap-8">
-                    <div className="flex items-center space-x-10 flex-col md:flex-row text-center md:text-left">
-                       <div className="h-24 w-24 bg-white rounded-3xl flex items-center justify-center shadow-xl shadow-emerald-500/10 border border-emerald-100 mb-6 md:mb-0">
-                          <CheckBadgeIcon className="h-14 w-14 text-emerald-600" />
-                       </div>
-                       <div className="space-y-1">
-                          <p className="text-slate-900 text-3xl font-black italic tracking-tighter group-hover:text-emerald-700 transition-colors">Infrastructure Signal: Success</p>
-                          <p className="text-slate-500 text-lg font-bold flex items-center justify-center md:justify-start italic">
-                             <QueueListIcon className="h-5 w-5 mr-3 text-emerald-500" />
-                             Discovery stream successfully injected <span className="text-slate-900 font-black mx-2 px-3 py-1 bg-white rounded-xl shadow-inner border border-slate-100 tabular-nums">{results.count}</span> records into the verification unit
-                          </p>
-                       </div>
-                    </div>
-                    <Button 
-                        onClick={() => router.push('/dashboard/operations/suggestions')}
-                        className="h-16 bg-white text-slate-900 border-2 border-slate-100 shadow-xl hover:bg-slate-50 px-12 text-md font-black uppercase tracking-widest transition-all rounded-2xl group italic"
-                    >
-                        Review Results
-                        <ArrowRightIcon className="h-5 w-5 ml-4 group-hover:translate-x-2 transition-transform text-emerald-500" />
-                    </Button>
-                 </div>
-              </Card>
-            )}
-          </div>
+              <div className="pt-6 border-t border-white/10">
+                <div className="flex items-center gap-2 mb-4">
+                  <InformationCircleIcon className="h-4 w-4 text-emerald-400" />
+                  <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Infrastructure Check</span>
+                </div>
+                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest leading-relaxed text-center">Engine health: Optimal. Ready for large-scale periodic discovery.</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
+    </div>
+  )
+}
+
+export default function GenerateSuggestionsPage() {
+  return (
+    <DashboardLayout>
+      <Suspense fallback={<div>Querying Engine Matrix...</div>}>
+        <GenerateSuggestionsContent />
+      </Suspense>
     </DashboardLayout>
   )
 }

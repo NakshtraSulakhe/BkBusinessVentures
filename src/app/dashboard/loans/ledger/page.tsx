@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { PageHeader } from "@/components/ui/page-header"
+import { StatCard } from "@/components/ui/stat-card"
 import {
   Select,
   SelectContent,
@@ -23,7 +25,10 @@ import {
   DocumentTextIcon,
   CalendarIcon,
   CurrencyDollarIcon,
-  ShieldExclamationIcon
+  ShieldExclamationIcon,
+  BanknotesIcon,
+  ArrowPathIcon,
+  CheckBadgeIcon
 } from "@heroicons/react/24/outline"
 import {
   Table,
@@ -83,24 +88,9 @@ export default function LoanLedgerPage() {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'INR'
+      currency: 'INR',
+      maximumFractionDigits: 0
     }).format(amount)
-  }
-
-  const getTransactionTypeColor = (type: string) => {
-    switch (type.toUpperCase()) {
-      case 'EMI':
-      case 'PRINCIPAL_PAYMENT':
-        return 'bg-indigo-100 text-indigo-700 border-indigo-200'
-      case 'PENALTY':
-        return 'bg-red-100 text-red-700 border-red-200'
-      case 'INTEREST':
-        return 'bg-amber-100 text-amber-700 border-amber-200'
-      case 'EMI_DUE':
-        return 'bg-orange-100 text-orange-700 border-orange-200'
-      default:
-        return 'bg-gray-100 text-gray-700 border-gray-200'
-    }
   }
 
   const filteredTransactions = transactions.filter(tx => {
@@ -118,218 +108,194 @@ export default function LoanLedgerPage() {
     return matchesSearch && matchesType && matchesStart && matchesEnd
   })
 
+  // Aggregated Metrics
+  const totalRecovered = transactions.filter(t => ['EMI', 'PRINCIPAL_PAYMENT', 'deposit'].includes(t.type)).reduce((sum, t) => sum + Math.abs(t.amount), 0)
+  const pendingDues = transactions.filter(t => t.type === 'EMI_DUE').reduce((sum, t) => sum + t.amount, 0)
+  const penaltyVolume = transactions.filter(t => t.type === 'PENALTY').reduce((sum, t) => sum + t.amount, 0)
+
   if (!mounted) return null
 
   return (
     <DashboardLayout>
-      <div className="p-6 min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50/20">
-        <div className="max-w-7xl mx-auto space-y-6">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+      <div className="space-y-6 animate-fade-in-up pb-20">
+        <PageHeader
+          title="Loan Transaction Ledger"
+          subtitle="Audit-grade historical records for all debt instruments and recoveries"
+          actions={
+            <div className="flex items-center gap-3">
               <Button
-                variant="ghost"
-                size="sm"
+                variant="outline"
                 onClick={() => router.push('/dashboard/loans')}
-                className="h-10 w-10 p-0 rounded-full hover:bg-indigo-50 transition-colors"
+                className="h-9 border-slate-200 text-slate-700 rounded-xl px-4 hover:bg-slate-50 font-medium"
               >
-                <ArrowLeftIcon className="h-5 w-5" />
+                <ArrowLeftIcon className="h-4 w-4 mr-2" />
+                Back to Loans
               </Button>
-              <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-indigo-800 bg-clip-text text-transparent underline decoration-indigo-200 underline-offset-8">
-                  Loan Ledger
-                </h1>
-                <p className="text-gray-600 mt-4 flex items-center">
-                  <BookOpenIcon className="h-4 w-4 mr-2 text-indigo-500" />
-                  Audit history for EMI, Principal, and Penalty transactions
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <Button variant="outline" className="h-12 border-indigo-200 text-indigo-700 hover:bg-indigo-50 shadow-sm">
-                <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
-                Statement (PDF)
+              <Button className="h-9 bg-slate-800 hover:bg-slate-900 text-white rounded-xl px-4 font-bold transition-all shadow-sm">
+                <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
+                Export Audit Log
               </Button>
             </div>
+          }
+        />
+
+        {/* Dashboard Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <StatCard
+            title="Total Capital Recovered"
+            value={formatCurrency(totalRecovered)}
+            icon={CheckBadgeIcon}
+            trend={{ value: "Principal + Interest", isPositive: true }}
+            className="border-primary"
+          />
+          <StatCard
+            title="Active System Dues"
+            value={formatCurrency(pendingDues)}
+            icon={ShieldExclamationIcon}
+            trend={{ value: "Unpaid cycles", isPositive: false }}
+            className="border-orange-500"
+          />
+          <StatCard
+            title="Penalty Yield"
+            value={formatCurrency(penaltyVolume)}
+            icon={BanknotesIcon}
+            trend={{ value: "Late fee volume", isPositive: true }}
+            className="border-rose-500"
+          />
+        </div>
+
+        {/* Filter Toolbar */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-wrap items-center gap-4">
+          <div className="relative flex-1 min-w-[300px]">
+            <MagnifyingGlassIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Input
+              placeholder="Search by account#, borrower name, or narrative..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 h-10 border-slate-200 bg-slate-50/50 focus:bg-white rounded-xl text-sm transition-all"
+            />
           </div>
 
-          {/* Stats Bar */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="bg-gradient-to-br from-indigo-600 to-indigo-700 text-white shadow-lg overflow-hidden relative">
-              <CardContent className="p-6">
-                <p className="text-indigo-100 text-sm font-medium">Total Recovered</p>
-                <p className="text-3xl font-bold mt-1">
-                  {formatCurrency(transactions.filter(t => ['EMI', 'PRINCIPAL_PAYMENT'].includes(t.type)).reduce((sum, t) => sum + t.amount, 0))}
-                </p>
-                <CurrencyDollarIcon className="absolute -bottom-2 -right-2 h-20 w-20 text-white/10" />
-              </CardContent>
-            </Card>
+          <div className="flex items-center gap-2">
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="h-10 w-48 border-slate-200 bg-slate-50/50 rounded-xl font-medium">
+                <SelectValue placeholder="Classification" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Classifications</SelectItem>
+                <SelectItem value="emi">EMI Payment</SelectItem>
+                <SelectItem value="principal_payment">Principal Recovery</SelectItem>
+                <SelectItem value="penalty">Penalty Charge</SelectItem>
+                <SelectItem value="interest">Yield Accrual</SelectItem>
+                <SelectItem value="emi_due">Cycle Due Marker</SelectItem>
+              </SelectContent>
+            </Select>
 
-            <Card className="bg-white/80 backdrop-blur-sm border-orange-100 shadow-lg">
-              <CardContent className="p-6">
-                <p className="text-orange-600 text-sm font-medium">Pending Dues</p>
-                <p className="text-3xl font-bold mt-1 text-slate-800">
-                  {formatCurrency(transactions.filter(t => t.type === 'EMI_DUE').reduce((sum, t) => sum + t.amount, 0))}
-                </p>
-                <ShieldExclamationIcon className="absolute top-4 right-4 h-6 w-6 text-orange-400" />
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white/80 backdrop-blur-sm border-red-100 shadow-lg">
-              <CardContent className="p-6">
-                <p className="text-red-600 text-sm font-medium">Penalties Collected</p>
-                <p className="text-3xl font-bold mt-1 text-slate-800">
-                  {formatCurrency(transactions.filter(t => t.type === 'PENALTY').reduce((sum, t) => sum + t.amount, 0))}
-                </p>
-              </CardContent>
-            </Card>
+            <div className="flex items-center border border-slate-200 rounded-xl bg-slate-50/50 px-2 h-10">
+              <CalendarIcon className="h-4 w-4 text-slate-400 mr-2" />
+              <input 
+                type="date" 
+                value={dateRange.start} 
+                onChange={(e) => setDateRange({...dateRange, start: e.target.value})}
+                className="bg-transparent border-none text-xs font-bold text-slate-700 outline-none w-28"
+              />
+              <span className="text-slate-300 mx-2">—</span>
+              <input 
+                type="date" 
+                value={dateRange.end} 
+                onChange={(e) => setDateRange({...dateRange, end: e.target.value})}
+                className="bg-transparent border-none text-xs font-bold text-slate-700 outline-none w-28"
+              />
+            </div>
           </div>
+        </div>
 
-          {/* Filters */}
-          <Card className="bg-white/60 backdrop-blur-sm shadow-sm border-indigo-50">
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
-                  <div className="relative">
-                    <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      placeholder="Acc No, Name, Desc..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 h-10 shadow-sm transition-all focus:ring-indigo-500"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Transaction Type</label>
-                  <Select value={typeFilter} onValueChange={setTypeFilter}>
-                    <SelectTrigger className="h-10 shadow-sm">
-                      <SelectValue placeholder="All Types" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Types</SelectItem>
-                      <SelectItem value="emi">EMI Payment</SelectItem>
-                      <SelectItem value="principal_payment">Principal Recovery</SelectItem>
-                      <SelectItem value="penalty">Penalty Charge</SelectItem>
-                      <SelectItem value="interest">Interest Charge</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">From Date</label>
-                  <Input
-                    type="date"
-                    value={dateRange.start}
-                    onChange={(e) => setDateRange({...dateRange, start: e.target.value})}
-                    className="h-10 shadow-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">To Date</label>
-                  <Input
-                    type="date"
-                    value={dateRange.end}
-                    onChange={(e) => setDateRange({...dateRange, end: e.target.value})}
-                    className="h-10 shadow-sm"
-                  />
-                </div>
+        {/* Ledger Table */}
+        <Card className="border-slate-200 shadow-sm overflow-hidden">
+          <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-8 h-16 flex flex-row items-center justify-between">
+            <CardTitle className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
+              <BookOpenIcon className="h-4 w-4 mr-2 text-primary" />
+              Historical Portfolio Logs
+            </CardTitle>
+            <Badge className="bg-indigo-50 text-indigo-700 border-none font-bold text-[10px] uppercase">
+              {filteredTransactions.length} Verified Entries
+            </Badge>
+          </CardHeader>
+          <div className="overflow-x-auto">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-4">
+                <div className="h-10 w-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Reconstructing Logs...</p>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Ledger Table */}
-          <Card className="bg-white shadow-xl border-indigo-50 overflow-hidden">
-            <CardHeader className="flex flex-row items-center justify-between border-b border-gray-100 bg-slate-50/50 pb-6 px-6">
-              <CardTitle className="text-xl font-semibold flex items-center text-slate-800">
-                <DocumentTextIcon className="h-5 w-5 mr-3 text-indigo-500" />
-                Transaction History
-              </CardTitle>
-              <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-100 px-4 py-1 font-semibold">
-                {filteredTransactions.length} Transactions
-              </Badge>
-            </CardHeader>
-            <CardContent className="p-0">
-              {loading ? (
-                <div className="text-center py-24 bg-white/40">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-                  <p className="mt-6 text-slate-600 font-medium">Reconstruction transaction audit...</p>
+            ) : filteredTransactions.length === 0 ? (
+              <div className="text-center py-20">
+                <div className="h-16 w-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <DocumentTextIcon className="h-8 w-8 text-slate-300" />
                 </div>
-              ) : filteredTransactions.length > 0 ? (
-                <Table>
-                  <TableHeader className="bg-slate-50/80">
-                    <TableRow className="hover:bg-transparent border-b border-slate-200">
-                      <TableHead className="font-bold text-slate-900 h-14 px-6">Date</TableHead>
-                      <TableHead className="font-bold text-slate-900 h-14">Account</TableHead>
-                      <TableHead className="font-bold text-slate-900 h-14">Customer</TableHead>
-                      <TableHead className="font-bold text-slate-900 h-14">Category</TableHead>
-                      <TableHead className="font-bold text-slate-900 h-14 text-right">Amount</TableHead>
-                      <TableHead className="font-bold text-slate-900 h-14 text-right">Outstanding</TableHead>
-                      <TableHead className="font-bold text-slate-900 h-14 px-6">Notes</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredTransactions.map((tx) => (
-                      <TableRow key={tx.id} className="hover:bg-indigo-50/30 transition-colors border-b border-slate-100">
-                        <TableCell className="whitespace-nowrap px-6">
-                          <div className="flex items-center text-slate-700 font-medium">
-                            <CalendarIcon className="h-4 w-4 mr-2 text-slate-400" />
-                            {new Date(tx.transactionDate).toLocaleDateString('en-IN', { 
-                              day: '2-digit', 
-                              month: 'short', 
-                              year: 'numeric' 
-                            })}
+                <h3 className="text-sm font-bold text-slate-900 uppercase">No records resolved</h3>
+                <p className="text-xs text-slate-500 mt-2 max-w-xs mx-auto leading-relaxed">Modify your temporal markers or search tokens to locate specific repayment records.</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader className="bg-slate-50/30">
+                  <TableRow>
+                    <TableHead className="px-8 text-[10px] font-black uppercase text-slate-400 h-12 tracking-widest">Temporal Marker</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase text-slate-400 h-12 tracking-widest">Borrower / Instrument</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase text-slate-400 h-12 tracking-widest text-center">Protocol</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase text-slate-400 h-12 tracking-widest text-right">Magnitude</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase text-slate-400 h-12 tracking-widest text-right">Outstanding</TableHead>
+                    <TableHead className="px-8 text-[10px] font-black uppercase text-slate-400 h-12 tracking-widest">Narrative</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredTransactions.map((tx) => {
+                    const isInward = ['EMI', 'PRINCIPAL_PAYMENT', 'deposit'].some(t => tx.type.toUpperCase().includes(t))
+                    return (
+                      <TableRow key={tx.id} className="hover:bg-slate-50/50 transition-colors border-b border-slate-50">
+                        <TableCell className="px-8 py-4">
+                          <div className="text-xs font-bold text-slate-900">
+                            {new Date(tx.transactionDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </div>
+                          <div className="text-[10px] font-medium text-slate-400 tracking-tighter mt-0.5 uppercase">
+                            Cycle Marker
                           </div>
                         </TableCell>
-                        <TableCell className="font-mono text-xs font-bold text-indigo-700 tracking-tight">
-                          {tx.account.accountNumber}
-                        </TableCell>
-                        <TableCell className="font-semibold text-slate-800">
-                          {tx.account.customer.name}
-                        </TableCell>
                         <TableCell>
-                          <Badge className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-sm ${getTransactionTypeColor(tx.type)}`}>
+                          <div className="text-xs font-bold text-slate-900">{tx.account.customer.name}</div>
+                          <div className="text-[10px] font-black text-primary uppercase tracking-widest mt-0.5 font-mono">{tx.account.accountNumber}</div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 border-none ${
+                            tx.type.toUpperCase() === 'PENALTY' ? 'bg-rose-50 text-rose-700' :
+                            tx.type.toUpperCase() === 'EMI_DUE' ? 'bg-orange-50 text-orange-700' :
+                            isInward ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'
+                          }`}>
                             {tx.type.replace('_', ' ')}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <span className={`font-bold text-lg ${
-                            ['EMI', 'PRINCIPAL_PAYMENT'].includes(tx.type.toUpperCase()) 
-                              ? 'text-emerald-600' 
-                              : 'text-red-600'
+                          <span className={`text-xs font-black tracking-tight ${
+                            isInward ? 'text-emerald-600' : 'text-rose-600'
                           }`}>
-                            {formatCurrency(tx.amount)}
+                            {isInward ? '+' : ''}{formatCurrency(tx.amount)}
                           </span>
                         </TableCell>
-                        <TableCell className="text-right font-bold text-slate-900 tabular-nums">
+                        <TableCell className="text-right text-xs font-black text-slate-900 tracking-tight">
                           {formatCurrency(tx.balance || 0)}
                         </TableCell>
-                        <TableCell className="text-slate-500 text-xs px-6 max-w-xs truncate">
-                          {tx.description || tx.reference || '—'}
+                        <TableCell className="px-8 max-w-[200px]">
+                          <div className="text-[11px] text-slate-600 leading-relaxed truncate group-hover:whitespace-normal">
+                            {tx.description || tx.reference || 'Automated Portfolio Entry'}
+                          </div>
                         </TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <div className="text-center py-32 bg-white/40">
-                  <div className="h-20 w-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <DocumentTextIcon className="h-10 w-10 text-indigo-300" />
-                  </div>
-                  <h3 className="text-xl font-bold text-slate-900">No loan records found</h3>
-                  <p className="text-slate-500 mt-3 max-w-sm mx-auto">
-                    {searchTerm || typeFilter !== 'all' 
-                      ? 'No transactions match your search parameters. Try clearing the filters.' 
-                      : 'Audit records will appear here as EMIs and Principal payments are processed.'}
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+        </Card>
       </div>
     </DashboardLayout>
   )

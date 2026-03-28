@@ -4,352 +4,174 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
+import { StatCard } from "@/components/ui/stat-card"
+import { PageHeader } from "@/components/ui/page-header"
+import { TableActions } from "@/components/ui/table-actions"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  ArrowLeftIcon,
-  BuildingLibraryIcon,
-  CurrencyDollarIcon,
-  CalendarIcon,
-  DocumentTextIcon,
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-  PlusIcon,
-  EyeIcon,
-  PencilIcon,
-  TrashIcon,
-  SparklesIcon,
-  MagnifyingGlassIcon,
-  ChartBarIcon,
-  CreditCardIcon
+  BuildingLibraryIcon, CurrencyDollarIcon, CheckCircleIcon, PlusIcon,
+  EyeIcon, PencilIcon, MagnifyingGlassIcon, ChartBarIcon, CalendarIcon,
+  CreditCardIcon,
 } from "@heroicons/react/24/outline"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 
 interface LoanAccount {
-  id: string
-  accountNumber: string
-  customerId: string
-  accountType: string
-  principalAmount: number
-  interestRate: number
-  tenure: number
-  startDate: string
-  maturityDate: string
-  status: string
-  customer: {
-    id: string
-    name: string
-    email: string
-    phone: string
-  }
-  accountRules: any
-  _count: {
-    transactions: number
-  }
+  id: string; accountNumber: string; customerId: string; accountType: string;
+  principalAmount: number; interestRate: number; tenure: number;
+  startDate: string; maturityDate: string; status: string;
+  customer: { id: string; name: string; email: string; phone: string };
+  accountRules: any; _count: { transactions: number }
+}
+
+const STATUS_CLS: Record<string, string> = {
+  active:           "badge-status badge-status-active",
+  maturity_pending: "badge-status badge-status-matured",
+  closing_pending:  "badge-status badge-status-matured",
+  closed:           "badge-status badge-status-closed",
+  overdue:          "badge-status badge-status-overdue",
 }
 
 export default function LoansPage() {
   const router = useRouter()
-  const [loanAccounts, setLoanAccounts] = useState<LoanAccount[]>([])
+  const [loans, setLoans] = useState<LoanAccount[]>([])
   const [loading, setLoading] = useState(false)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
-
-  const fetchLoanAccounts = async () => {
-    try {
-      setLoading(true)
-      const response = await fetch('/api/accounts?accountType=LOAN')
-      if (response.ok) {
-        const data = await response.json()
-        setLoanAccounts(data.accounts || [])
-      }
-    } catch (error) {
-      console.error('Failed to fetch loan accounts:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
-    fetchLoanAccounts()
+    const fetch_ = async () => {
+      try {
+        setLoading(true)
+        const res = await fetch('/api/accounts?accountType=LOAN')
+        if (res.ok) { const d = await res.json(); setLoans(d.accounts || []) }
+      } catch (e) { console.error(e) } finally { setLoading(false) }
+    }
+    fetch_()
   }, [])
 
-  const showMessage = (text: string, type: 'success' | 'error') => {
-    setMessage({ text, type })
-    setTimeout(() => setMessage(null), 5000)
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'active': return 'bg-green-100 text-green-700 border-green-200'
-      case 'maturity_pending': return 'bg-yellow-100 text-yellow-700 border-yellow-200'
-      case 'closing_pending': return 'bg-orange-100 text-orange-700 border-orange-200'
-      case 'closed': return 'bg-gray-100 text-gray-700 border-gray-200'
-      default: return 'bg-blue-100 text-blue-700 border-blue-200'
-    }
-  }
-
-  const calculateEMI = (principal: number, rate: number, tenure: number) => {
-    const monthlyRate = rate / 12 / 100
-    const emi = principal * monthlyRate * Math.pow(1 + monthlyRate, tenure) / (Math.pow(1 + monthlyRate, tenure) - 1)
+  const calcEMI = (p: number, r: number, t: number) => {
+    const mr = r / 12 / 100
+    const emi = p * mr * Math.pow(1 + mr, t) / (Math.pow(1 + mr, t) - 1)
     return isNaN(emi) ? 0 : emi
   }
 
-  const filteredAccounts = loanAccounts.filter(account =>
-    account.accountNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    account.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    account.customer.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const filtered = loans.filter(a =>
+    a.accountNumber.toLowerCase().includes(search.toLowerCase()) ||
+    a.customer.name.toLowerCase().includes(search.toLowerCase()) ||
+    a.customer.email.toLowerCase().includes(search.toLowerCase())
   )
+
+  const totalPrincipal = filtered.reduce((s, a) => s + a.principalAmount, 0)
+  const avgRate = filtered.length > 0 ? filtered.reduce((s, a) => s + a.interestRate, 0) / filtered.length : 0
 
   return (
     <DashboardLayout>
-      <div className="p-6 min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
-        <div className="max-w-7xl mx-auto space-y-6">
-          {/* Message */}
-          {message && (
-            <div className={`rounded-xl p-4 flex items-start space-x-3 shadow-sm border ${
-              message.type === 'success' 
-                ? 'bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 text-green-800' 
-                : 'bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 text-red-800'
-            }`}>
-              <div className={`flex-shrink-0 ${
-                message.type === 'success' ? 'text-green-600' : 'text-red-600'
-              }`}>
-                {message.type === 'success' ? (
-                  <CheckCircleIcon className="h-6 w-6" />
-                ) : (
-                  <ExclamationTriangleIcon className="h-6 w-6" />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm">{message.text}</p>
-                <p className="text-xs mt-1 opacity-75">
-                  {message.type === 'success' ? 'Operation completed successfully' : 'Please try again'}
-                </p>
-              </div>
-              <button
-                onClick={() => setMessage(null)}
-                className="flex-shrink-0 p-1 rounded-lg hover:bg-black/5 transition-colors"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+      <div className="space-y-6 animate-fade-in-up">
+        <PageHeader
+          title="Loans"
+          subtitle="Manage all loan accounts and EMI schedules"
+          actions={
+            <Button onClick={() => router.push('/dashboard/loans/create')} className="finance-gradient-primary text-white h-9 px-4 rounded-xl font-medium shadow-sm">
+              <PlusIcon className="h-4 w-4 mr-2" /> Create Loan
+            </Button>
+          }
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+          <StatCard title="Total Loans" value={filtered.length} subtitle="All accounts" icon={<CreditCardIcon />} iconVariant="primary" borderVariant="primary" />
+          <StatCard title="Active Loans" value={filtered.filter(a => a.status?.toLowerCase() === 'active').length} subtitle="Currently active" icon={<CheckCircleIcon />} iconVariant="success" borderVariant="success" />
+          <StatCard title="Total Principal" value={`₹${(totalPrincipal / 100000).toFixed(1)}L`} subtitle="Outstanding exposure" icon={<CurrencyDollarIcon />} iconVariant="danger" borderVariant="danger" />
+          <StatCard title="Avg Interest Rate" value={`${avgRate.toFixed(1)}%`} subtitle="Across all loans" icon={<ChartBarIcon />} iconVariant="warning" borderVariant="warning" />
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+          <div className="relative max-w-md">
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Input placeholder="Search by account number or customer..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10 h-10 border-slate-200 bg-slate-50 focus:bg-white rounded-lg text-sm" />
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100">
+            <h2 className="text-sm font-semibold text-slate-800">Loan Accounts <span className="ml-1 text-xs font-normal text-slate-400">({filtered.length})</span></h2>
+          </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center py-16 gap-3">
+              <div className="h-5 w-5 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
+              <p className="text-sm text-slate-400">Loading accounts...</p>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="h-14 w-14 rounded-2xl finance-icon-bg flex items-center justify-center mx-auto mb-4"><CreditCardIcon className="h-7 w-7" /></div>
+              <h3 className="text-sm font-semibold text-slate-800">No loan accounts found</h3>
+              <p className="text-xs text-slate-400 mt-1">{search ? 'Try adjusting your search' : 'Get started by creating your first loan'}</p>
+              {!search && (
+                <Button onClick={() => router.push('/dashboard/loans/create')} className="mt-5 finance-gradient-primary text-white h-8 px-4 text-xs rounded-lg">
+                  <PlusIcon className="h-3.5 w-3.5 mr-1.5" /> Create Loan Account
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50/60 hover:bg-slate-50 border-slate-100">
+                    <TableHead className="px-5 py-3 text-xs font-semibold text-slate-600 min-w-[150px]">Account</TableHead>
+                    <TableHead className="px-4 py-3 text-xs font-semibold text-slate-600 min-w-[180px]">Customer</TableHead>
+                    <TableHead className="px-4 py-3 text-xs font-semibold text-slate-600 min-w-[120px] text-right">Principal</TableHead>
+                    <TableHead className="px-4 py-3 text-xs font-semibold text-slate-600 min-w-[80px] text-right">Rate</TableHead>
+                    <TableHead className="px-4 py-3 text-xs font-semibold text-slate-600 min-w-[110px] text-right">Monthly EMI</TableHead>
+                    <TableHead className="px-4 py-3 text-xs font-semibold text-slate-600 min-w-[80px]">Tenure</TableHead>
+                    <TableHead className="px-4 py-3 text-xs font-semibold text-slate-600 min-w-[90px]">Status</TableHead>
+                    <TableHead className="px-4 py-3 w-14 text-right text-xs font-semibold text-slate-600">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filtered.map(account => {
+                    const emi = calcEMI(account.principalAmount, account.interestRate, account.tenure)
+                    const sk = account.status?.toLowerCase() || 'active'
+                    const statusCls = STATUS_CLS[sk] ?? "badge-status badge-status-closed"
+                    return (
+                      <TableRow key={account.id} className="hover:bg-slate-50 border-slate-100 transition-colors">
+                        <TableCell className="px-5 py-3.5">
+                          <div className="font-mono text-sm font-semibold text-slate-800">{account.accountNumber}</div>
+                          <div className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                            <CalendarIcon className="h-3 w-3" />
+                            {new Date(account.startDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: '2-digit' })}
+                          </div>
+                        </TableCell>
+                        <TableCell className="px-4 py-3.5">
+                          <div className="text-sm font-semibold text-slate-800">{account.customer.name}</div>
+                          <div className="text-xs text-slate-400">{account.customer.email}</div>
+                        </TableCell>
+                        <TableCell className="px-4 py-3.5 text-right">
+                          <span className="text-sm font-bold text-slate-900 tabular-nums">₹{account.principalAmount.toLocaleString('en-IN')}</span>
+                        </TableCell>
+                        <TableCell className="px-4 py-3.5 text-right">
+                          <span className="text-sm font-semibold text-slate-800 tabular-nums">{account.interestRate}%</span>
+                        </TableCell>
+                        <TableCell className="px-4 py-3.5 text-right">
+                          <span className="text-sm font-semibold text-slate-800 tabular-nums">₹{emi.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
+                        </TableCell>
+                        <TableCell className="px-4 py-3.5">
+                          <span className="text-sm text-slate-600 tabular-nums">{account.tenure}m</span>
+                        </TableCell>
+                        <TableCell className="px-4 py-3.5">
+                          <span className={statusCls}>{account.status || 'ACTIVE'}</span>
+                        </TableCell>
+                        <TableCell className="px-4 py-3.5 text-right">
+                          <TableActions actions={[
+                            { label: "View Details", icon: <EyeIcon />, onClick: () => router.push(`/dashboard/loans/${account.id}`) },
+                            { label: "Edit", icon: <PencilIcon />, onClick: () => router.push(`/dashboard/loans/${account.id}/edit`) },
+                          ]} />
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
             </div>
           )}
-
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push('/dashboard')}
-                className="h-10 w-10 p-0 rounded-full hover:bg-blue-50 transition-colors"
-              >
-                <ArrowLeftIcon className="h-5 w-5" />
-              </Button>
-              <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Loans
-                </h1>
-                <p className="text-gray-600 mt-2 flex items-center">
-                  <SparklesIcon className="h-4 w-4 mr-2 text-blue-500" />
-                  Manage all loan accounts
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <div className="relative">
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search loans..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-64"
-                />
-              </div>
-              <Button
-                onClick={() => router.push('/dashboard/loans/create')}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg h-12 px-6"
-              >
-                <PlusIcon className="h-5 w-5 mr-2" />
-                Create Loan
-              </Button>
-            </div>
-          </div>
-
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <Card className="bg-white/60 backdrop-blur-sm">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Total Loans</p>
-                    <p className="text-3xl font-bold text-gray-900">{filteredAccounts.length}</p>
-                  </div>
-                  <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
-                    <BuildingLibraryIcon className="h-7 w-7 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white/60 backdrop-blur-sm">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Active Loans</p>
-                    <p className="text-3xl font-bold text-green-600">
-                      {filteredAccounts.filter(acc => acc.status === 'ACTIVE').length}
-                    </p>
-                  </div>
-                  <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center shadow-lg">
-                    <CheckCircleIcon className="h-7 w-7 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white/60 backdrop-blur-sm">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Total Principal</p>
-                    <p className="text-3xl font-bold text-red-600">
-                      ₹{filteredAccounts.reduce((sum, acc) => sum + acc.principalAmount, 0).toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg">
-                    <CurrencyDollarIcon className="h-7 w-7 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white/60 backdrop-blur-sm">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Avg Interest Rate</p>
-                    <p className="text-3xl font-bold text-orange-600">
-                      {filteredAccounts.length > 0 
-                        ? (filteredAccounts.reduce((sum, acc) => sum + acc.interestRate, 0) / filteredAccounts.length).toFixed(1)
-                        : '0'}%
-                    </p>
-                  </div>
-                  <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg">
-                    <ChartBarIcon className="h-7 w-7 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Loan Accounts Table */}
-          <Card className="bg-white/60 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="text-xl font-semibold">Loan Accounts</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="mt-2 text-gray-600">Loading loan accounts...</p>
-                </div>
-              ) : filteredAccounts.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Account Number</TableHead>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Principal</TableHead>
-                      <TableHead>Interest Rate</TableHead>
-                      <TableHead>EMI</TableHead>
-                      <TableHead>Tenure</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredAccounts.map((account) => {
-                      const emi = calculateEMI(account.principalAmount, account.interestRate, account.tenure)
-                      return (
-                        <TableRow key={account.id} className="hover:bg-gray-50/50">
-                          <TableCell className="font-medium">{account.accountNumber}</TableCell>
-                          <TableCell>
-                            <div>
-                              <p className="font-medium">{account.customer.name}</p>
-                              <p className="text-sm text-gray-500">{account.customer.email}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell>₹{account.principalAmount.toLocaleString()}</TableCell>
-                          <TableCell>{account.interestRate}%</TableCell>
-                          <TableCell>₹{emi.toLocaleString()}</TableCell>
-                          <TableCell>{account.tenure} months</TableCell>
-                          <TableCell>
-                            <Badge className={`text-xs ${getStatusColor(account.status)}`}>
-                              {account.status || 'ACTIVE'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center space-x-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => router.push(`/dashboard/loans/${account.id}`)}
-                              >
-                                <EyeIcon className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => router.push(`/dashboard/loans/${account.id}/edit`)}
-                              >
-                                <PencilIcon className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      )
-                    })}
-                  </TableBody>
-                </Table>
-              ) : (
-                <div className="text-center py-8">
-                  <BuildingLibraryIcon className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">No loan accounts found</h3>
-                  <p className="mt-1 text-sm text-gray-500">
-                    {searchTerm ? 'Try adjusting your search terms' : 'Get started by creating your first loan account'}
-                  </p>
-                  <div className="mt-6">
-                    <Button
-                      onClick={() => router.push('/dashboard/loans/create')}
-                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                    >
-                      <PlusIcon className="h-4 w-4 mr-2" />
-                      Create Loan Account
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </div>
       </div>
     </DashboardLayout>

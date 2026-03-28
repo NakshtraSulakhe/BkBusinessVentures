@@ -1,245 +1,182 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter } from "next/navigation"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { AmountDisplay, StatusBadge, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui"
+import { StatCard } from "@/components/ui/stat-card"
+import { PageHeader } from "@/components/ui/page-header"
+import { AmountDisplay } from "@/components/ui"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useAuth } from "@/contexts/auth-context"
-import { 
-  BuildingLibraryIcon, 
-  CurrencyDollarIcon, 
-  ChartBarIcon, 
-  ArrowTrendingUpIcon, 
-  ArrowTrendingDownIcon, 
-  BanknotesIcon, 
-  CreditCardIcon, 
-  SparklesIcon, 
-  CheckCircleIcon, 
-  ExclamationTriangleIcon, 
+import {
+  BanknotesIcon,
+  CurrencyDollarIcon,
+  ChartBarIcon,
+  ArrowTrendingUpIcon,
+  ArrowTrendingDownIcon,
+  ExclamationTriangleIcon,
   PlusIcon,
   ArrowRightIcon,
   CalendarIcon,
   ClockIcon,
   ShieldCheckIcon,
-  NoSymbolIcon,
   RocketLaunchIcon,
-  FunnelIcon,
   ArrowPathIcon,
   QueueListIcon,
-  UserIcon as UserGroupIcon
+  UserGroupIcon as UserIcon,
+  BuildingLibraryIcon,
+  FunnelIcon,
+  SparklesIcon,
+  WalletIcon,
+  BriefcaseIcon,
+  ArrowUpRightIcon,
+  CheckCircleIcon,
+  BoltIcon
 } from "@heroicons/react/24/outline"
+import { Badge } from "@/components/ui/badge"
 
-// Simple Bar Chart Component
-function SimpleBarChart({ data, title, color }: { data: { label: string, value: number }[], title: string, color: string }) {
+// ─── Premium Visualizations ───────────────────────────────────────────────────
+
+function DashboardChartLine({ data }: { data: { label: string; value: number }[] }) {
   const maxValue = Math.max(...data.map(d => d.value))
-  
-  return (
-    <div className="space-y-4">
-      <h4 className="text-sm font-semibold text-foreground">{title}</h4>
-      <div className="space-y-3">
-        {data.map((item, index) => (
-          <div key={index} className="flex items-center gap-3">
-            <span className="text-xs text-muted-foreground w-16 text-right font-medium">{item.label}</span>
-            <div className="flex-1 bg-muted/50 rounded-full h-8 relative overflow-hidden shadow-inner">
-              <div 
-                className={`h-full rounded-full transition-all duration-700 ease-out shadow-lg ${
-                  color === 'success' ? 'bg-gradient-to-r from-emerald-400 to-emerald-600' : 
-                  color === 'danger' ? 'bg-gradient-to-r from-red-400 to-red-600' : 
-                  color === 'warning' ? 'bg-gradient-to-r from-amber-400 to-amber-600' : 
-                  'bg-gradient-to-r from-blue-400 to-blue-600'
-                }`}
-                style={{ width: `${(item.value / maxValue) * 100}%` }}
-              >
-                <div className="h-full bg-white/20 animate-pulse" />
-              </div>
-              <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white drop-shadow-lg">
-                {item.value.toLocaleString()}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-// Simple Pie Chart Component
-function SimplePieChart({ data, title }: { data: { label: string, value: number, color: string }[], title: string }) {
-  const total = data.reduce((sum, item) => sum + item.value, 0)
-  
-  return (
-    <div className="space-y-4">
-      <h4 className="text-sm font-semibold text-foreground">{title}</h4>
-      <div className="flex items-center justify-center">
-        <div className="relative w-36 h-36">
-          <svg className="w-36 h-36 transform -rotate-90 drop-shadow-lg">
-            {data.map((item, index) => {
-              const percentage = (item.value / total) * 100
-              const strokeDasharray = `${percentage} ${100 - percentage}`
-              const offset = data.slice(0, index).reduce((sum, prev) => sum + (prev.value / total) * 100, 0)
-              
-              return (
-                <circle
-                  key={index}
-                  cx="72"
-                  cy="72"
-                  r="60"
-                  fill="none"
-                  stroke={item.color}
-                  strokeWidth="18"
-                  strokeDasharray={strokeDasharray}
-                  strokeDashoffset={offset}
-                  className="transition-all duration-700 ease-out hover:opacity-80"
-                  style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}
-                />
-              )
-            })}
-          </svg>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center">
-              <span className="text-xl font-bold text-foreground">{total}</span>
-              <span className="text-xs text-muted-foreground block">Total</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="space-y-2">
-        {data.map((item, index) => (
-          <div key={index} className="flex items-center justify-between text-xs p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: item.color }} />
-              <span className="text-muted-foreground font-medium">{item.label}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-foreground">{item.value}%</span>
-              <span className="text-muted-foreground">({Math.round((item.value / total) * 100)}%)</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-// Simple Line Chart Component
-function SimpleLineChart({ data, title }: { data: { label: string, value: number }[], title: string }) {
-  const maxValue = Math.max(...data.map(d => d.value))
-  const points = data.map((item, index) => {
-    const x = (index / (data.length - 1)) * 100
+  const points = data.map((item, i) => {
+    const x = (i / (data.length - 1)) * 100
     const y = 100 - (item.value / maxValue) * 100
     return `${x},${y}`
-  }).join(' ')
-  
+  }).join(" ")
+
   return (
     <div className="space-y-4">
-      <h4 className="text-sm font-semibold text-foreground">{title}</h4>
-      <div className="h-36 relative bg-gradient-to-b from-primary/5 to-transparent rounded-lg p-2">
-        <svg className="w-full h-full">
-          {/* Grid lines */}
-          {[...Array(4)].map((_, i) => (
-            <line
-              key={i}
-              x1="0"
-              y1={`${(i + 1) * 25}%`}
-              x2="100%"
-              y2={`${(i + 1) * 25}%`}
-              stroke="hsl(var(--border))"
-              strokeWidth="1"
-              strokeDasharray="2,2"
-              className="opacity-30"
-            />
-          ))}
-          
-          {/* Area fill */}
+      <div className="h-40 relative group">
+        <svg className="w-full h-full overflow-visible">
           <defs>
-            <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="hsl(217 91% 60%)" stopOpacity="0.3" />
-              <stop offset="100%" stopColor="hsl(217 91% 60%)" stopOpacity="0.05" />
+            <linearGradient id="dashboardLineGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.1" />
+              <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.0" />
             </linearGradient>
           </defs>
-          
-          <polygon
-            points={`${points} 100,100 0,100`}
-            fill="url(#areaGradient)"
-            className="transition-all duration-700"
-          />
-          
-          {/* Line */}
+          <polygon points={`${points} 100,100 0,100`} fill="url(#dashboardLineGrad)" />
           <polyline
             points={points}
             fill="none"
-            stroke="hsl(217 91% 60%)"
+            stroke="var(--primary)"
             strokeWidth="3"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="transition-all duration-700 drop-shadow-lg"
+            className="drop-shadow-sm"
           />
-          
-          {/* Data points */}
-          {data.map((item, index) => {
-            const x = (index / (data.length - 1)) * 100
+          {data.map((item, i) => {
+            const x = (i / (data.length - 1)) * 100
             const y = 100 - (item.value / maxValue) * 100
             return (
-              <g key={index}>
-                <circle
-                  cx={`${x}%`}
-                  cy={`${y}%`}
-                  r="6"
-                  fill="white"
-                  stroke="hsl(217 91% 60%)"
-                  strokeWidth="3"
-                  className="transition-all duration-700 hover:r-8 cursor-pointer"
-                />
-                <circle
-                  cx={`${x}%`}
-                  cy={`${y}%`}
-                  r="3"
-                  fill="hsl(217 91% 60%)"
-                  className="transition-all duration-700"
-                />
-              </g>
+              <circle
+                key={i}
+                cx={`${x}%`}
+                cy={`${y}%`}
+                r="4"
+                fill="white"
+                stroke="var(--primary)"
+                strokeWidth="2.5"
+                className="transition-all duration-300 hover:r-6 cursor-pointer"
+              />
             )
           })}
         </svg>
       </div>
-      <div className="flex justify-between text-xs text-muted-foreground font-medium">
-        {data.map((item, index) => (
-          <span key={index} className="px-2 py-1 bg-muted/50 rounded">{item.label}</span>
+      <div className="flex justify-between px-1">
+        {data.map((item, i) => (
+          <span key={i} className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.label}</span>
         ))}
       </div>
     </div>
   )
 }
 
-export default function Dashboard() {
+function DashboardChartDistribution({ data }: { data: { label: string; value: number; color: string }[] }) {
+  const total = data.reduce((s, d) => s + d.value, 0)
+  return (
+    <div className="flex items-center gap-8">
+      <div className="relative w-28 h-28 flex-shrink-0">
+        <svg className="w-28 h-28 -rotate-90">
+          {data.map((item, i) => {
+            const pct = (item.value / total) * 100
+            const offset = data.slice(0, i).reduce((s, p) => s + (p.value / total) * 100, 0)
+            return (
+              <circle
+                key={i}
+                cx="56" cy="56" r="44"
+                fill="none"
+                stroke={item.color}
+                strokeWidth="12"
+                strokeDasharray={`${pct} ${100 - pct}`}
+                strokeDashoffset={-offset}
+                className="transition-all duration-700"
+              />
+            )
+          })}
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-xl font-black text-slate-900 leading-none">{total}</span>
+          <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1">Total</span>
+        </div>
+      </div>
+      <div className="flex-1 space-y-2">
+        {data.map((item, i) => (
+          <div key={i} className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: item.color }} />
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">{item.label}</span>
+            </div>
+            <span className="text-[10px] font-black text-slate-900 tabular-nums">{Math.round((item.value / total) * 100)}%</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Quick Actions ───────────────────────────────────────────────────────────
+
+function ActionTile({ title, icon: Icon, onClick, color }: { title: string; icon: any; onClick: () => void; color?: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className="group flex flex-col items-center justify-center p-4 bg-white border border-slate-200 rounded-2xl hover:border-primary/40 hover:shadow-lg transition-all active:scale-[0.98]"
+    >
+      <div className={`h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform ${color}`}>
+        <Icon className="h-5 w-5" />
+      </div>
+      <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest transition-colors group-hover:text-primary">{title}</span>
+    </button>
+  )
+}
+
+// ─── Main Interface ──────────────────────────────────────────────────────────
+
+function DashboardContent() {
   const { user } = useAuth()
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<any>(null)
-  
-  // Quick Month/Year Selection for Suggestions Run
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+  const [selectedYear] = useState(new Date().getFullYear())
   const [running, setRunning] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    if (!user) router.push("/login")
-    else fetchSummary()
+    setMounted(true)
+    if (user) fetchSummary()
   }, [user])
 
   const fetchSummary = async () => {
     try {
       setLoading(true)
       const res = await fetch('/api/dashboard/summary')
-      if (res.ok) {
-        const d = await res.json()
-        setData(d)
-      }
-    } catch (error) {
-       console.error(error)
+      if (res.ok) setData(await res.json())
+    } catch (e) {
+      console.error(e)
     } finally {
       setLoading(false)
     }
@@ -257,387 +194,260 @@ export default function Dashboard() {
         fetchSummary()
         router.push('/dashboard/operations/suggestions')
       }
-    } catch (error) {
-       console.error(error)
+    } catch (e) {
+      console.error(e)
     } finally {
       setRunning(false)
     }
   }
 
-  if (!user || loading) return (
-     <DashboardLayout>
-        <div className="p-6 min-h-screen bg-slate-50 flex items-center justify-center">
-           <div className="text-center">
-              <div className="h-10 w-10 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin mx-auto" />
-              <p className="mt-4 text-slate-400 font-black uppercase tracking-widest text-xs italic">Syncing Financial Core...</p>
-           </div>
-        </div>
-     </DashboardLayout>
-  )
+  if (!mounted) return null
 
-  const summary = data?.summary || { totalBalance: 0, loanOutstanding: 0, depositsCount: 0, loanCount: 0, pendingSuggestions: 0, overdueEMI: 0, dueTodayEMI: 0 }
-
-  const stats = [
-    {
-      title: "Portfolio Deposits",
-      value: summary.totalBalance,
-      count: `${summary.depositsCount} Active Accounts`,
-      icon: BanknotesIcon,
-      description: "FD & RD Combined Exposure",
-      color: "success",
-      bgColor: "finance-success",
-      iconBg: "finance-icon-bg-success"
-    },
-    {
-      title: "Loan Book",
-      value: summary.loanOutstanding,
-      count: `${summary.loanCount} active loans`,
-      icon: CurrencyDollarIcon,
-      description: "Overall System Exposure",
-      color: "info",
-      bgColor: "finance-info",
-      iconBg: "finance-icon-bg"
-    },
-    {
-      title: "Overdue Alerts",
-      value: summary.overdueEMI,
-      count: "Critical Overdue EMIs",
-      icon: ExclamationTriangleIcon,
-      description: "Immediate Recovery Required",
-      color: "danger",
-      bgColor: "finance-danger",
-      iconBg: "finance-icon-bg-danger",
-      highlight: summary.overdueEMI > 0
-    },
-    {
-      title: "Pending Discovery",
-      value: summary.pendingSuggestions,
-      count: "Awaiting Verification",
-      icon: ClockIcon,
-      description: "Engine-generated Logs",
-      color: "warning",
-      bgColor: "finance-warning",
-      iconBg: "finance-icon-bg-warning",
-      highlight: summary.pendingSuggestions > 0
-    }
-  ]
+  const summary = data?.summary || {
+    totalBalance: 0, loanOutstanding: 0, depositsCount: 0,
+    loanCount: 0, pendingSuggestions: 0, overdueEMI: 0, dueTodayEMI: 0
+  }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-8">
-          {/* Page Header */}
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            <div>
-              <h1 className="text-2xl font-bold finance-text-gradient">Dashboard Overview</h1>
-              <p className="text-muted-foreground mt-1">Manage your banking portfolio and monitor financial performance</p>
+    <div className="space-y-6 animate-fade-in-up pb-20">
+      <PageHeader
+        title="Overview"
+        subtitle="A quick summary of all your customers, deposits, loans, and payments"
+        actions={
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-sm">
+              <CalendarIcon className="h-4 w-4 text-slate-400" />
+              <select
+                value={selectedMonth}
+                onChange={e => setSelectedMonth(parseInt(e.target.value))}
+                className="bg-transparent text-[10px] font-black text-slate-900 uppercase outline-none cursor-pointer"
+              >
+                {Array.from({ length: 12 }, (_, i) => (
+                  <option key={i + 1} value={i + 1}>
+                    {new Date(2000, i).toLocaleString('en-US', { month: 'short' }).toUpperCase()}
+                  </option>
+                ))}
+              </select>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={running}
+                onClick={handleQuickRun}
+                className="h-7 px-3 text-[10px] font-black uppercase text-primary hover:bg-primary hover:text-white transition-all rounded-lg"
+              >
+                {running ? <ArrowPathIcon className="h-3 w-3 animate-spin mr-1.5" /> : <RocketLaunchIcon className="h-3 w-3 mr-1.5" />}
+                Process Month
+              </Button>
             </div>
-            
-            <div className="flex flex-wrap items-center gap-3">
-               <div className="flex bg-card border border-border rounded-lg p-1.5 items-center">
-                  <div className="flex items-center px-4 space-x-2 border-r border-border">
-                     <CalendarIcon className="h-4 w-4 text-primary" />
-                     <select 
-                        value={selectedMonth} 
-                        onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                        className="bg-transparent text-sm font-medium outline-none pr-2"
-                     >
-                        {Array.from({length: 12}, (_, i) => (
-                           <option key={i+1} value={i+1}>{new Date(2000, i).toLocaleString('en-US', { month: 'short' })}</option>
-                        ))}
-                     </select>
-                  </div>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    disabled={running}
-                    onClick={handleQuickRun}
-                    className="ml-2 h-10 px-4 text-primary hover:bg-primary hover:text-primary-foreground"
-                  >
-                     {running ? <ArrowPathIcon className="h-4 w-4 animate-spin mr-2" /> : <RocketLaunchIcon className="h-4 w-4 mr-2" />}
-                     Generate Suggestions
-                  </Button>
-               </div>
-               
-               <Button
-                onClick={() => router.push('/dashboard/customers/create')}
-                className="finance-gradient-primary text-white hover:shadow-lg transition-all duration-200"
-               >
-                 <PlusIcon className="h-4 w-4 mr-2" />
-                 New Account
-               </Button>
-            </div>
+            <Button
+              onClick={() => router.push('/dashboard/customers/create')}
+              className="h-9 finance-gradient-primary text-white rounded-xl px-6 font-bold transition-all shadow-md hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <PlusIcon className="h-4 w-4 mr-2" />
+              Add Customer
+            </Button>
           </div>
+        }
+      />
 
-          {/* Dashboard Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {stats.map((stat, i) => (
-              <Card key={i} className={`finance-hover-lift transition-all duration-300 hover:shadow-xl ${stat.highlight ? 'ring-2 ring-destructive ring-offset-2 animate-pulse' : ''}`}>
-                <CardContent className={`p-6 ${stat.bgColor} bg-opacity-5 border-l-4`} style={{borderLeftColor: stat.color === 'success' ? 'hsl(160 84% 39%)' : stat.color === 'danger' ? 'hsl(0 72% 51%)' : stat.color === 'warning' ? 'hsl(38 92% 50%)' : 'hsl(217 91% 60%)'}}>
-                   <div className="flex items-center justify-between">
-                      <div className="space-y-2">
-                         <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
-                         <AmountDisplay amount={stat.value} size="xl" weight="bold" color={stat.color} />
-                         <p className={`text-xs font-medium ${
-                           stat.color === 'success' ? 'text-emerald-600 dark:text-emerald-400' : 
-                           stat.color === 'danger' ? 'text-red-600 dark:text-red-400' : 
-                           stat.color === 'warning' ? 'text-amber-600 dark:text-amber-400' : 
-                           'text-blue-600 dark:text-blue-400'
-                         }`}>
-                            {stat.count}
-                         </p>
-                      </div>
-                      <div className={`${stat.iconBg} h-12 w-12 rounded-lg flex items-center justify-center transition-transform duration-300 hover:scale-110`}>
-                        <stat.icon className="h-6 w-6" />
-                      </div>
-                   </div>
-                   <div className="mt-4 pt-4 border-t border-border">
-                      <p className={`text-xs flex items-center ${
-                        stat.color === 'success' ? 'text-emerald-700 dark:text-emerald-300' : 
-                        stat.color === 'danger' ? 'text-red-700 dark:text-red-300' : 
-                        stat.color === 'warning' ? 'text-amber-700 dark:text-amber-300' : 
-                        'text-blue-700 dark:text-blue-300'
-                      }`}>
-                         <ShieldCheckIcon className={`h-3 w-3 mr-2 ${
-                           stat.color === 'success' ? 'text-emerald-500' : 
-                           stat.color === 'danger' ? 'text-red-500' : 
-                           stat.color === 'warning' ? 'text-amber-500' : 
-                           'text-blue-500'
-                         }`} />
-                         {stat.description}
-                      </p>
-                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* Analytics & Graphs Section */}
-          <div className="grid lg:grid-cols-3 gap-8">
-            {/* Monthly Performance Trend */}
-            <Card className="finance-hover-lift">
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold flex items-center">
-                   <ChartBarIcon className="h-5 w-5 mr-3 text-primary" />
-                   Monthly Performance
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <SimpleLineChart 
-                  data={[
-                    { label: 'Jan', value: 45000 },
-                    { label: 'Feb', value: 52000 },
-                    { label: 'Mar', value: 48000 },
-                    { label: 'Apr', value: 61000 },
-                    { label: 'May', value: 58000 },
-                    { label: 'Jun', value: 67000 }
-                  ]}
-                  title="Portfolio Growth Trend"
-                />
-              </CardContent>
-            </Card>
-
-            {/* Loan Distribution */}
-            <Card className="finance-hover-lift">
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold flex items-center">
-                   <BuildingLibraryIcon className="h-5 w-5 mr-3 text-primary" />
-                   Loan Distribution
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <SimplePieChart 
-                  data={[
-                    { label: 'Personal', value: 45, color: '#10b981' },
-                    { label: 'Business', value: 30, color: '#3b82f6' },
-                    { label: 'Education', value: 15, color: '#f59e0b' },
-                    { label: 'Home', value: 10, color: '#ef4444' }
-                  ]}
-                  title="Loan Types Distribution"
-                />
-              </CardContent>
-            </Card>
-
-            {/* Top Performers */}
-            <Card className="finance-hover-lift">
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold flex items-center">
-                   <ArrowTrendingUpIcon className="h-5 w-5 mr-3 text-primary" />
-                   Top Performers
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <SimpleBarChart 
-                  data={[
-                    { label: 'FD A', value: 85000 },
-                    { label: 'RD B', value: 72000 },
-                    { label: 'FD C', value: 68000 },
-                    { label: 'RD D', value: 54000 }
-                  ]}
-                  title="Highest Deposits"
-                  color="success"
-                />
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Recent Transactions */}
-          <div className="grid lg:grid-cols-3 gap-8">
-            
-            {/* Recent Ledger Stream */}
-            <Card className="lg:col-span-2 finance-hover-lift">
-              <CardHeader className="flex flex-row items-center justify-between bg-gradient-to-r from-primary/5 to-transparent">
-                <CardTitle className="text-lg font-semibold flex items-center">
-                   <QueueListIcon className="h-5 w-5 mr-3 text-primary" />
-                   Recent Ledger Stream
-                </CardTitle>
-                <Button variant="ghost" size="sm" onClick={() => router.push('/dashboard/reports')} className="text-primary hover:bg-primary/10 transition-colors">
-                   View All Transactions <ArrowRightIcon className="h-4 w-4 ml-2" />
-                </Button>
-              </CardHeader>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader className="bg-muted/30">
-                    <TableRow>
-                      <TableHead className="font-semibold">Customer</TableHead>
-                      <TableHead className="text-center font-semibold">Type</TableHead>
-                      <TableHead className="text-right font-semibold">Amount</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {data?.recentTransactions?.map((t: any, index: number) => (
-                      <TableRow key={t.id} className="hover:bg-muted/50 transition-colors">
-                        <TableCell className="py-4">
-                          <div className="space-y-1">
-                             <p className="font-medium text-foreground">{t.customer}</p>
-                             <p className="text-xs text-muted-foreground flex items-center">
-                                <CalendarIcon className="h-3 w-3 mr-1" />
-                                {t.date} • {t.item}
-                             </p>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center py-4">
-                           <StatusBadge status={t.type === 'credit' ? 'success' : 'destructive'} className="font-medium">
-                              {t.type === 'credit' ? (
-                                <span className="flex items-center">
-                                   <ArrowTrendingUpIcon className="h-3 w-3 mr-1" />
-                                   Credit
-                                </span>
-                              ) : (
-                                <span className="flex items-center">
-                                   <ArrowTrendingDownIcon className="h-3 w-3 mr-1" />
-                                   Debit
-                                </span>
-                              )}
-                           </StatusBadge>
-                        </TableCell>
-                        <TableCell className="text-right py-4">
-                          <AmountDisplay 
-                            amount={t.amount} 
-                            color={t.type === 'credit' ? 'success' : 'danger'}
-                            size="sm"
-                            weight="semibold"
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-
-            {/* Quick Actions & Alerts */}
-            <div className="space-y-6">
-               <Card>
-                 <CardHeader>
-                   <CardTitle className="text-sm font-semibold flex items-center">
-                      <ExclamationTriangleIcon className="h-5 w-5 mr-3 text-destructive" />
-                      Critical Alerts
-                   </CardTitle>
-                 </CardHeader>
-                 <CardContent className="space-y-4">
-                    <div className="p-4 bg-destructive/5 border border-destructive/20 rounded-lg flex items-center justify-between">
-                       <div>
-                          <p className="text-sm font-medium text-destructive">Overdue EMIs</p>
-                          <p className="text-lg font-semibold">{summary.overdueEMI} Default Recorded</p>
-                       </div>
-                       <Button size="sm" onClick={() => router.push('/dashboard/loans')}>
-                          <ArrowRightIcon className="h-4 w-4" />
-                       </Button>
-                    </div>
-                    <div className="p-4 bg-warning/5 border border-warning/20 rounded-lg flex items-center justify-between">
-                       <div>
-                          <p className="text-sm font-medium text-warning">Due Today</p>
-                          <p className="text-lg font-semibold">{summary.dueTodayEMI} Collections Open</p>
-                       </div>
-                       <Button size="sm" onClick={() => router.push('/dashboard/operations/suggestions')}>
-                          <ArrowRightIcon className="h-4 w-4" />
-                       </Button>
-                    </div>
-                 </CardContent>
-               </Card>
-
-               <Card>
-                 <CardHeader>
-                    <CardTitle className="text-sm font-semibold flex items-center">
-                       <FunnelIcon className="h-5 w-5 mr-3 text-primary" />
-                       Quick Actions
-                    </CardTitle>
-                 </CardHeader>
-                 <CardContent className="grid grid-cols-2 gap-3">
-                    <QuickActionBtn 
-                        title="Customers" 
-                        icon={<UserIcon className="h-5 w-5" />} 
-                        onClick={() => router.push('/dashboard/customers')} 
-                    />
-                    <QuickActionBtn 
-                        title="Suggestions" 
-                        icon={<ClockIcon className="h-5 w-5" />} 
-                        onClick={() => router.push('/dashboard/operations/suggestions')} 
-                    />
-                    <QuickActionBtn 
-                        title="Loans" 
-                        icon={<BuildingLibraryIcon className="h-5 w-5" />} 
-                        onClick={() => router.push('/dashboard/loans')} 
-                    />
-                    <QuickActionBtn 
-                        title="Reports" 
-                        icon={<ChartBarIcon className="h-5 w-5" />} 
-                        onClick={() => router.push('/dashboard/reports')} 
-                    />
-                 </CardContent>
-               </Card>
-            </div>
-          </div>
+      {/* Primary Analytics Overlays */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard
+          title="Total Deposits"
+          value={<AmountDisplay amount={summary.totalBalance} size="xl" weight="bold" className="" />}
+          icon={<BanknotesIcon />}
+          trend={{ value: `${summary.depositsCount} Active Accounts`, isPositive: true }}
+          className="border-primary"
+        />
+        <StatCard
+          title="Loans Given Out"
+          value={<AmountDisplay amount={summary.loanOutstanding} size="xl" weight="bold" className="" />}
+          icon={<WalletIcon />}
+          trend={{ value: `${summary.loanCount} Active Loans`, isPositive: true }}
+          className="border-blue-500"
+        />
+        <StatCard
+          title="Overdue EMIs"
+          value={<span className="">{summary.overdueEMI}</span>}
+          icon={<ExclamationTriangleIcon />}
+          trend={{ value: summary.overdueEMI > 0 ? "Action Needed" : "All Clear", isPositive: summary.overdueEMI === 0 }}
+          className={summary.overdueEMI > 0 ? "border-rose-500 ring-1 ring-rose-500/20" : "border-slate-200"}
+        />
+        <StatCard
+          title="Pending Suggestions"
+          value={<span className="">{summary.pendingSuggestions}</span>}
+          icon={<ClockIcon />}
+          trend={{ value: summary.pendingSuggestions === 0 ? "Nothing Pending" : "Needs Review", isPositive: summary.pendingSuggestions === 0 }}
+          className="border-indigo-500"
+        />
       </div>
-    </DashboardLayout>
+
+      {/* Structural Intelligence */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Market Trajectory */}
+        <Card className="lg:col-span-8 border-slate-200 shadow-sm overflow-hidden rounded-3xl">
+          <CardHeader className="bg-slate-50/50 border-b border-slate-100 py-5 px-8">
+            <CardTitle className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center">
+              <ChartBarIcon className="h-4 w-4 mr-3 text-primary" />
+              Deposit Growth (This Year)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-8">
+            <DashboardChartLine data={[
+              { label: 'Jan', value: 45000 }, { label: 'Feb', value: 52000 },
+              { label: 'Mar', value: 48000 }, { label: 'Apr', value: 61000 },
+              { label: 'May', value: 58000 }, { label: 'Jun', value: 67000 }
+            ]} />
+          </CardContent>
+        </Card>
+
+        {/* Portfolio Stratification */}
+        <Card className="lg:col-span-4 border-slate-200 shadow-sm overflow-hidden rounded-3xl">
+          <CardHeader className="bg-slate-50/50 border-b border-slate-100 py-5 px-8">
+            <CardTitle className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center">
+              <BuildingLibraryIcon className="h-4 w-4 mr-3 text-primary" />
+              Account Type Breakdown
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-8">
+            <DashboardChartDistribution data={[
+              { label: 'Fixed Deposits', value: 45, color: 'var(--primary)' },
+              { label: 'Recurring', value: 30, color: 'hsl(215 90% 40%)' },
+              { label: 'Consumer Loans', value: 15, color: 'hsl(142 70% 45%)' },
+              { label: 'Institutional', value: 10, color: 'hsl(30 90% 50%)' },
+            ]} />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Activity Log + Command Panel */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Recent Ledger */}
+        <Card className="lg:col-span-8 border-slate-200 shadow-sm overflow-hidden rounded-3xl">
+          <CardHeader className="bg-slate-50/50 border-b border-slate-100 py-5 px-8 flex flex-row items-center justify-between">
+            <CardTitle className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center">
+              <QueueListIcon className="h-4 w-4 mr-3 text-primary" />
+              Recent Transactions
+            </CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push('/dashboard/ledger')}
+              className="text-[10px] font-black uppercase text-primary hover:bg-primary/5 h-8 px-3 rounded-xl transition-all"
+            >
+              View All <ArrowUpRightIcon className="h-3 w-3 ml-2" />
+            </Button>
+          </CardHeader>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-slate-50/30">
+                <TableRow>
+                  <TableHead className="px-8 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest h-12">Customer / Account</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase text-slate-400 tracking-widest h-12 text-center">Type</TableHead>
+                  <TableHead className="px-8 text-[10px] font-black uppercase text-slate-400 tracking-widest h-12 text-right">Amount</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data?.recentTransactions?.map((t: any) => (
+                  <TableRow key={t.id} className="hover:bg-slate-50/50 transition-colors border-b border-slate-50 group">
+                    <TableCell className="px-8 py-5">
+                      <div className="text-sm font-black text-slate-900 tracking-tight group-hover:text-primary transition-colors">{t.customer}</div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">{t.item}</span>
+                        <span className="text-[8px] text-slate-300">•</span>
+                        <span className="text-[10px] font-bold text-slate-400">{t.date}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge className={`uppercase font-black text-[9px] tracking-widest px-3 py-1 rounded-sm border ${t.type === 'credit' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-rose-50 text-rose-700 border-rose-100'}`}>
+                        {t.type === 'credit' ? 'Inflow' : 'Outflow'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="px-8 text-right">
+                      <div className={`text-lg font-black tracking-tighter tabular-nums ${t.type === 'credit' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        {t.type === 'credit' ? '+' : '-'}{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(t.amount || 0)}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {(!data?.recentTransactions || data.recentTransactions.length === 0) && (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center py-20 bg-white">
+                      <QueueListIcon className="h-10 w-10 text-slate-200 mx-auto mb-4" />
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No Recent Transactions Found</p>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </Card>
+
+        {/* Command Panel */}
+        <div className="lg:col-span-4 space-y-6">
+          {/* Delinquency Radar */}
+          <Card className="border-slate-200 shadow-sm overflow-hidden rounded-3xl">
+            <CardHeader className="bg-slate-50/50 border-b border-slate-100 py-4 px-6">
+              <CardTitle className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center">
+                <ExclamationTriangleIcon className="h-4 w-4 mr-2 text-rose-500" />
+                Alerts & Reminders
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 space-y-4">
+              <div
+                className="group p-5 bg-rose-50 border border-rose-100 rounded-2xl flex items-center justify-between cursor-pointer hover:bg-rose-100 transition-all active:scale-[0.98]"
+                onClick={() => router.push('/dashboard/loans')}
+              >
+                <div>
+                  <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest mb-1">Overdue EMIs</p>
+                  <p className="text-3xl font-black text-rose-700 tracking-tighter tabular-nums">{summary.overdueEMI}</p>
+                </div>
+                <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center text-rose-600 shadow-sm group-hover:scale-110 transition-transform">
+                  <ArrowRightIcon className="h-5 w-5" />
+                </div>
+              </div>
+              <div
+                className="group p-5 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center justify-between cursor-pointer hover:bg-indigo-100 transition-all active:scale-[0.98]"
+                onClick={() => router.push('/dashboard/operations/suggestions')}
+              >
+                <div>
+                  <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">Due Today</p>
+                  <p className="text-3xl font-black text-indigo-700 tracking-tighter tabular-nums">{summary.dueTodayEMI}</p>
+                </div>
+                <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center text-indigo-600 shadow-sm group-hover:scale-110 transition-transform">
+                  <ArrowRightIcon className="h-5 w-5" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Quick Access Matrix */}
+          <Card className="border-slate-200 shadow-sm overflow-hidden rounded-3xl">
+            <CardHeader className="bg-slate-50/50 border-b border-slate-100 py-4 px-6">
+              <CardTitle className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center">
+                <BoltIcon className="h-4 w-4 mr-2 text-primary" />
+                Quick Actions
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 grid grid-cols-2 gap-3">
+              <ActionTile title="Customers" icon={UserIcon} onClick={() => router.push('/dashboard/customers')} color="text-blue-600" />
+              <ActionTile title="Loans" icon={BriefcaseIcon} onClick={() => router.push('/dashboard/loans')} color="text-amber-600" />
+              <ActionTile title="Transactions" icon={QueueListIcon} onClick={() => router.push('/dashboard/ledger')} color="text-emerald-600" />
+              <ActionTile title="Reports" icon={ChartBarIcon} onClick={() => router.push('/dashboard/reports')} color="text-purple-600" />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
   )
 }
 
-function QuickActionBtn({ title, icon, onClick }: { title: string, icon: React.ReactNode, onClick: () => void }) {
-   const getButtonColor = (title: string) => {
-      switch(title) {
-         case "Customers": return "finance-icon-bg hover:finance-icon-bg-success"
-         case "Suggestions": return "finance-icon-bg-warning hover:finance-icon-bg"
-         case "Loans": return "finance-icon-bg hover:finance-icon-bg-danger"
-         case "Reports": return "finance-icon-bg hover:finance-icon-bg"
-         default: return "finance-icon-bg"
-      }
-   }
-
-   return (
-      <Button 
-         variant="outline" 
-         onClick={onClick}
-         className="flex flex-col items-center justify-center h-24 gap-2 finance-hover-lift border-2 hover:border-primary/50 transition-all duration-300"
-      >
-         <div className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all duration-300 ${getButtonColor(title)}`}>
-            {icon}
-         </div>
-         <span className="text-xs font-medium">{title}</span>
-      </Button>
-   )
-}
-
-function UserIcon({ className }: { className?: string }) {
-    return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+export default function DashboardPage() {
+  return (
+    <DashboardLayout>
+      <Suspense fallback={<div>Loading...</div>}>
+        <DashboardContent />
+      </Suspense>
+    </DashboardLayout>
+  )
 }

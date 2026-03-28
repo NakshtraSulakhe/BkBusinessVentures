@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { PageHeader } from "@/components/ui/page-header"
 import {
   Select,
   SelectContent,
@@ -24,8 +25,24 @@ import {
   UserIcon,
   InformationCircleIcon,
   SparklesIcon,
-  CreditCardIcon
+  CreditCardIcon,
+  BanknotesIcon,
+  ClockIcon,
+  ReceiptPercentIcon,
+  Cog6ToothIcon,
+  ShieldCheckIcon,
+  CircleStackIcon,
+  UsersIcon,
+  ChevronDownIcon
 } from "@heroicons/react/24/outline"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 interface Customer {
   id: string
@@ -40,6 +57,8 @@ function CreateLoanComponent() {
   const [customers, setCustomers] = useState<Customer[]>([])
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
+  
   const [formData, setFormData] = useState({
     customerId: searchParams.get('customerId') || '',
     principalAmount: '',
@@ -48,7 +67,7 @@ function CreateLoanComponent() {
     startDate: new Date().toISOString().split('T')[0],
     loanMethod: 'reducing' as 'flat' | 'reducing',
     emiDueDay: '1',
-    gracePeriodDays: '0',
+    gracePeriodDays: '3',
     penaltyRate: '1.0',
     roundingMode: 'nearest' as 'nearest' | 'up' | 'down',
     roundingPrecision: '2'
@@ -57,10 +76,14 @@ function CreateLoanComponent() {
 
   const fetchCustomers = async () => {
     try {
-      const response = await fetch('/api/customers')
+      const response = await fetch('/api/customers?limit=1000')
       if (response.ok) {
         const data = await response.json()
         setCustomers(data.customers || [])
+        if (formData.customerId) {
+          const found = data.customers.find((c: Customer) => c.id === formData.customerId)
+          if (found) setSelectedCustomer(found)
+        }
       }
     } catch (error) {
       console.error('Failed to fetch customers:', error)
@@ -71,81 +94,49 @@ function CreateLoanComponent() {
     fetchCustomers()
   }, [])
 
-  const showMessage = (text: string, type: 'success' | 'error') => {
-    setMessage({ text, type })
-    setTimeout(() => setMessage(null), 5000)
-  }
-
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {}
-
-    if (!formData.customerId) newErrors.customerId = 'Customer is required'
-    if (!formData.principalAmount || parseFloat(formData.principalAmount) <= 0) {
-      newErrors.principalAmount = 'Principal amount must be greater than 0'
-    }
-    if (!formData.interestRate || parseFloat(formData.interestRate) <= 0 || parseFloat(formData.interestRate) > 100) {
-      newErrors.interestRate = 'Interest rate must be between 0 and 100'
-    }
-    if (!formData.tenure || parseInt(formData.tenure) <= 0) {
-      newErrors.tenure = 'Tenure must be greater than 0'
-    }
-    if (!formData.startDate) newErrors.startDate = 'Start date is required'
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
   const calculateEMI = () => {
-    if (formData.principalAmount && formData.interestRate && formData.tenure) {
-      const principal = parseFloat(formData.principalAmount)
-      const rate = parseFloat(formData.interestRate)
-      const tenure = parseInt(formData.tenure)
-      
-      if (formData.loanMethod === 'flat') {
-        // Flat rate: simple interest on principal
-        const totalInterest = principal * (rate / 100) * (tenure / 12)
-        return (principal + totalInterest) / tenure
-      } else {
-        // Reducing balance: standard EMI formula
-        const monthlyRate = rate / 12 / 100
-        const emi = principal * monthlyRate * Math.pow(1 + monthlyRate, tenure) / (Math.pow(1 + monthlyRate, tenure) - 1)
-        return isNaN(emi) ? 0 : emi
-      }
+    const principal = parseFloat(formData.principalAmount) || 0
+    const rate = parseFloat(formData.interestRate) || 0
+    const tenure = parseInt(formData.tenure) || 0
+    if (!principal || !rate || !tenure) return 0
+    
+    if (formData.loanMethod === 'flat') {
+      const totalInterest = principal * (rate / 100) * (tenure / 12)
+      return (principal + totalInterest) / tenure
+    } else {
+      const monthlyRate = rate / 12 / 100
+      const emi = principal * monthlyRate * Math.pow(1 + monthlyRate, tenure) / (Math.pow(1 + monthlyRate, tenure) - 1)
+      return isNaN(emi) ? 0 : emi
     }
-    return 0
   }
 
   const calculateMaturityDate = () => {
-    if (formData.startDate && formData.tenure) {
-      const startDate = new Date(formData.startDate)
-      const tenureMonths = parseInt(formData.tenure)
-      const maturityDate = new Date(startDate)
-      maturityDate.setMonth(maturityDate.getMonth() + tenureMonths)
-      return maturityDate.toISOString().split('T')[0]
-    }
-    return ''
+    if (!formData.startDate || !formData.tenure) return ''
+    const d = new Date(formData.startDate)
+    d.setMonth(d.getMonth() + parseInt(formData.tenure))
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    if (!validateForm()) return
+    if (!formData.customerId || !formData.principalAmount) {
+      setErrors({ customerId: !formData.customerId ? 'Required' : '', amount: 'Required' })
+      return
+    }
 
     try {
       setLoading(true)
       const response = await fetch('/api/accounts', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
-          accountType: 'LOAN',
+          accountType: 'loan',
           principalAmount: parseFloat(formData.principalAmount),
           interestRate: parseFloat(formData.interestRate),
           tenure: parseInt(formData.tenure),
           emiAmount: calculateEMI(),
-          maturityDate: calculateMaturityDate(),
+          maturityDate: new Date(new Date(formData.startDate).setMonth(new Date(formData.startDate).getMonth() + parseInt(formData.tenure))).toISOString(),
           emiDueDay: parseInt(formData.emiDueDay),
           gracePeriodDays: parseInt(formData.gracePeriodDays),
           penaltyRate: parseFloat(formData.penaltyRate),
@@ -154,366 +145,264 @@ function CreateLoanComponent() {
       })
 
       if (response.ok) {
-        showMessage('Loan account created successfully', 'success')
-        setTimeout(() => {
-          router.push('/dashboard/loans')
-        }, 2000)
+        setMessage({ type: 'success', text: 'Loan instrument provisioned successfully' })
+        setTimeout(() => router.push('/dashboard/loans'), 2000)
       } else {
-        const errorData = await response.json()
-        showMessage(errorData.error || 'Failed to create loan account', 'error')
+        const err = await response.json()
+        setMessage({ type: 'error', text: err.error || 'Failed to initialize account' })
       }
     } catch (error) {
-      console.error('Failed to create loan account:', error)
-      showMessage('Failed to create loan account', 'error')
+      setMessage({ type: 'error', text: 'Protocol exchange failure' })
     } finally {
       setLoading(false)
     }
   }
 
+  const formatCurrency = (amt: number) => {
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amt)
+  }
+
   const emi = calculateEMI()
-  const maturityDate = calculateMaturityDate()
-  const totalPayable = emi * parseInt(formData.tenure || '0')
+  const totalPayable = emi * (parseInt(formData.tenure) || 0)
 
   return (
-    <DashboardLayout>
-      <div className="p-6 min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
-        <div className="max-w-4xl mx-auto">
-          {/* Message */}
-          {message && (
-            <div className={`rounded-xl p-4 flex items-start space-x-3 shadow-sm border mb-6 ${
-              message.type === 'success' 
-                ? 'bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 text-green-800' 
-                : 'bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 text-red-800'
-            }`}>
-              <div className={`flex-shrink-0 ${
-                message.type === 'success' ? 'text-green-600' : 'text-red-600'
-              }`}>
-                {message.type === 'success' ? (
-                  <CheckCircleIcon className="h-6 w-6" />
-                ) : (
-                  <ExclamationTriangleIcon className="h-6 w-6" />
-                )}
+    <div className="space-y-6 animate-fade-in-up pb-20">
+      <PageHeader
+        title="Provision Loan Instrument"
+        subtitle="Initialize a debt portfolio for a verified credit-worthy client"
+        actions={
+          <Button
+            variant="outline"
+            onClick={() => router.push('/dashboard/loans')}
+            className="h-9 border-slate-200 text-slate-700 rounded-xl px-4 hover:bg-slate-50 font-medium"
+          >
+            Cancel setup
+          </Button>
+        }
+      />
+
+      {message && (
+        <div className={`p-4 rounded-xl border flex items-start gap-3 shadow-lg animate-in fade-in slide-in-from-top-4 duration-300 ${
+          message.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-800' : 'bg-rose-50 border-rose-100 text-rose-800'
+        }`}>
+          {message.type === 'success' ? <CheckCircleIcon className="h-5 w-5 mt-0.5" /> : <ExclamationTriangleIcon className="h-5 w-5 mt-0.5" />}
+          <div className="text-sm font-bold">{message.text}</div>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div className="lg:col-span-8 space-y-6">
+          {/* Section 1: Entity Linkage */}
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-4">
+              <CardTitle className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
+                <UsersIcon className="h-4 w-4 mr-2 text-primary" />
+                1. Borrower Linkage
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Verified Borrower</label>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="w-full h-11 justify-between border-slate-200 rounded-lg bg-slate-50/30 hover:bg-white transition-all text-slate-900 font-bold">
+                        <div className="flex items-center gap-2">
+                          <UserIcon className="h-4 w-4 text-slate-400" />
+                          {selectedCustomer ? selectedCustomer.name : "Select borrower..."}
+                        </div>
+                        <ChevronDownIcon className="h-4 w-4 text-slate-400" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-[400px] max-h-[300px] overflow-y-auto">
+                      <DropdownMenuLabel className="text-[10px] uppercase font-black tracking-widest text-slate-400">Search Results</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {customers.map(c => (
+                        <DropdownMenuItem key={c.id} className="py-3 px-4 flex flex-col items-start gap-1 cursor-pointer hover:bg-slate-50" onClick={() => { setSelectedCustomer(c); setFormData(p => ({ ...p, customerId: c.id })) }}>
+                          <span className="font-bold text-slate-900">{c.name}</span>
+                          <span className="text-[10px] text-slate-500 font-medium">#{c.id.slice(-8).toUpperCase()} • {c.phone}</span>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  {errors.customerId && <p className="text-[10px] text-rose-500 font-bold ml-1">Borrower selection is mandatory</p>}
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm">{message.text}</p>
-                <p className="text-xs mt-1 opacity-75">
-                  {message.type === 'success' ? 'Operation completed successfully' : 'Please try again'}
-                </p>
-              </div>
-              <button
-                onClick={() => setMessage(null)}
-                className="flex-shrink-0 p-1 rounded-lg hover:bg-black/5 transition-colors"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          )}
+            </CardContent>
+          </Card>
 
-          {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push('/dashboard/loans')}
-                className="h-10 w-10 p-0 rounded-full hover:bg-blue-50 transition-colors"
-              >
-                <ArrowLeftIcon className="h-5 w-5" />
-              </Button>
-              <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Create Loan
-                </h1>
-                <p className="text-gray-600 mt-2 flex items-center">
-                  <SparklesIcon className="h-4 w-4 mr-2 text-blue-500" />
-                  Open a new loan account
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Customer Selection */}
-              <Card className="bg-white/60 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <UserIcon className="h-5 w-5 mr-2" />
-                    Customer Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Select Customer <span className="text-red-500">*</span>
-                    </label>
-                    <Select
-                      value={formData.customerId}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, customerId: value }))}
-                    >
-                      <SelectTrigger className={errors.customerId ? 'border-red-500' : ''}>
-                        <SelectValue placeholder="Choose a customer..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {customers.map((customer) => (
-                          <SelectItem key={customer.id} value={customer.id}>
-                            <div className="flex items-center justify-between w-full">
-                              <span>{customer.name}</span>
-                              <span className="text-sm text-gray-500 ml-2">{customer.email}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {errors.customerId && (
-                      <p className="text-red-500 text-sm mt-1">{errors.customerId}</p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Loan Details */}
-              <Card className="bg-white/60 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <BuildingLibraryIcon className="h-5 w-5 mr-2" />
-                    Loan Details
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Principal Amount (₹) <span className="text-red-500">*</span>
-                    </label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={formData.principalAmount}
-                      onChange={(e) => setFormData(prev => ({ ...prev, principalAmount: e.target.value }))}
-                      className={errors.principalAmount ? 'border-red-500' : ''}
-                      placeholder="Enter principal amount"
-                    />
-                    {errors.principalAmount && (
-                      <p className="text-red-500 text-sm mt-1">{errors.principalAmount}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Interest Rate (%) <span className="text-red-500">*</span>
-                    </label>
-                    <Input
-                      type="number"
-                      step="0.1"
-                      value={formData.interestRate}
-                      onChange={(e) => setFormData(prev => ({ ...prev, interestRate: e.target.value }))}
-                      className={errors.interestRate ? 'border-red-500' : ''}
-                      placeholder="Enter interest rate"
-                    />
-                    {errors.interestRate && (
-                      <p className="text-red-500 text-sm mt-1">{errors.interestRate}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tenure (months) <span className="text-red-500">*</span>
-                    </label>
-                    <Input
-                      type="number"
-                      value={formData.tenure}
-                      onChange={(e) => setFormData(prev => ({ ...prev, tenure: e.target.value }))}
-                      className={errors.tenure ? 'border-red-500' : ''}
-                      placeholder="Enter tenure in months"
-                    />
-                    {errors.tenure && (
-                      <p className="text-red-500 text-sm mt-1">{errors.tenure}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Start Date <span className="text-red-500">*</span>
-                    </label>
-                    <Input
-                      type="date"
-                      value={formData.startDate}
-                      onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
-                      className={errors.startDate ? 'border-red-500' : ''}
-                    />
-                    {errors.startDate && (
-                      <p className="text-red-500 text-sm mt-1">{errors.startDate}</p>
-                    )}
-                  </div>
-
-                  {emi > 0 && (
-                    <div className="bg-blue-50 p-3 rounded-lg">
-                      <p className="text-sm font-medium text-blue-800">
-                        <CreditCardIcon className="h-4 w-4 inline mr-1" />
-                        Calculated EMI: ₹{emi.toLocaleString()}
-                      </p>
-                    </div>
-                  )}
-
-                  {totalPayable > 0 && (
-                    <div className="bg-green-50 p-3 rounded-lg">
-                      <p className="text-sm font-medium text-green-800">
-                        <CurrencyDollarIcon className="h-4 w-4 inline mr-1" />
-                        Total Payable: ₹{totalPayable.toLocaleString()}
-                      </p>
-                    </div>
-                  )}
-
-                  {maturityDate && (
-                    <div className="bg-orange-50 p-3 rounded-lg">
-                      <p className="text-sm font-medium text-orange-800">
-                        <CalendarIcon className="h-4 w-4 inline mr-1" />
-                        Maturity Date: {new Date(maturityDate).toLocaleDateString()}
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Loan Rules */}
-            <Card className="bg-white/60 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <InformationCircleIcon className="h-5 w-5 mr-2" />
-                  Loan Rules
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Loan Method
-                    </label>
-                    <Select
-                      value={formData.loanMethod}
-                      onValueChange={(value: 'flat' | 'reducing') => 
-                        setFormData(prev => ({ ...prev, loanMethod: value }))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="flat">Flat Rate</SelectItem>
-                        <SelectItem value="reducing">Reducing Balance</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      EMI Due Day
-                    </label>
-                    <Select
-                      value={formData.emiDueDay}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, emiDueDay: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {[...Array(28)].map((_, i) => (
-                          <SelectItem key={i + 1} value={(i + 1).toString()}>
-                            {i + 1}{i === 0 ? 'st' : i === 1 ? 'nd' : i === 2 ? 'rd' : 'th'}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Grace Period (days)
-                    </label>
-                    <Select
-                      value={formData.gracePeriodDays}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, gracePeriodDays: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="0">0 days</SelectItem>
-                        <SelectItem value="3">3 days</SelectItem>
-                        <SelectItem value="5">5 days</SelectItem>
-                        <SelectItem value="7">7 days</SelectItem>
-                        <SelectItem value="10">10 days</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Penalty Rate (%)
-                    </label>
-                    <Select
-                      value={formData.penaltyRate}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, penaltyRate: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="0.5">0.5%</SelectItem>
-                        <SelectItem value="1.0">1.0%</SelectItem>
-                        <SelectItem value="1.5">1.5%</SelectItem>
-                        <SelectItem value="2.0">2.0%</SelectItem>
-                        <SelectItem value="2.5">2.5%</SelectItem>
-                      </SelectContent>
-                    </Select>
+          {/* Section 2: Financial Matrix */}
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-4">
+              <CardTitle className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
+                <CurrencyDollarIcon className="h-4 w-4 mr-2 text-primary" />
+                2. Debt Parameters
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Loan Principal (₹)</label>
+                  <div className="relative">
+                    <BanknotesIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Input type="number" placeholder="0.00" value={formData.principalAmount} onChange={e => setFormData(p => ({ ...p, principalAmount: e.target.value }))} className="pl-10 h-11 border-slate-200 bg-slate-50/30 font-black tracking-tight" />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Disbursement Date</label>
+                  <div className="relative">
+                    <CalendarIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Input type="date" value={formData.startDate} onChange={e => setFormData(p => ({ ...p, startDate: e.target.value }))} className="pl-10 h-11 border-slate-200 bg-slate-50/30 font-medium" />
+                  </div>
+                </div>
+              </div>
 
-            {/* Action Buttons */}
-            <div className="flex items-center justify-end space-x-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.push('/dashboard/loans')}
-                className="h-12 px-8"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={loading}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg h-12 px-8"
-              >
-                {loading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Creating Loan...
-                  </>
-                ) : (
-                  <>
-                    <BuildingLibraryIcon className="h-5 w-5 mr-2" />
-                    Create Loan Account
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Annual Interest (%)</label>
+                  <div className="relative">
+                    <ReceiptPercentIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Input type="number" placeholder="0.00" value={formData.interestRate} onChange={e => setFormData(p => ({ ...p, interestRate: e.target.value }))} className="pl-10 h-11 border-slate-200 bg-slate-50/30 font-black tracking-tight" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Repayment Tenure (Months)</label>
+                  <div className="relative">
+                    <ClockIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Input type="number" placeholder="0" value={formData.tenure} onChange={e => setFormData(p => ({ ...p, tenure: e.target.value }))} className="pl-10 h-11 border-slate-200 bg-slate-50/30 font-black tracking-tight" />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Section 3: Operational Rules */}
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-4">
+              <CardTitle className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
+                <Cog6ToothIcon className="h-4 w-4 mr-2 text-primary" />
+                3. Operational Protocol
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Amortization Logic</label>
+                  <Select value={formData.loanMethod} onValueChange={v => setFormData(p => ({ ...p, loanMethod: v as any }))}>
+                    <SelectTrigger className="h-11 border-slate-200 bg-slate-50/30 font-bold">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="flat">Flat Interest Rate</SelectItem>
+                      <SelectItem value="reducing">Reducing Balance EMI</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">EMI Cycle Day</label>
+                  <Select value={formData.emiDueDay} onValueChange={v => setFormData(p => ({ ...p, emiDueDay: v }))}>
+                    <SelectTrigger className="h-11 border-slate-200 bg-slate-50/30">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[...Array(28)].map((_, i) => (
+                        <SelectItem key={i + 1} value={(i + 1).toString()}>
+                          Day {i + 1} of Month
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Default Grace Period (Days)</label>
+                  <Input type="number" value={formData.gracePeriodDays} onChange={e => setFormData(p => ({ ...p, gracePeriodDays: e.target.value }))} className="h-11 border-slate-200 bg-slate-50/30 font-bold" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Overdue Penalty (%)</label>
+                  <Input type="number" step="0.1" value={formData.penaltyRate} onChange={e => setFormData(p => ({ ...p, penaltyRate: e.target.value }))} className="h-11 border-slate-200 bg-slate-50/30 font-bold" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      </div>
-    </DashboardLayout>
+
+        {/* Right Sidebar: Projection Intelligence */}
+        <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-6">
+          <Card className="bg-slate-900 border-slate-800 rounded-3xl overflow-hidden shadow-2xl relative">
+            <div className="absolute top-0 right-0 p-8 opacity-10">
+              <CircleStackIcon className="h-24 w-24 text-white" />
+            </div>
+            <CardHeader className="px-8 pt-8 pb-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Repayment Forecast</p>
+              <CardTitle className="text-white tracking-tight text-xl mt-1">Portfolio Preview</CardTitle>
+            </CardHeader>
+            <CardContent className="px-8 pb-8 space-y-6">
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold text-slate-500 uppercase">Monthly Principal + Interest (EMI)</p>
+                <p className="text-3xl font-black text-white tracking-tighter">
+                  {formatCurrency(emi)}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Termination Date</p>
+                  <p className="text-xs font-bold text-slate-300">{calculateMaturityDate() || "TBD"}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Gross Repayable</p>
+                  <p className="text-xs font-bold text-slate-300">{formatCurrency(totalPayable)}</p>
+                </div>
+              </div>
+
+              <div className="pt-6 border-t border-white/10">
+                <div className="flex items-center gap-2 mb-4">
+                  <ShieldCheckIcon className="h-4 w-4 text-emerald-400" />
+                  <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">CREDIT DEPTH: APPROVED</span>
+                </div>
+                <Button type="submit" disabled={loading} className="w-full finance-gradient-primary text-white font-black uppercase tracking-widest h-14 rounded-2xl shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">
+                  {loading ? (
+                    <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                    Provisioning...
+                    </div>
+                  ) : "Provision Loan"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="bg-white border border-slate-200 rounded-2xl p-6">
+            <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-4 flex items-center">
+              <InformationCircleIcon className="h-4 w-4 mr-2 text-primary" />
+              Lending Guidelines
+            </h4>
+            <div className="space-y-3">
+              {[
+                "Disbursement occurs immediately upon provisioning",
+                "Interest recalculates monthly based on amortization rule",
+                "Grace period applies before penalty state is triggered",
+                "EMI cycle day determines automated notification window"
+              ].map((text, idx) => (
+                <div key={idx} className="flex gap-2 text-[10px] font-bold text-slate-500 leading-tight">
+                  <div className="h-1 w-1 bg-slate-300 rounded-full mt-1.5 flex-shrink-0" />
+                  {text}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
   )
 }
 
 export default function CreateLoan() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <CreateLoanComponent />
-    </Suspense>
+    <DashboardLayout>
+      <Suspense fallback={<div>Loading setup...</div>}>
+        <CreateLoanComponent />
+      </Suspense>
+    </DashboardLayout>
   )
 }

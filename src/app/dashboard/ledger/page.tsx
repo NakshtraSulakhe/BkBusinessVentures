@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter } from "next/navigation"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { PageHeader } from "@/components/ui/page-header"
+import { StatCard } from "@/components/ui/stat-card"
 import { 
   PlusIcon,
   MagnifyingGlassIcon,
@@ -28,8 +30,22 @@ import {
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
   ArrowPathIcon,
-  UserIcon
+  UserIcon,
+  BookOpenIcon,
+  ShieldCheckIcon,
+  XMarkIcon,
+  CheckBadgeIcon,
+  DocumentTextIcon
 } from "@heroicons/react/24/outline"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter
+} from "@/components/ui/dialog"
 
 interface Transaction {
   id: string
@@ -48,8 +64,9 @@ interface Transaction {
   }
 }
 
-export default function LedgerPage() {
+function LedgerContent() {
   const router = useRouter()
+  const [mounted, setMounted] = useState(false)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(false)
   const [showAddTransaction, setShowAddTransaction] = useState(false)
@@ -59,11 +76,6 @@ export default function LedgerPage() {
   const [dateFilter, setDateFilter] = useState('')
   const [runningBalance, setRunningBalance] = useState(0)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
-
-  const showMessage = (text: string, type: 'success' | 'error') => {
-    setMessage({ text, type })
-    setTimeout(() => setMessage(null), 5000)
-  }
   
   const [newTransaction, setNewTransaction] = useState({
     accountId: '',
@@ -77,43 +89,22 @@ export default function LedgerPage() {
 
   const [accounts, setAccounts] = useState<any[]>([])
 
-  // Handle customer pre-selection from URL parameter
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search)
-    const customerId = urlParams.get('customerId')
-    
-    if (customerId) {
-      // Fetch accounts first, then set the account filter to the customer's first account
-      fetchAccounts().then(() => {
-        // This will be handled in the fetchAccounts callback
-      })
-    }
+    setMounted(true)
+    fetchTransactions()
+    fetchAccounts()
   }, [])
+
+  useEffect(() => {
+    if (mounted) fetchTransactions()
+  }, [searchTerm, accountFilter, typeFilter, dateFilter])
 
   const fetchAccounts = async () => {
     try {
       const response = await fetch('/api/accounts')
       if (response.ok) {
         const data = await response.json()
-        const accountsList = data.accounts || []
-        setAccounts(accountsList)
-        
-        // Check if we have a customerId in URL and pre-select the customer's account
-        const urlParams = new URLSearchParams(window.location.search)
-        const customerId = urlParams.get('customerId')
-        
-        if (customerId) {
-          const customerAccount = accountsList.find((account: any) => account.customerId === customerId)
-          if (customerAccount) {
-            setAccountFilter(customerAccount.id)
-            // Also open the add transaction modal
-            setShowAddTransaction(true)
-            setNewTransaction(prev => ({
-              ...prev,
-              accountId: customerAccount.id
-            }))
-          }
-        }
+        setAccounts(data.accounts || [])
       }
     } catch (error) {
       console.error('Failed to fetch accounts:', error)
@@ -134,24 +125,16 @@ export default function LedgerPage() {
       if (response.ok) {
         const data = await response.json()
         setTransactions(data.transactions || [])
-        calculateRunningBalance(data.transactions || [])
+        const balance = (data.transactions || []).reduce((acc: number, t: Transaction) => {
+          return ['deposit', 'interest', 'credit'].includes(t.type) ? acc + t.amount : acc - t.amount
+        }, 0)
+        setRunningBalance(balance)
       }
     } catch (error) {
       console.error('Failed to fetch transactions:', error)
     } finally {
       setLoading(false)
     }
-  }
-
-  const calculateRunningBalance = (transactions: Transaction[]) => {
-    const balance = transactions.reduce((acc, transaction) => {
-      if (transaction.type === 'deposit' || transaction.type === 'interest') {
-        return acc + transaction.amount
-      } else {
-        return acc - transaction.amount
-      }
-    }, 0)
-    setRunningBalance(balance)
   }
 
   const exportToCSV = () => {
@@ -173,708 +156,335 @@ export default function LedgerPage() {
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `transactions-${new Date().toISOString().split('T')[0]}.csv`
+    a.download = `ledger-export-${new Date().toISOString().split('T')[0]}.csv`
     a.click()
     window.URL.revokeObjectURL(url)
   }
 
   const handleAddTransaction = async () => {
-    if (!newTransaction.accountId || !newTransaction.amount || !newTransaction.type) {
-      showMessage('Please fill in all required fields', 'error')
-      return
-    }
-
+    if (!newTransaction.accountId || !newTransaction.amount) return
     try {
       const response = await fetch('/api/transactions', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          accountId: newTransaction.accountId,
-          type: newTransaction.type,
-          amount: parseFloat(newTransaction.amount),
-          description: newTransaction.description,
-          reference: newTransaction.reference,
-          date: newTransaction.date,
-          paymentMethod: newTransaction.paymentMethod
+          ...newTransaction,
+          amount: parseFloat(newTransaction.amount)
         })
       })
-
       if (response.ok) {
-        showMessage('Transaction added successfully', 'success')
+        setMessage({ type: 'success', text: 'Financial entry recorded successfully' })
         setShowAddTransaction(false)
-        setNewTransaction({
-          accountId: '',
-          type: 'deposit',
-          amount: '',
-          description: '',
-          reference: '',
-          date: new Date().toISOString().split('T')[0],
-          paymentMethod: 'cash'
-        })
         fetchTransactions()
       } else {
-        showMessage('Failed to add transaction', 'error')
+        setMessage({ type: 'error', text: 'Authorization failure or invalid parameters' })
       }
     } catch (error) {
-      console.error('Error adding transaction:', error)
-      showMessage('Error adding transaction', 'error')
+      setMessage({ type: 'error', text: 'Network connection failure' })
     }
   }
 
-  const getTransactionTypeColor = (type: string) => {
-    switch (type) {
-      case 'deposit': return 'bg-green-100 text-green-700'
-      case 'withdrawal': return 'bg-red-100 text-red-700'
-      case 'interest': return 'bg-blue-100 text-blue-700'
-      case 'disbursement': return 'bg-purple-100 text-purple-700'
-      default: return 'bg-gray-100 text-gray-700'
-    }
+  const formatCurrency = (amt: number) => {
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amt)
   }
 
-  const getTransactionTypeIcon = (type: string) => {
-    switch (type) {
-      case 'deposit': return '📈'
-      case 'withdrawal': return '📉'
-      case 'interest': return '📈'
-      case 'disbursement': return '💰'
-      default: return '🔄'
-    }
-  }
-
-  const filteredTransactions = transactions.filter(transaction => {
-    const matchesSearch = transaction.account.accountNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         transaction.account.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (transaction.description?.toLowerCase().includes(searchTerm.toLowerCase()) || false)
-    return matchesSearch
-  })
-
-  useEffect(() => {
-    fetchTransactions()
-    fetchAccounts()
-  }, [])
-
-  useEffect(() => {
-    fetchTransactions()
-  }, [searchTerm, accountFilter, typeFilter, dateFilter])
+  if (!mounted) return null
 
   return (
-    <DashboardLayout>
-      <div className="p-6 min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
-        <div className="max-w-7xl mx-auto space-y-6">
-          {/* Message */}
-          {message && (
-            <div className={`rounded-xl p-4 flex items-start space-x-3 shadow-sm border ${
-              message.type === 'success' 
-                ? 'bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 text-green-800' 
-                : 'bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 text-red-800'
-            }`}>
-              <div className={`flex-shrink-0 ${
-                message.type === 'success' ? 'text-green-600' : 'text-red-600'
-              }`}>
-                {message.type === 'success' ? (
-                  <CheckCircleIcon className="h-6 w-6" />
-                ) : (
-                  <ExclamationTriangleIcon className="h-6 w-6" />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm">{message.text}</p>
-                <p className="text-xs mt-1 opacity-75">
-                  {message.type === 'success' ? 'Operation completed successfully' : 'Please try again'}
-                </p>
-              </div>
-              <button
-                onClick={() => setMessage(null)}
-                className="flex-shrink-0 p-1 rounded-lg hover:bg-black/5 transition-colors"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          )}
+    <div className="space-y-6 animate-fade-in-up pb-20">
+      <PageHeader
+        title="Institutional Ledger"
+        subtitle="Consolidated audit-grade history of all multi-instrument transactions"
+        actions={
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={exportToCSV}
+              className="h-9 border-slate-200 text-slate-700 rounded-xl px-4 hover:bg-slate-50 font-medium"
+            >
+              <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
+              Export Records
+            </Button>
+            <Button
+              onClick={() => setShowAddTransaction(true)}
+              className="h-9 finance-gradient-primary text-white rounded-xl px-4 font-bold transition-all shadow-md hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <PlusIcon className="h-4 w-4 mr-2" />
+              Post New Entry
+            </Button>
+          </div>
+        }
+      />
 
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Ledger Management
-              </h1>
-              <p className="text-gray-600 mt-2 flex items-center">
-                <SparklesIcon className="h-4 w-4 mr-2 text-blue-500" />
-                Track all financial transactions and account balances
-              </p>
-            </div>
-            <div className="flex items-center space-x-3">
-              <Badge variant="outline" className="px-3 py-1.5 bg-white/80 backdrop-blur-sm border-green-200 text-green-700">
-                <CheckCircleIcon className="h-3 w-3 mr-1" />
-                System Active
+      {message && (
+        <div className={`p-4 rounded-xl border flex items-start gap-3 shadow-lg animate-in fade-in slide-in-from-top-4 duration-300 ${
+          message.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-800' : 'bg-rose-50 border-rose-100 text-rose-800'
+        }`}>
+          {message.type === 'success' ? <CheckCircleIcon className="h-5 w-5 mt-0.5" /> : <ExclamationTriangleIcon className="h-5 w-5 mt-0.5" />}
+          <div className="text-sm font-bold">{message.text}</div>
+          <button onClick={() => setMessage(null)} className="ml-auto p-1 rounded-lg hover:bg-black/5"><XMarkIcon className="h-4 w-4" /></button>
+        </div>
+      )}
+
+      {/* Dashboard Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard
+          title="Total Cycle Volume"
+          value={transactions.length}
+          icon={ArrowPathIcon}
+          trend={{ value: "Historical Entries", isPositive: true }}
+          className="border-primary"
+        />
+        <StatCard
+          title="Consolidated Inflow"
+          value={formatCurrency(transactions.filter(t => ['deposit', 'interest', 'credit'].includes(t.type)).reduce((s, t) => s + t.amount, 0))}
+          icon={ArrowTrendingUpIcon}
+          trend={{ value: "Total Credits", isPositive: true }}
+          className="border-blue-500"
+        />
+        <StatCard
+          title="Consolidated Outflow"
+          value={formatCurrency(transactions.filter(t => ['withdrawal', 'disbursement', 'debit'].includes(t.type)).reduce((s, t) => s + t.amount, 0))}
+          icon={ArrowTrendingDownIcon}
+          trend={{ value: "Total Debits", isPositive: false }}
+          className="border-rose-500"
+        />
+        <StatCard
+          title="System Net Balance"
+          value={formatCurrency(runningBalance)}
+          icon={CurrencyDollarIcon}
+          trend={{ value: "Current Liquidity", isPositive: runningBalance >= 0 }}
+          className="border-emerald-500"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Main Records Table */}
+        <div className="lg:col-span-9 space-y-6">
+          {/* Filter Toolbar */}
+          <Card className="border-slate-200 shadow-sm">
+            <CardContent className="p-4 flex flex-wrap items-center gap-4">
+              <div className="relative flex-1 min-w-[200px]">
+                <MagnifyingGlassIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Input
+                  placeholder="Filter by narrative or identifier..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 h-10 border-slate-200 bg-slate-50/50 focus:bg-white rounded-xl text-xs font-bold transition-all shadow-none"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Select value={accountFilter} onValueChange={setAccountFilter}>
+                  <SelectTrigger className="h-10 w-48 border-slate-200 bg-slate-50/50 rounded-xl font-bold text-xs shadow-none">
+                    <SelectValue placeholder="Instrument Filter" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Instruments</SelectItem>
+                    {accounts.map(acc => (
+                      <SelectItem key={acc.id} value={acc.id}>{acc.accountNumber} • {acc.customer.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <SelectTrigger className="h-10 w-32 border-slate-200 bg-slate-50/50 rounded-xl font-bold text-xs shadow-none">
+                    <SelectValue placeholder="Classification" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="deposit">Deposit</SelectItem>
+                    <SelectItem value="withdrawal">Withdrawal</SelectItem>
+                    <SelectItem value="interest">Interest</SelectItem>
+                    <SelectItem value="disbursement">Disbursement</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <div className="flex items-center border border-slate-200 rounded-xl bg-slate-50/50 px-2 h-10 shadow-none">
+                  <CalendarIcon className="h-4 w-4 text-slate-400 mr-2" />
+                  <input 
+                    type="date" 
+                    value={dateFilter} 
+                    onChange={(e) => setDateFilter(e.target.value)}
+                    className="bg-transparent border-none text-[10px] font-black text-slate-700 outline-none w-28 uppercase"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Ledger Table */}
+          <Card className="border-slate-200 shadow-sm overflow-hidden">
+            <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-8 h-16 flex flex-row items-center justify-between">
+              <CardTitle className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
+                <BookOpenIcon className="h-4 w-4 mr-2 text-primary" />
+                Verified Entry Logs
+              </CardTitle>
+              <Badge className="bg-blue-50 text-blue-700 border-none font-bold text-[10px] uppercase">
+                {transactions.length} Records Resolved
               </Badge>
-              <Button
-                variant="outline"
-                onClick={exportToCSV}
-                className="border-green-200 text-green-700 hover:bg-green-50 h-12 px-6"
-              >
-                <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
-                Export CSV
-              </Button>
-              <Button
-                onClick={() => setShowAddTransaction(true)}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg h-12 px-6"
-              >
-                <PlusIcon className="h-5 w-5 mr-2" />
-                Add Transaction
-              </Button>
-            </div>
-          </div>
-
-          {/* Enhanced Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.02]">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 mb-2">Total Transactions</p>
-                  <p className="text-3xl font-bold text-gray-900">{transactions.length}</p>
-                  <p className="text-xs text-gray-500 mt-2">All recorded transactions</p>
-                  <div className="flex items-center mt-2">
-                    <span className="text-sm font-medium text-blue-600">+12%</span>
-                    <span className="text-xs text-gray-500 ml-1">this month</span>
-                  </div>
+            </CardHeader>
+            <div className="overflow-x-auto">
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-4">
+                  <div className="h-10 w-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Querying Global Ledger...</p>
                 </div>
-                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
-                  <BanknotesIcon className="h-7 w-7 text-white" />
+              ) : transactions.length === 0 ? (
+                <div className="text-center py-24">
+                  <div className="h-16 w-16 bg-slate-100 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                    <DocumentTextIcon className="h-8 w-8 text-slate-300" />
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-900 uppercase">No ledger entries located</h3>
+                  <p className="text-xs text-slate-500 mt-2 max-w-xs mx-auto leading-relaxed">Adjust your temporal markers or search tokens to locate specific financial logs.</p>
                 </div>
-              </div>
-            </div>
-
-            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.02]">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 mb-2">Total Credits</p>
-                  <p className="text-3xl font-bold text-gray-900">
-                    {transactions.filter(t => t.type === 'credit' || t.type === 'deposit' || t.type === 'interest').length}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-2">Money in transactions</p>
-                  <div className="flex items-center mt-2">
-                    <span className="text-sm font-medium text-green-600">+8%</span>
-                    <span className="text-xs text-gray-500 ml-1">this month</span>
-                  </div>
-                </div>
-                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg">
-                  <ArrowTrendingUpIcon className="h-7 w-7 text-white" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.02]">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 mb-2">Total Debits</p>
-                  <p className="text-3xl font-bold text-gray-900">
-                    {transactions.filter(t => t.type === 'debit' || t.type === 'withdrawal' || t.type === 'disbursement').length}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-2">Money out transactions</p>
-                  <div className="flex items-center mt-2">
-                    <span className="text-sm font-medium text-red-600">-3%</span>
-                    <span className="text-xs text-gray-500 ml-1">this month</span>
-                  </div>
-                </div>
-                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center shadow-lg">
-                  <ArrowTrendingDownIcon className="h-7 w-7 text-white" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.02]">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 mb-2">Net Balance</p>
-                  <p className="text-3xl font-bold text-gray-900">₹{runningBalance.toLocaleString()}</p>
-                  <p className="text-xs text-gray-500 mt-2">Current account balance</p>
-                  <div className="flex items-center mt-2">
-                    <span className="text-sm font-medium text-purple-600">+15%</span>
-                    <span className="text-xs text-gray-500 ml-1">this month</span>
-                  </div>
-                </div>
-                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-lg">
-                  <CurrencyDollarIcon className="h-7 w-7 text-white" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Additional Analytics Row */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Transaction Volume Chart */}
-            <Card className="bg-white/60 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold">Transaction Volume</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Today</span>
-                    <span className="font-semibold">₹12,450</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Yesterday</span>
-                    <span className="font-semibold">₹8,230</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">This Week</span>
-                    <span className="font-semibold">₹45,680</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Last Week</span>
-                    <span className="font-semibold">₹38,920</span>
-                  </div>
-                </div>
-                <div className="mt-4 pt-4 border-t">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Growth Rate</span>
-                    <Badge className="bg-green-100 text-green-700">+17.4%</Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Transaction Types Distribution */}
-            <Card className="bg-white/60 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold">Transaction Types</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <div className="h-3 w-3 rounded-full bg-green-500"></div>
-                      <span className="text-sm">Deposits</span>
-                    </div>
-                    <span className="font-semibold">{transactions.filter(t => t.type === 'deposit').length}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <div className="h-3 w-3 rounded-full bg-blue-500"></div>
-                      <span className="text-sm">Interest</span>
-                    </div>
-                    <span className="font-semibold">{transactions.filter(t => t.type === 'interest').length}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <div className="h-3 w-3 rounded-full bg-red-500"></div>
-                      <span className="text-sm">Withdrawals</span>
-                    </div>
-                    <span className="font-semibold">{transactions.filter(t => t.type === 'withdrawal').length}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <div className="h-3 w-3 rounded-full bg-purple-500"></div>
-                      <span className="text-sm">Disbursements</span>
-                    </div>
-                    <span className="font-semibold">{transactions.filter(t => t.type === 'disbursement').length}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Performance Metrics */}
-            <Card className="bg-white/60 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold">Performance Metrics</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm text-gray-600">API Response Time</span>
-                      <span className="text-sm font-medium">45ms</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-green-500 h-2 rounded-full" style={{width: '85%'}}></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm text-gray-600">Data Accuracy</span>
-                      <span className="text-sm font-medium">99.8%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-blue-500 h-2 rounded-full" style={{width: '99.8%'}}></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm text-gray-600">System Uptime</span>
-                      <span className="text-sm font-medium">99.9%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-purple-500 h-2 rounded-full" style={{width: '99.9%'}}></div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Main Content Grid */}
-          <div className="grid lg:grid-cols-3 gap-6">
-            {/* Transactions Table */}
-            <Card className="lg:col-span-2 bg-white/60 backdrop-blur-sm">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-xl font-semibold">Transaction History</CardTitle>
-                <div className="flex items-center space-x-2">
-                  <Button variant="outline" size="sm" onClick={() => fetchTransactions()}>
-                    <ArrowPathIcon className="h-4 w-4 mr-2" />
-                    Refresh
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {/* Filters */}
-                <div className="space-y-4">
-                  <div className="flex flex-col md:flex-row gap-4">
-                    <div className="flex-1 relative">
-                      <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                      <Input
-                        placeholder="Search transactions..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
-                    <Select value={accountFilter} onValueChange={setAccountFilter}>
-                      <SelectTrigger className="w-full md:w-48">
-                        <SelectValue placeholder="All Accounts" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Accounts</SelectItem>
-                        {accounts.map(account => (
-                          <SelectItem key={account.id} value={account.id}>
-                            {account.accountNumber} - {account.customer.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select value={typeFilter} onValueChange={setTypeFilter}>
-                      <SelectTrigger className="w-full md:w-32">
-                        <SelectValue placeholder="All Types" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Types</SelectItem>
-                        <SelectItem value="deposit">Deposit</SelectItem>
-                        <SelectItem value="withdrawal">Withdrawal</SelectItem>
-                        <SelectItem value="interest">Interest</SelectItem>
-                        <SelectItem value="disbursement">Disbursement</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Input
-                      type="date"
-                      value={dateFilter}
-                      onChange={(e) => setDateFilter(e.target.value)}
-                      className="w-full md:w-40"
-                    />
-                    <Button onClick={fetchTransactions}>Apply Filters</Button>
-                  </div>
-                </div>
-
-                {/* Table */}
-                <div className="rounded-lg border overflow-hidden mt-4">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Account</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
-                        <TableHead className="text-right">Balance</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {loading ? (
-                        <TableRow>
-                          <TableCell colSpan={7} className="text-center py-8">
-                            <div className="flex items-center justify-center">
-                              <ArrowPathIcon className="h-6 w-6 animate-spin text-blue-500 mr-2" />
-                              Loading transactions...
+              ) : (
+                <Table>
+                  <TableHeader className="bg-slate-50/30">
+                    <TableRow className="border-b border-slate-100">
+                      <TableHead className="px-8 text-[10px] font-black uppercase text-slate-400 h-14 tracking-widest">Temporal Marker</TableHead>
+                      <TableHead className="text-[10px] font-black uppercase text-slate-400 h-14 tracking-widest">Instrument / Client</TableHead>
+                      <TableHead className="text-[10px] font-black uppercase text-slate-400 h-14 tracking-widest text-center">Protocol</TableHead>
+                      <TableHead className="text-[10px] font-black uppercase text-slate-400 h-14 tracking-widest text-right">Magnitude</TableHead>
+                      <TableHead className="text-[10px] font-black uppercase text-slate-400 h-14 tracking-widest text-right">Running</TableHead>
+                      <TableHead className="px-8 text-[10px] font-black uppercase text-slate-400 h-14 tracking-widest">Narrative</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {transactions.map((tx) => {
+                      const isInflow = ['deposit', 'interest', 'credit'].includes(tx.type)
+                      return (
+                        <TableRow key={tx.id} className="hover:bg-slate-50/50 transition-colors border-b border-slate-50 group">
+                          <TableCell className="px-8 py-5">
+                            <div className="text-xs font-bold text-slate-900 tracking-tight">
+                              {new Date(tx.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            </div>
+                            <div className="text-[9px] font-black text-slate-400 tracking-widest mt-0.5 uppercase">
+                              {new Date(tx.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-xs font-bold text-slate-900">{tx.account.customer.name}</div>
+                            <div className="text-[10px] font-black text-primary uppercase tracking-widest mt-0.5 font-mono">#{tx.account.accountNumber}</div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 border-none ${
+                               isInflow ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
+                            }`}>
+                              {tx.type}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className={`text-xs font-black tracking-tighter ${isInflow ? 'text-emerald-600' : 'text-rose-600'}`}>
+                              {isInflow ? '+' : '-'}{formatCurrency(tx.amount)}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right text-xs font-bold text-slate-900 tabular-nums">
+                            {formatCurrency(tx.balance || 0)}
+                          </TableCell>
+                          <TableCell className="px-8 max-w-[200px]">
+                            <div className="text-[11px] text-slate-500 leading-relaxed truncate group-hover:whitespace-normal transition-all">
+                              {tx.description || tx.reference || 'Automated Protocol Sync'}
                             </div>
                           </TableCell>
                         </TableRow>
-                      ) : filteredTransactions.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                            No transactions found
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        filteredTransactions.map((transaction) => (
-                          <TableRow key={transaction.id} className="hover:bg-gray-50/50">
-                            <TableCell>
-                              <div className="flex items-center">
-                                <CalendarIcon className="h-4 w-4 mr-2 text-gray-400" />
-                                {new Date(transaction.createdAt).toLocaleDateString()}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center">
-                                <BanknotesIcon className="h-4 w-4 mr-2 text-gray-400" />
-                                <div>
-                                  <p className="font-medium">{transaction.account.accountNumber}</p>
-                                  <p className="text-sm text-gray-500">{transaction.account.customer.name}</p>
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge className={getTransactionTypeColor(transaction.type)}>
-                                {getTransactionTypeIcon(transaction.type)}
-                                <span className="ml-1">{transaction.type}</span>
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div>
-                                <p className="font-medium">{transaction.description || 'N/A'}</p>
-                                {transaction.reference && (
-                                  <p className="text-sm text-gray-500">Ref: {transaction.reference}</p>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell className={`text-right font-medium ${
-                              transaction.type === 'deposit' || transaction.type === 'interest' ? 'text-green-600' : 'text-red-600'
-                            }`}>
-                              {transaction.type === 'deposit' || transaction.type === 'interest' ? '+' : '-'}
-                              ₹{transaction.amount.toLocaleString()}
-                            </TableCell>
-                            <TableCell className="text-right font-medium">
-                              ₹{transaction.balance?.toLocaleString() || '0'}
-                            </TableCell>
-                            <TableCell>
-                              <Button variant="ghost" size="sm">
-                                <EyeIcon className="h-4 w-4" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Enhanced Sidebar */}
-            <div className="space-y-6">
-              {/* Quick Actions */}
-              <Card className="bg-white/60 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-lg font-semibold">Quick Actions</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start h-12"
-                    onClick={() => setShowAddTransaction(true)}
-                  >
-                    <PlusIcon className="h-5 w-5 mr-3" />
-                    Add Transaction
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start h-12"
-                    onClick={() => router.push('/dashboard/accounts')}
-                  >
-                    <BanknotesIcon className="h-5 w-5 mr-3" />
-                    Manage Accounts
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start h-12"
-                    onClick={() => router.push('/dashboard/customers')}
-                  >
-                    <UserIcon className="h-5 w-5 mr-3" />
-                    View Customers
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start h-12"
-                    onClick={exportToCSV}
-                  >
-                    <ArrowDownTrayIcon className="h-5 w-5 mr-3" />
-                    Export Report
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {/* Recent Activity */}
-              <Card className="bg-white/60 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center space-x-3 p-2 rounded-lg bg-green-50">
-                    <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-                      <ArrowTrendingUpIcon className="h-4 w-4 text-green-600" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">Deposit Received</p>
-                      <p className="text-xs text-gray-500">2 mins ago</p>
-                    </div>
-                    <span className="text-sm font-semibold text-green-600">+₹5,000</span>
-                  </div>
-                  <div className="flex items-center space-x-3 p-2 rounded-lg bg-red-50">
-                    <div className="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center">
-                      <ArrowTrendingDownIcon className="h-4 w-4 text-red-600" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">Withdrawal</p>
-                      <p className="text-xs text-gray-500">15 mins ago</p>
-                    </div>
-                    <span className="text-sm font-semibold text-red-600">-₹2,000</span>
-                  </div>
-                  <div className="flex items-center space-x-3 p-2 rounded-lg bg-blue-50">
-                    <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                      <BanknotesIcon className="h-4 w-4 text-blue-600" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">Interest Credit</p>
-                      <p className="text-xs text-gray-500">1 hour ago</p>
-                    </div>
-                    <span className="text-sm font-semibold text-blue-600">+₹150</span>
-                  </div>
-                  <div className="flex items-center space-x-3 p-2 rounded-lg bg-purple-50">
-                    <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
-                      <CurrencyDollarIcon className="h-4 w-4 text-purple-600" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">Loan Disbursement</p>
-                      <p className="text-xs text-gray-500">2 hours ago</p>
-                    </div>
-                    <span className="text-sm font-semibold text-purple-600">+₹10,000</span>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Account Summary */}
-              <Card className="bg-white/60 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-lg font-semibold">Account Summary</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Total Accounts</span>
-                    <span className="font-semibold">{accounts.length}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Active Today</span>
-                    <span className="font-semibold text-green-600">{accounts.length}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Pending Review</span>
-                    <span className="font-semibold text-orange-600">0</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Avg Balance</span>
-                    <span className="font-semibold">₹4,230</span>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* System Status */}
-              <Card className="bg-white/60 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-lg font-semibold">System Status</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Database</span>
-                    <div className="flex items-center space-x-2">
-                      <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-                      <span className="text-sm text-green-600">Online</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">API Server</span>
-                    <div className="flex items-center space-x-2">
-                      <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-                      <span className="text-sm text-green-600">Operational</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Backup</span>
-                    <div className="flex items-center space-x-2">
-                      <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
-                      <span className="text-sm text-blue-600">Scheduled</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Last Sync</span>
-                    <span className="text-sm text-gray-500">2 mins ago</span>
-                  </div>
-                </CardContent>
-              </Card>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              )}
             </div>
-          </div>
+          </Card>
+        </div>
+
+        {/* Sidebar Analytics */}
+        <div className="lg:col-span-3 space-y-6 lg:sticky lg:top-6">
+          <Card className="border-slate-200 shadow-sm overflow-hidden rounded-2xl">
+            <CardHeader className="bg-slate-900 py-6 px-6">
+              <CardTitle className="text-sm font-black text-white uppercase tracking-[.2em] flex items-center">
+                <ChartBarIcon className="h-4 w-4 mr-2 text-primary" />
+                Distribution
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 space-y-4">
+              {[
+                { label: 'Deposits', count: transactions.filter(t => t.type === 'deposit').length, color: 'bg-emerald-500' },
+                { label: 'Withdrawals', count: transactions.filter(t => t.type === 'withdrawal').length, color: 'bg-rose-500' },
+                { label: 'Interest', count: transactions.filter(t => t.type === 'interest').length, color: 'bg-blue-500' },
+                { label: 'Disbursements', count: transactions.filter(t => t.type === 'disbursement').length, color: 'bg-indigo-500' }
+              ].map((item, idx) => (
+                <div key={idx} className="space-y-1.5">
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-500">
+                    <span>{item.label}</span>
+                    <span className="text-slate-900">{item.count}</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <div className={`${item.color} h-full transition-all duration-500`} style={{ width: `${(item.count/Math.max(transactions.length, 1))*100}%` }} />
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card className="border-slate-200 shadow-sm rounded-2xl">
+            <CardHeader className="py-4 border-b border-slate-100">
+              <CardTitle className="text-[10px] font-black text-slate-900 uppercase tracking-widest flex items-center">
+                <ShieldCheckIcon className="h-4 w-4 mr-2 text-emerald-500" />
+                Protocol Status
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Sync Health</span>
+                <Badge className="bg-emerald-50 text-emerald-700 text-[8px] font-black px-1.5 h-4 border-none">100%</Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Auth Protocol</span>
+                <Badge className="bg-blue-50 text-blue-700 text-[8px] font-black px-1.5 h-4 border-none">SECURE</Badge>
+              </div>
+              <div className="pt-4 border-t border-slate-50">
+                <p className="text-[9px] text-slate-400 font-bold leading-relaxed">System performing real-time audit on all distributed instrument logs.</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
       {/* Add Transaction Modal */}
-      {showAddTransaction && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-  <Card className="w-full max-w-md bg-white shadow-2xl border border-gray-200">
-            <CardHeader>
-              <CardTitle className="text-xl font-semibold">Add Manual Transaction</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="account">Account</Label>
-                <Select value={newTransaction.accountId} onValueChange={(value) => setNewTransaction({...newTransaction, accountId: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select account" />
+      <Dialog open={showAddTransaction} onOpenChange={setShowAddTransaction}>
+        <DialogContent className="sm:max-w-[500px] border-none shadow-2xl rounded-3xl p-0 overflow-hidden">
+          <div className="bg-slate-900 p-8 text-white relative">
+            <div className="absolute top-0 right-0 p-8 opacity-10">
+              <BanknotesIcon className="h-24 w-24" />
+            </div>
+            <DialogHeader>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Protocol Action</p>
+              <DialogTitle className="text-2xl font-black tracking-tight">Financial Entry Point</DialogTitle>
+              <DialogDescription className="text-slate-400 font-bold text-xs">Authorize and record a manual transaction cycle</DialogDescription>
+            </DialogHeader>
+          </div>
+
+          <div className="p-8 space-y-6 bg-white">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2 col-span-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Target Instrument</Label>
+                <Select value={newTransaction.accountId} onValueChange={v => setNewTransaction(p => ({ ...p, accountId: v }))}>
+                  <SelectTrigger className="h-11 border-slate-200 bg-slate-50/50 rounded-xl font-bold">
+                    <SelectValue placeholder="Select Account" />
                   </SelectTrigger>
                   <SelectContent>
-                    {accounts.map(account => (
-                      <SelectItem key={account.id} value={account.id}>
-                        {account.accountNumber} - {account.customer.name}
-                      </SelectItem>
+                    {accounts.map(acc => (
+                      <SelectItem key={acc.id} value={acc.id}>{acc.accountNumber} • {acc.customer.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="date">Transaction Date</Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    value={newTransaction.date}
-                    onChange={(e) => setNewTransaction({...newTransaction, date: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="paymentMethod">Payment Method</Label>
-                  <Select value={newTransaction.paymentMethod} onValueChange={(value) => setNewTransaction({...newTransaction, paymentMethod: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Method" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="online">Online</SelectItem>
-                      <SelectItem value="cash">Cash</SelectItem>
-                      <SelectItem value="bank">Bank</SelectItem>
-                      <SelectItem value="neft">NEFT</SelectItem>
-                      <SelectItem value="rtgs">RTGS</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="type">Transaction Type</Label>
-                <Select value={newTransaction.type} onValueChange={(value) => setNewTransaction({...newTransaction, type: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Cycle Type</Label>
+                <Select value={newTransaction.type} onValueChange={v => setNewTransaction(p => ({ ...p, type: v }))}>
+                  <SelectTrigger className="h-11 border-slate-200 bg-slate-50/50 rounded-xl font-bold">
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="deposit">Deposit</SelectItem>
@@ -885,56 +495,47 @@ export default function LedgerPage() {
                 </Select>
               </div>
 
-              <div>
-                <Label htmlFor="amount">Amount</Label>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Magnitude (₹)</Label>
                 <Input
-                  id="amount"
                   type="number"
-                  placeholder="Enter amount"
+                  placeholder="0.00"
                   value={newTransaction.amount}
-                  onChange={(e) => setNewTransaction({...newTransaction, amount: e.target.value})}
+                  onChange={e => setNewTransaction(p => ({ ...p, amount: e.target.value }))}
+                  className="h-11 border-slate-200 bg-slate-50/50 rounded-xl font-black tracking-tight"
                 />
               </div>
 
-              <div>
-                <Label htmlFor="description">Description</Label>
+              <div className="space-y-2 col-span-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Narrative String</Label>
                 <Input
-                  id="description"
-                  placeholder="Enter description"
+                  placeholder="Official transaction description..."
                   value={newTransaction.description}
-                  onChange={(e) => setNewTransaction({...newTransaction, description: e.target.value})}
+                  onChange={e => setNewTransaction(p => ({ ...p, description: e.target.value }))}
+                  className="h-11 border-slate-200 bg-slate-50/50 rounded-xl font-bold"
                 />
               </div>
+            </div>
 
-              <div>
-                <Label htmlFor="reference">Reference (Optional)</Label>
-                <Input
-                  id="reference"
-                  placeholder="Enter reference"
-                  value={newTransaction.reference}
-                  onChange={(e) => setNewTransaction({...newTransaction, reference: e.target.value})}
-                />
-              </div>
+            <DialogFooter className="mt-8">
+              <Button variant="ghost" onClick={() => setShowAddTransaction(false)} className="h-12 px-6 font-bold text-slate-500 hover:text-slate-900">Abort</Button>
+              <Button onClick={handleAddTransaction} className="h-12 px-8 finance-gradient-primary text-white font-black uppercase tracking-widest rounded-2xl shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">
+                Authorize Cycle
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
 
-              <div className="flex space-x-3 pt-4">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowAddTransaction(false)}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleAddTransaction}
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                >
-                  Add Transaction
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+export default function LedgerPage() {
+  return (
+    <DashboardLayout>
+      <Suspense fallback={<div>Loading Protocol...</div>}>
+        <LedgerContent />
+      </Suspense>
     </DashboardLayout>
   )
 }
