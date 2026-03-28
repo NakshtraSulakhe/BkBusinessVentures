@@ -1,49 +1,99 @@
 @import "tailwindcss";
+@import "./finance-theme.css";
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
+    /* Professional Finance Theme - Light Mode */
+    --background: 0 0% 99%;
+    --foreground: 220 13% 18%;
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
+    --card-foreground: 220 13% 18%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 217 91% 60%;
+    --popover-foreground: 220 13% 18%;
+    
+    /* Deep Navy Blue - Professional Primary */
+    --primary: 220 90% 18%;
     --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
-    --destructive: 0 84.2% 60.2%;
+    
+    /* Sophisticated Gray - Secondary */
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 13% 18%;
+    
+    /* Muted Professional Gray */
+    --muted: 220 13% 95%;
+    --muted-foreground: 220 9% 46%;
+    
+    /* Emerald Green - Financial Success/Accent */
+    --accent: 160 84% 39%;
+    --accent-foreground: 0 0% 98%;
+    
+    /* Professional Red - Financial Alerts */
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 217 91% 60%;
+    
+    /* Subtle Borders */
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 220 90% 18%;
+    
+    /* Custom Finance Colors */
+    --finance-success: 160 84% 39%;
+    --finance-warning: 38 92% 50%;
+    --finance-danger: 0 72% 51%;
+    --finance-info: 217 91% 60%;
+    
+    /* Professional Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(220 90% 18%) 0%, hsl(220 85% 25%) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(160 84% 39%) 0%, hsl(160 79% 46%) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(220 13% 98%) 100%);
+    
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 0 0% 3.9%;
+    /* Professional Finance Theme - Dark Mode */
+    --background: 220 13% 9%;
     --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
+    --card: 220 13% 11%;
     --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
+    --popover: 220 13% 11%;
     --popover-foreground: 0 0% 98%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
+    
+    /* Deep Navy Blue - Professional Primary */
+    --primary: 220 90% 25%;
+    --primary-foreground: 0 0% 98%;
+    
+    /* Sophisticated Dark Gray - Secondary */
+    --secondary: 215 28% 17%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
+    
+    /* Muted Professional Gray */
+    --muted: 215 28% 17%;
+    --muted-foreground: 217 10% 64%;
+    
+    /* Emerald Green - Financial Success/Accent */
+    --accent: 160 84% 44%;
     --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
+    
+    /* Professional Red - Financial Alerts */
+    --destructive: 0 62% 31%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 217 91% 60%;
+    
+    /* Subtle Borders */
+    --border: 215 28% 17%;
+    --input: 215 28% 17%;
+    --ring: 220 90% 25%;
+    
+    /* Custom Finance Colors - Dark Mode */
+    --finance-success: 160 84% 44%;
+    --finance-warning: 38 92% 55%;
+    --finance-danger: 0 62% 31%;
+    --finance-info: 217 91% 65%;
+    
+    /* Professional Gradients - Dark Mode */
+    --gradient-primary: linear-gradient(135deg, hsl(220 90% 25%) 0%, hsl(220 85% 32%) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(160 84% 44%) 0%, hsl(160 79% 51%) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(220 13% 11%) 0%, hsl(215 28% 17%) 100%);
   }
 
   * {
@@ -56,7 +106,7 @@
     color: hsl(var(--foreground));
   }
   html {
-    font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   }
 }
 
@@ -143,4 +193,4 @@
   transform: translateY(-5px);
   box-shadow: 0 20px 40px rgba(194, 186, 186, 0.1);
 }
-
+

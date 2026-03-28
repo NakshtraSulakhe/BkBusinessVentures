@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { AmountDisplay, StatusBadge, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui"
 import { 
   PlusIcon,
   MagnifyingGlassIcon,
@@ -129,266 +130,262 @@ export default function AccountsPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-6 min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Accounts Master
-              </h1>
-              <p className="text-gray-600 mt-2">
-                Manage Fixed Deposits, Recurring Deposits, and Loans
-              </p>
-            </div>
-            <Button
-              onClick={() => router.push('/dashboard/accounts/create')}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg h-12 px-6"
-            >
-              <PlusIcon className="h-5 w-5 mr-2" />
-              Create Account
-            </Button>
+      <div className="space-y-8">
+        {/* Page Header */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div>
+            <h1 className="text-2xl font-bold">Accounts Management</h1>
+            <p className="text-muted-foreground mt-1">Manage Fixed Deposits, Recurring Deposits, and Loans</p>
           </div>
+          <Button onClick={() => router.push('/dashboard/accounts/create')} className="finance-gradient-primary text-white hover:shadow-lg transition-all duration-200">
+            <PlusIcon className="h-4 w-4 mr-2" />
+            Create Account
+          </Button>
+        </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="finance-hover-lift">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 mb-2">Total Accounts</p>
-                  <p className="text-3xl font-bold text-gray-900">{total}</p>
-                  <p className="text-xs text-gray-500 mt-2">All account types</p>
+                  <p className="text-sm font-medium text-muted-foreground mb-2">Total Accounts</p>
+                  <p className="text-3xl font-bold">{total}</p>
+                  <p className="text-xs text-muted-foreground mt-2">All account types</p>
                 </div>
-                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
-                  <BanknotesIcon className="h-7 w-7 text-white" />
+                <div className="finance-icon-bg h-12 w-12 rounded-lg flex items-center justify-center">
+                  <BanknotesIcon className="h-6 w-6" />
                 </div>
               </div>
-            </div>
+            </CardContent>
+          </Card>
 
-            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+          <Card className="finance-hover-lift">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 mb-2">Fixed Deposits</p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-sm font-medium text-muted-foreground mb-2">Fixed Deposits</p>
+                  <p className="text-3xl font-bold">
                     {accounts.filter(a => a.accountType === 'fd').length}
                   </p>
-                  <p className="text-xs text-gray-500 mt-2">Investment accounts</p>
+                  <p className="text-xs text-muted-foreground mt-2">Investment accounts</p>
                 </div>
-                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg">
+                <div className="finance-icon-bg-success h-12 w-12 rounded-lg flex items-center justify-center">
                   <span className="text-2xl">💰</span>
                 </div>
               </div>
-            </div>
+            </CardContent>
+          </Card>
 
-            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+          <Card className="finance-hover-lift">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 mb-2">Recurring Deposits</p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-sm font-medium text-muted-foreground mb-2">Recurring Deposits</p>
+                  <p className="text-3xl font-bold">
                     {accounts.filter(a => a.accountType === 'rd').length}
                   </p>
-                  <p className="text-xs text-gray-500 mt-2">Monthly savings</p>
+                  <p className="text-xs text-muted-foreground mt-2">Monthly savings</p>
                 </div>
-                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg">
+                <div className="finance-icon-bg-info h-12 w-12 rounded-lg flex items-center justify-center">
                   <span className="text-2xl">🔄</span>
                 </div>
               </div>
-            </div>
+            </CardContent>
+          </Card>
 
-            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+          <Card className="finance-hover-lift">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 mb-2">Loans</p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-sm font-medium text-muted-foreground mb-2">Loans</p>
+                  <p className="text-3xl font-bold">
                     {accounts.filter(a => a.accountType === 'loan').length}
                   </p>
-                  <p className="text-xs text-gray-500 mt-2">Active loans</p>
+                  <p className="text-xs text-muted-foreground mt-2">Active loans</p>
                 </div>
-                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center shadow-lg">
+                <div className="finance-icon-bg-danger h-12 w-12 rounded-lg flex items-center justify-center">
                   <span className="text-2xl">💳</span>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Filters */}
-          <Card className="bg-white/60 backdrop-blur-sm mb-6">
-            <CardContent className="p-6">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1">
-                  <div className="relative">
-                    <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      placeholder="Search by account number, customer name..."
-                      value={search}
-                      onChange={(e) => handleSearch(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                <div className="w-full md:w-48">
-                  <Select value={accountType} onValueChange={handleTypeFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="All Types" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Types</SelectItem>
-                      <SelectItem value="fd">Fixed Deposit</SelectItem>
-                      <SelectItem value="rd">Recurring Deposit</SelectItem>
-                      <SelectItem value="loan">Loan</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button
-                  variant="outline"
-                  onClick={() => fetchAccounts(1, '', 'all')}
-                  className="w-full md:w-auto"
-                >
-                  <ArrowPathIcon className="h-4 w-4 mr-2" />
-                  Refresh
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Accounts Table */}
-          <Card className="bg-white/60 backdrop-blur-sm">
-            <CardContent className="p-6">
-              {loading ? (
-                <div className="flex justify-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                </div>
-              ) : accounts.length === 0 ? (
-                <div className="text-center py-12">
-                  <BanknotesIcon className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-4 text-lg font-medium text-gray-900">No accounts found</h3>
-                  <p className="mt-2 text-sm text-gray-500">
-                    Get started by creating your first account.
-                  </p>
-                  <Button
-                    onClick={() => router.push('/dashboard/accounts/create')}
-                    className="mt-4 bg-gradient-to-r from-blue-600 to-purple-600"
-                  >
-                    <PlusIcon className="h-4 w-4 mr-2" />
-                    Create First Account
-                  </Button>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-4 font-medium text-gray-700">Account</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700">Customer</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700">Type</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700">Principal</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700">Rate</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700">Status</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {accounts.map((account) => (
-                        <tr key={account.id} className="border-b border-gray-100 hover:bg-gray-50">
-                          <td className="py-4 px-4">
-                            <div>
-                              <div className="font-medium">{account.accountNumber}</div>
-                              <div className="text-sm text-gray-500">
-                                {new Date(account.createdAt).toLocaleDateString()}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-4 px-4">
-                            <div className="flex items-center">
-                              <UserIcon className="h-4 w-4 text-gray-400 mr-2" />
-                              <div>
-                                <div className="font-medium">{account.customer.name}</div>
-                                <div className="text-sm text-gray-500">{account.customer.email}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-4 px-4">
-                            <Badge className={getAccountTypeColor(account.accountType)}>
-                              <span className="mr-1">{getAccountTypeIcon(account.accountType)}</span>
-                              {account.accountType.toUpperCase()}
-                            </Badge>
-                          </td>
-                          <td className="py-4 px-4">
-                            <div className="font-medium">
-                              ₹{account.principalAmount.toLocaleString()}
-                            </div>
-                          </td>
-                          <td className="py-4 px-4">
-                            <div className="font-medium">{account.interestRate}%</div>
-                            <div className="text-sm text-gray-500">{account.tenure} months</div>
-                          </td>
-                          <td className="py-4 px-4">
-                            <Badge className={getStatusColor(account.state)}>
-                              {account.state}
-                            </Badge>
-                          </td>
-                          <td className="py-4 px-4">
-                            <div className="flex items-center space-x-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => router.push(`/dashboard/accounts/${account.id}`)}
-                              >
-                                <EyeIcon className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-6">
-                  <div className="text-sm text-gray-600">
-                    Showing {((currentPage - 1) * 10) + 1} to {Math.min(currentPage * 10, total)} of {total} accounts
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                      disabled={currentPage === 1}
-                    >
-                      Previous
-                    </Button>
-                    <div className="flex items-center space-x-1">
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        const page = i + 1
-                        return (
-                          <Button
-                            key={page}
-                            variant={currentPage === page ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setCurrentPage(page)}
-                          >
-                            {page}
-                          </Button>
-                        )
-                      })}
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                      disabled={currentPage === totalPages}
-                    >
-                      Next
-                    </Button>
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
         </div>
+
+        {/* Filters */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by account number, customer name..."
+                    value={search}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              <div className="w-full md:w-48">
+                <Select value={accountType} onValueChange={handleTypeFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Types" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="fd">Fixed Deposit</SelectItem>
+                    <SelectItem value="rd">Recurring Deposit</SelectItem>
+                    <SelectItem value="loan">Loan</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => fetchAccounts(1, '', 'all')}
+                className="w-full md:w-auto"
+              >
+                <ArrowPathIcon className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Accounts Table */}
+        <Card>
+          <CardContent className="p-6">
+            {loading ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : accounts.length === 0 ? (
+              <div className="text-center py-12">
+                <BanknotesIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+                <h3 className="mt-4 text-lg font-medium">No accounts found</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Get started by creating your first account.
+                </p>
+                <Button
+                  onClick={() => router.push('/dashboard/accounts/create')}
+                  className="mt-4"
+                >
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  Create First Account
+                </Button>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Account</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Principal</TableHead>
+                    <TableHead>Rate</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {accounts.map((account) => (
+                    <TableRow key={account.id}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium font-mono text-sm">{account.accountNumber}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {new Date(account.createdAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center">
+                          <UserIcon className="h-4 w-4 text-muted-foreground mr-2" />
+                          <div>
+                            <div className="font-medium">{account.customer.name}</div>
+                            <div className="text-sm text-muted-foreground">{account.customer.email}</div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge status={account.accountType === 'fd' ? 'active' : 'pending'}>
+                          <span className="mr-1">{getAccountTypeIcon(account.accountType)}</span>
+                          {account.accountType.toUpperCase()}
+                        </StatusBadge>
+                      </TableCell>
+                      <TableCell>
+                        <AmountDisplay amount={account.principalAmount} size="sm" />
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-medium">{account.interestRate}%</div>
+                        <div className="text-sm text-muted-foreground">{account.tenure} months</div>
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge status={account.state === 'active' ? 'active' : account.state === 'matured' ? 'due_soon' : 'inactive'}>
+                          {account.state}
+                        </StatusBadge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => router.push(`/dashboard/accounts/${account.id}`)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <EyeIcon className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-6">
+                <div className="text-sm text-muted-foreground">
+                  Showing {((currentPage - 1) * 10) + 1} to {Math.min(currentPage * 10, total)} of {total} accounts
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      const page = i + 1
+                      return (
+                        <Button
+                          key={page}
+                          variant={currentPage === page ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(page)}
+                        >
+                          {page}
+                        </Button>
+                      )
+                    })}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   )

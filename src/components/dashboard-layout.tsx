@@ -170,7 +170,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                       tooltip={item.name}
                       className={cn(isParentActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium")}
                     >
-                      <item.icon className="h-4 w-4" />
+                      <item.icon className={cn(
+                        "h-4 w-4",
+                        isParentActive ? "text-primary" : "text-muted-foreground"
+                      )} />
                       <span>{item.name}</span>
                       <ChevronRightIcon className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                     </SidebarMenuButton>
@@ -207,7 +210,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 className={cn(item.current && "bg-sidebar-accent text-sidebar-accent-foreground font-medium")}
               >
                 <a href={item.href} className="flex items-center gap-2">
-                  <item.icon className="h-4 w-4" />
+                  <item.icon className={cn(
+                    "h-4 w-4",
+                    item.current ? "text-primary" : "text-muted-foreground"
+                  )} />
                   <span>{item.name}</span>
                 </a>
               </SidebarMenuButton>
@@ -224,11 +230,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <Sidebar collapsible="icon">
         <SidebarHeader className="h-16 flex items-center justify-center border-b border-sidebar-border px-4 py-2">
           <div className="flex w-full items-center gap-2 overflow-hidden">
-            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-blue-600 text-sidebar-primary-foreground">
+            <div className="flex aspect-square size-8 items-center justify-center rounded-lg finance-gradient-primary text-sidebar-primary-foreground">
               <BuildingLibraryIcon className="size-4 text-white" />
             </div>
             <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-semibold text-foreground">BK Business</span>
+              <span className="truncate font-semibold finance-text-gradient">BK Business</span>
               <span className="truncate text-xs text-muted-foreground">Ventures</span>
             </div>
           </div>
@@ -289,9 +295,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       </Sidebar>
 
       {/* Main Content */}
-      <SidebarInset>
+      <SidebarInset className="flex flex-col h-screen">
         {/* Top Header */}
-        <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-6 border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+        <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-6 border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 flex-shrink-0">
           <div className="flex items-center gap-4">
             <SidebarTrigger className="text-muted-foreground hover:text-foreground transition-colors" />
             <div className="h-6 w-px bg-border hidden sm:block" />
@@ -342,7 +348,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </header>
 
         {/* Page Content */}
-        <main className="p-6">
+        <main className="flex-1 overflow-y-auto p-6">
           {children}
         </main>
       </SidebarInset>

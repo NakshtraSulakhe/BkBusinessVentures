@@ -19,11 +19,12 @@ export async function POST(request: NextRequest) {
     const template = await prisma.numberingTemplate.create({
       data: {
         name: body.name,
-        prefix: body.prefix,
-        suffix: body.suffix || null,
-        padding: body.padding || 6,
-        currentNumber: body.currentNumber || 1,
-        yearlyReset: body.yearlyReset || false
+        template: body.template,
+        description: body.description || null,
+        accountType: body.accountType,
+        sequenceStart: body.sequenceStart || 1,
+        currentSequence: body.currentSequence || 0,
+        requiredVariables: body.requiredVariables || null
       }
     })
     return NextResponse.json({ template }, { status: 201 })
