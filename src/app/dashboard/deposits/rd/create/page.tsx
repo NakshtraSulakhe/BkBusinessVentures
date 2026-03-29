@@ -34,6 +34,7 @@ import {
   ChevronDownIcon,
   ArrowPathIcon
 } from "@heroicons/react/24/outline"
+import { ShieldCheck } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -356,7 +357,7 @@ function CreateRDComponent() {
 
               <div className="pt-6 border-t border-white/10">
                 <div className="flex items-center gap-2 mb-4">
-                  <ShieldCheckIcon className="h-4 w-4 text-emerald-400" />
+                  <ShieldCheck className="h-4 w-4 text-emerald-400" />
                   <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">KYC DEPTH CHECK: PASS</span>
                 </div>
                 <Button type="submit" disabled={loading} className="w-full finance-gradient-primary text-white font-black uppercase tracking-widest h-14 rounded-2xl shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">

@@ -3,9 +3,9 @@ import { prisma } from "@/lib/database"
 
 export async function POST(request: NextRequest) {
   try {
-    const { ids } = await request.json()
+    const { suggestionIds } = await request.json()
     
-    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    if (!suggestionIds || !Array.isArray(suggestionIds) || suggestionIds.length === 0) {
       return NextResponse.json(
         { error: 'Valid suggestion IDs are required' },
         { status: 400 }
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
 
     const results = []
 
-    for (const suggestionId of ids) {
+    for (const suggestionId of suggestionIds) {
       try {
         // Get the suggestion with account details
         const suggestion = await prisma.suggestedEntry.findUnique({

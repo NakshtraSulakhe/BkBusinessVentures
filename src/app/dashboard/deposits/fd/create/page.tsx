@@ -31,7 +31,8 @@ import {
   Cog6ToothIcon,
   CircleStackIcon,
   UsersIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  ShieldCheckIcon
 } from "@heroicons/react/24/outline"
 import {
   DropdownMenu,

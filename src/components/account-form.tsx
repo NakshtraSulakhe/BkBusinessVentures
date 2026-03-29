@@ -129,12 +129,12 @@ export default function AccountForm({ customerId, customerName, onSuccess, onCan
   const selectedAccountType = accountTypes.find(t => t.value === formData.accountType)
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+        <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
           Create New Account
         </h1>
-        <p className="text-gray-600 mt-2 flex items-center">
+        <p className="text-gray-600 mt-2 flex items-center text-sm">
           <UserIcon className="h-4 w-4 mr-2" />
           Customer: {customerName}
         </p>
@@ -150,11 +150,11 @@ export default function AccountForm({ customerId, customerName, onSuccess, onCan
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               {accountTypes.map((type) => (
                 <div
                   key={type.value}
-                  className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                  className={`p-3 sm:p-4 border-2 rounded-lg cursor-pointer transition-all ${
                     formData.accountType === type.value
                       ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-200 hover:border-gray-300'
@@ -162,9 +162,9 @@ export default function AccountForm({ customerId, customerName, onSuccess, onCan
                   onClick={() => updateFormData('accountType', '', type.value)}
                 >
                   <div className="text-center">
-                    <div className="text-2xl mb-2">{type.icon}</div>
-                    <div className="font-medium">{type.label}</div>
-                    <Badge className={`mt-2 ${type.color}`}>
+                    <div className="text-xl sm:text-2xl mb-1 sm:mb-2">{type.icon}</div>
+                    <div className="font-medium text-sm sm:text-base">{type.label}</div>
+                    <Badge className={`mt-1 sm:mt-2 text-[10px] sm:text-xs ${type.color}`}>
                       {type.value.toUpperCase()}
                     </Badge>
                   </div>
@@ -183,7 +183,7 @@ export default function AccountForm({ customerId, customerName, onSuccess, onCan
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="principalAmount">Principal Amount (₹)</Label>
                 <Input
@@ -210,7 +210,7 @@ export default function AccountForm({ customerId, customerName, onSuccess, onCan
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="tenure">Tenure (months)</Label>
                 <Input
@@ -255,7 +255,7 @@ export default function AccountForm({ customerId, customerName, onSuccess, onCan
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label>Interest Mode</Label>
                 <Select
@@ -293,7 +293,7 @@ export default function AccountForm({ customerId, customerName, onSuccess, onCan
             {formData.accountType === 'loan' && (
               <>
                 <Separator />
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label>Loan Method</Label>
                     <Select
@@ -322,7 +322,7 @@ export default function AccountForm({ customerId, customerName, onSuccess, onCan
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="emiDueDay">EMI Due Day</Label>
                     <Input
@@ -351,7 +351,7 @@ export default function AccountForm({ customerId, customerName, onSuccess, onCan
             )}
 
             <Separator />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label>Rounding Mode</Label>
                 <Select
@@ -385,19 +385,20 @@ export default function AccountForm({ customerId, customerName, onSuccess, onCan
         </Card>
 
         {/* Action Buttons */}
-        <div className="flex justify-end space-x-4">
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 sm:space-x-4">
           <Button
             type="button"
             variant="outline"
             onClick={onCancel}
             disabled={loading}
+            className="w-full sm:w-auto"
           >
             Cancel
           </Button>
           <Button
             type="submit"
             disabled={loading}
-            className="bg-gradient-to-r from-blue-600 to-purple-600"
+            className="bg-gradient-to-r from-blue-600 to-purple-600 w-full sm:w-auto"
           >
             {loading ? 'Creating Account...' : `Create ${selectedAccountType?.label}`}
           </Button>

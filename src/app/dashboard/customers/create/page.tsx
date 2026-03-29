@@ -144,7 +144,7 @@ export default function CreateCustomer() {
       <div className="space-y-6 animate-fade-in-up pb-20">
         <PageHeader
           title="Create New Customer"
-          subtitle="Onboard a new client into the banking ecosystem"
+          subtitle="Add a new customer to the system"
           actions={
             <Button
               variant="outline"
@@ -152,7 +152,7 @@ export default function CreateCustomer() {
               className="h-9 border-slate-200 text-slate-700 rounded-xl px-4 hover:bg-slate-50 transition-all font-medium"
             >
               <ArrowLeftIcon className="h-4 w-4 mr-2" />
-              Discard
+              Cancel
             </Button>
           }
         />
@@ -167,8 +167,8 @@ export default function CreateCustomer() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          <div className="lg:col-span-8 space-y-6">
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start pb-10">
+          <div className="lg:col-span-8 space-y-5 sm:space-y-6">
             {/* Form Section: Identity */}
             <Card className="border-slate-200 shadow-sm overflow-hidden">
               <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-4">
@@ -179,7 +179,7 @@ export default function CreateCustomer() {
               </CardHeader>
               <CardContent className="p-6 space-y-5">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Legal Full Name</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Full Name</label>
                   <div className="relative">
                     <UserIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <Input
@@ -220,7 +220,7 @@ export default function CreateCustomer() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 pt-2">
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">PAN Card</label>
                     <Input
@@ -277,7 +277,7 @@ export default function CreateCustomer() {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">City</label>
                     <Input
@@ -364,12 +364,12 @@ export default function CreateCustomer() {
               <CardHeader className="bg-slate-800 text-white rounded-t-xl px-6 py-4">
                 <CardTitle className="text-xs font-black uppercase tracking-[0.2em] flex items-center">
                   <BuildingLibraryIcon className="h-4 w-4 mr-2 text-primary-foreground/60" />
-                  Core Product Selection
+                  Select Account Type
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
                 <div className="space-y-4">
-                  <p className="text-xs text-slate-400 font-medium mb-4">Choose the primary account relationship for this customer.</p>
+                  <p className="text-xs text-slate-400 font-medium mb-4">Choose the account type for this customer.</p>
                   
                   {[
                     { val: 'savings', label: 'Savings Account', icon: '💰', color: 'bg-blue-50 text-blue-600' },
@@ -404,13 +404,13 @@ export default function CreateCustomer() {
 
             {/* Compliance Info */}
             <div className="bg-primary/5 border border-primary/10 rounded-2xl p-6">
-              <h4 className="text-xs font-black text-primary uppercase tracking-[0.15em] mb-4">Compliance Check</h4>
+              <h4 className="text-xs font-black text-primary uppercase tracking-[0.15em] mb-4">Verification Status</h4>
               <ul className="space-y-3">
                 {[
-                  "Government ID details matched",
-                  "Contact information verified",
-                  "AML / Risk screening pending",
-                  "Terms of Service acknowledged"
+                  "ID details matched",
+                  "Contact info verified",
+                  "Background check pending",
+                  "Terms of service accepted"
                 ].map((text, idx) => (
                   <li key={idx} className="flex items-center text-[11px] font-bold text-slate-600">
                     <ShieldCheckIcon className="h-3.5 w-3.5 mr-2 text-primary/60" />
@@ -427,15 +427,15 @@ export default function CreateCustomer() {
               className="w-full h-14 finance-gradient-primary text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               {loading ? (
-                <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center gap-3">
                   <div className="h-5 w-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                   Processing...
                 </div>
               ) : (
-                <>
+                <div className="flex items-center justify-center">
                   <SparklesIcon className="h-5 w-5 mr-3" />
-                  Confirm & Create
-                </>
+                  Create Customer
+                </div>
               )}
             </Button>
           </div>

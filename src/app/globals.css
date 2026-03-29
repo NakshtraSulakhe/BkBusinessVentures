@@ -192,3 +192,87 @@
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
+
+/* ─── Mobile Sidebar Fix ───────────────────────────────── */
+[data-state="open"][data-sidebar="sidebar"] {
+  overscroll-behavior: contain;
+}
+
+body:has([data-state="open"][data-mobile="true"]) {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+
+/* Mobile sheet animation smoothness */
+[data-slot="sidebar"] {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent layout shift on mobile */
+@media (max-width: 768px) {
+  [data-slot="sidebar-wrapper"] {
+    position: relative;
+  }
+}
+
+/* Better touch handling on mobile sidebar */
+@media (max-width: 768px) {
+  [data-sidebar="content"] {
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Hide scrollbar but keep functionality on mobile sidebar */
+[data-sidebar="content"]::-webkit-scrollbar {
+  display: none;
+}
+
+[data-sidebar="content"] {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ─── Responsive Table Utilities ────────────────────────── */
+@media (max-width: 640px) {
+  .responsive-table th, 
+  .responsive-table td {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+  
+  .hide-on-mobile {
+    display: none !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  .hide-on-tablet {
+    display: none !important;
+  }
+}
+
+/* ─── Container Spacing ────────────────────────────────── */
+.page-container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .page-container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .page-container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}

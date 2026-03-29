@@ -46,11 +46,11 @@ function GenerateSuggestionsContent() {
         router.push('/dashboard/operations/suggestions')
       } else {
         const error = await response.json()
-        alert(error.error || 'Engine execution failed.')
+        alert(error.error || 'Failed to generate suggestions.')
       }
     } catch (error) {
       console.error(error)
-      alert('Internal engine protocol error.')
+      alert('Internal error occurred.')
     } finally {
       setLoading(false)
     }
@@ -61,8 +61,8 @@ function GenerateSuggestionsContent() {
   return (
     <div className="space-y-6 animate-fade-in-up pb-20">
       <PageHeader
-        title="Instrument Lifecycle Engine"
-        subtitle="Initialize automated predictive discovery for monthly periodic instruments"
+        title="Payment Suggestions Generator"
+        subtitle="Generate automated payment and interest suggestions for the selected month"
         actions={
           <Button
             variant="outline"
@@ -70,7 +70,7 @@ function GenerateSuggestionsContent() {
             className="h-9 border-slate-200 text-slate-700 rounded-xl px-4 hover:bg-slate-50 font-medium transition-all"
           >
             <ArrowLeftIcon className="h-4 w-4 mr-2" />
-            Queue
+            Back to Queue
           </Button>
         }
       />
@@ -82,16 +82,16 @@ function GenerateSuggestionsContent() {
             <CardHeader className="bg-slate-50/50 border-b border-slate-100 py-6 px-8 flex items-center justify-between">
               <CardTitle className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center">
                 <CpuChipIcon className="h-4 w-4 mr-3 text-primary" />
-                Processing Parameters
+                Generation Settings
               </CardTitle>
-              <Badge className="bg-blue-50 text-blue-700 border-none font-bold text-[10px] uppercase h-5 px-2">Ready for Execution</Badge>
+              <Badge className="bg-blue-50 text-blue-700 border-none font-bold text-[10px] uppercase h-5 px-2">Ready</Badge>
             </CardHeader>
             <CardContent className="p-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-3">
                   <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2">
                     <CalendarDaysIcon className="h-3 w-3" />
-                    Target Operational Period
+                    Select Month
                   </Label>
                   <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
                     <SelectTrigger className="h-14 border-slate-200 bg-slate-50/50 rounded-2xl font-black shadow-none px-6">
@@ -109,7 +109,7 @@ function GenerateSuggestionsContent() {
                 <div className="space-y-3">
                   <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2">
                     <BoltIcon className="h-3 w-3" />
-                    Institutional Year
+                    Select Year
                   </Label>
                   <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
                     <SelectTrigger className="h-14 border-slate-200 bg-slate-50/50 rounded-2xl font-black shadow-none px-6">
@@ -118,7 +118,7 @@ function GenerateSuggestionsContent() {
                     <SelectContent className="rounded-2xl border-slate-200">
                       {[selectedYear - 1, selectedYear, selectedYear + 1].map(y => (
                         <SelectItem key={y} value={y.toString()} className="font-bold">
-                          {y} Operational Cycle
+                          {y}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -128,9 +128,9 @@ function GenerateSuggestionsContent() {
 
               <div className="mt-10 pt-8 border-t border-slate-100 flex flex-col items-center gap-6">
                 <div className="text-center space-y-2">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Verification Required</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Review Information</p>
                   <p className="text-xs font-bold text-slate-500 leading-relaxed max-w-sm mx-auto">
-                    Initiating the engine will scan all active Recurring Deposits and Loan portfolios for the selected period.
+                    The generator will scan all active RD and Loan accounts to find due payments for this month.
                   </p>
                 </div>
                 <Button
@@ -141,12 +141,12 @@ function GenerateSuggestionsContent() {
                   {loading ? (
                     <div className="flex items-center gap-4">
                       <ArrowPathIcon className="h-6 w-6 animate-spin text-primary" />
-                      <span>Processing Pulse...</span>
+                      <span>Generating...</span>
                     </div>
                   ) : (
                     <div className="flex items-center gap-4 group-hover:scale-105 transition-transform">
                       <RocketLaunchIcon className="h-6 w-6 text-primary group-hover:animate-bounce" />
-                      <span>Launch Discovery Protocol</span>
+                      <span>Generate Suggestions</span>
                     </div>
                   )}
                   {/* Subtle shine effect */}
@@ -163,12 +163,12 @@ function GenerateSuggestionsContent() {
             <CardHeader className="p-8 pb-4">
               <CardTitle className="text-white text-xl font-black tracking-tight flex items-center">
                 <SparklesIcon className="h-5 w-5 mr-3 text-primary animate-pulse" />
-                Discovery Insights
+                How it works
               </CardTitle>
             </CardHeader>
             <CardContent className="p-8 pt-0 space-y-6">
               <p className="text-xs text-slate-400 font-bold leading-relaxed border-b border-white/10 pb-4">
-                The engine utilizes predictive logic to identify maturing installments and overdue liabilities.
+                The system identifies upcoming payments and interest due for all accounts.
               </p>
               
               <div className="space-y-6">
@@ -177,8 +177,8 @@ function GenerateSuggestionsContent() {
                     <CalendarDaysIcon className="h-4 w-4" />
                   </div>
                   <div>
-                    <h5 className="text-[10px] font-black text-white uppercase tracking-widest">Temporal Analysis</h5>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-1 leading-relaxed">Cross-references instrument opening dates with maturity cycles to verify installment accuracy.</p>
+                    <h5 className="text-[10px] font-black text-white uppercase tracking-widest">Smart Scanning</h5>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-1 leading-relaxed">Checks account dates and payment schedules to ensure all suggestions are accurate.</p>
                   </div>
                 </div>
                 <div className="flex gap-4 items-start">
@@ -186,8 +186,8 @@ function GenerateSuggestionsContent() {
                     <ShieldCheckIcon className="h-4 w-4" />
                   </div>
                   <div>
-                    <h5 className="text-[10px] font-black text-white uppercase tracking-widest">Audit Integrity</h5>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-1 leading-relaxed">Generated propositions are staged in a queue for human verification before ledger commitment.</p>
+                    <h5 className="text-[10px] font-black text-white uppercase tracking-widest">Manual Review</h5>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-1 leading-relaxed">All suggestions are saved in a queue for you to review and approve before they are recorded.</p>
                   </div>
                 </div>
               </div>
@@ -195,9 +195,9 @@ function GenerateSuggestionsContent() {
               <div className="pt-6 border-t border-white/10">
                 <div className="flex items-center gap-2 mb-4">
                   <InformationCircleIcon className="h-4 w-4 text-emerald-400" />
-                  <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Infrastructure Check</span>
+                  <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">System Status</span>
                 </div>
-                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest leading-relaxed text-center">Engine health: Optimal. Ready for large-scale periodic discovery.</p>
+                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest leading-relaxed text-center">System is ready to generate suggestions.</p>
               </div>
             </CardContent>
           </Card>
@@ -210,7 +210,7 @@ function GenerateSuggestionsContent() {
 export default function GenerateSuggestionsPage() {
   return (
     <DashboardLayout>
-      <Suspense fallback={<div>Querying Engine Matrix...</div>}>
+      <Suspense fallback={<div>Loading...</div>}>
         <GenerateSuggestionsContent />
       </Suspense>
     </DashboardLayout>

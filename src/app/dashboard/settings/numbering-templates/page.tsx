@@ -9,14 +9,16 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { PageHeader } from "@/components/ui/page-header"
 import { 
-  PlusIcon,
-  PencilIcon,
-  TrashIcon,
-  DocumentTextIcon,
-  CheckCircleIcon,
-  XCircleIcon
-} from "@heroicons/react/24/outline"
+  Plus,
+  Pencil,
+  Trash2,
+  FileText,
+  CheckCircle2,
+  XCircle,
+  Settings
+} from "lucide-react"
 
 interface NumberingTemplate {
   id: string
@@ -169,39 +171,33 @@ export default function NumberingTemplatesPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-6 min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
-        <div className="max-w-6xl mx-auto">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Numbering Templates
-              </h1>
-              <p className="text-gray-600 mt-2">
-                Manage account number generation templates
-              </p>
-            </div>
+      <div className="space-y-6 animate-fade-in-up pb-20">
+        <PageHeader
+          title="Numbering Templates"
+          subtitle="Manage account number generation templates"
+          actions={
             <Button
               onClick={() => setShowCreateForm(true)}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg h-12 px-6"
+              className="finance-gradient-primary shadow-lg h-10 px-5 rounded-xl"
             >
-              <PlusIcon className="h-5 w-5 mr-2" />
+              <Plus className="h-4 w-4 mr-2" />
               Create Template
             </Button>
-          </div>
+          }
+        />
 
-          {/* Create/Edit Form */}
-          {showCreateForm && (
-            <Card className="bg-white/60 backdrop-blur-sm mb-6">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <DocumentTextIcon className="h-5 w-5 mr-2" />
-                  {editingTemplate ? 'Edit Template' : 'Create New Template'}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+        {/* Create/Edit Form */}
+        {showCreateForm && (
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-4">
+              <CardTitle className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
+                <FileText className="h-4 w-4 mr-2 text-primary" />
+                {editingTemplate ? 'Edit Template' : 'Create New Template'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="name">Template Name</Label>
                       <Input
@@ -273,7 +269,7 @@ export default function NumberingTemplatesPage() {
                     />
                   </div>
 
-                  <div className="flex justify-end space-x-4 pt-4">
+                  <div className="flex justify-end gap-3 pt-4">
                     <Button
                       type="button"
                       variant="outline"
@@ -288,13 +284,14 @@ export default function NumberingTemplatesPage() {
                           sequenceStart: 1
                         })
                       }}
+                      className="h-10 px-5 rounded-xl"
                     >
                       Cancel
                     </Button>
                     <Button
                       type="submit"
                       disabled={templateErrors.length > 0}
-                      className="bg-gradient-to-r from-blue-600 to-purple-600"
+                      className="finance-gradient-primary h-10 px-5 rounded-xl"
                     >
                       {editingTemplate ? 'Update Template' : 'Create Template'}
                     </Button>
@@ -304,104 +301,106 @@ export default function NumberingTemplatesPage() {
             </Card>
           )}
 
-          {/* Templates List */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {templates.map((template) => (
-              <Card key={template.id} className="bg-white/60 backdrop-blur-sm">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center">
-                      <DocumentTextIcon className="h-5 w-5 mr-2" />
-                      {template.name}
-                    </CardTitle>
-                    <div className="flex items-center space-x-2">
-                      {template.isActive ? (
-                        <Badge className="bg-green-100 text-green-700">
-                          <CheckCircleIcon className="h-3 w-3 mr-1" />
-                          Active
-                        </Badge>
-                      ) : (
-                        <Badge className="bg-gray-100 text-gray-700">
-                          <XCircleIcon className="h-3 w-3 mr-1" />
-                          Inactive
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <p className="text-sm text-gray-500">Template Pattern</p>
-                    <code className="block p-2 bg-gray-100 rounded text-sm">
-                      {template.template}
-                    </code>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-gray-500">Account Type</p>
-                      <Badge className={getAccountTypeColor(template.accountType)}>
-                        {template.accountType.toUpperCase()}
+        {/* Templates List */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {templates.map((template) => (
+            <Card key={template.id} className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
+                    <FileText className="h-4 w-4 mr-2 text-primary" />
+                    {template.name}
+                  </CardTitle>
+                  <div className="flex items-center space-x-2">
+                    {template.isActive ? (
+                      <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                        Active
                       </Badge>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Current Sequence</p>
-                      <p className="font-medium">{template.currentSequence}</p>
-                    </div>
+                    ) : (
+                      <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200">
+                        <XCircle className="h-3 w-3 mr-1" />
+                        Inactive
+                      </Badge>
+                    )}
                   </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-6 space-y-4">
+                <div>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Template Pattern</p>
+                  <code className="block p-3 bg-slate-100 rounded-lg text-sm font-mono text-slate-800 mt-1">
+                    {template.template}
+                  </code>
+                </div>
 
-                  {template.description && (
-                    <div>
-                      <p className="text-sm text-gray-500">Description</p>
-                      <p className="text-sm">{template.description}</p>
-                    </div>
-                  )}
-
-                  <Separator />
-
-                  <div className="flex justify-end space-x-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEdit(template)}
-                    >
-                      <PencilIcon className="h-4 w-4 mr-1" />
-                      Edit
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(template.id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <TrashIcon className="h-4 w-4 mr-1" />
-                      Delete
-                    </Button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Account Type</p>
+                    <Badge className={getAccountTypeColor(template.accountType)}>
+                      {template.accountType.toUpperCase()}
+                    </Badge>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  <div>
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Current Sequence</p>
+                    <p className="font-bold text-slate-900">{template.currentSequence}</p>
+                  </div>
+                </div>
 
-          {templates.length === 0 && !loading && (
-            <Card className="bg-white/60 backdrop-blur-sm">
-              <CardContent className="text-center py-12">
-                <DocumentTextIcon className="mx-auto h-16 w-16 text-gray-400" />
-                <h3 className="mt-4 text-lg font-medium text-gray-900">No templates found</h3>
-                <p className="mt-2 text-sm text-gray-500">
-                  Create your first numbering template to get started.
-                </p>
-                <Button
-                  onClick={() => setShowCreateForm(true)}
-                  className="mt-4 bg-gradient-to-r from-blue-600 to-purple-600"
-                >
-                  <PlusIcon className="h-4 w-4 mr-2" />
-                  Create First Template
-                </Button>
+                {template.description && (
+                  <div>
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Description</p>
+                    <p className="text-sm text-slate-600">{template.description}</p>
+                  </div>
+                )}
+
+                <Separator />
+
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEdit(template)}
+                    className="h-9 px-4 rounded-lg"
+                  >
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDelete(template.id)}
+                    className="h-9 px-4 rounded-lg text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
+                  </Button>
+                </div>
               </CardContent>
             </Card>
-          )}
+          ))}
         </div>
+
+        {templates.length === 0 && !loading && (
+          <Card className="border-slate-200 shadow-sm">
+            <CardContent className="text-center py-16">
+              <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FileText className="h-10 w-10 text-slate-400" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-900">No templates found</h3>
+              <p className="mt-2 text-sm text-slate-500">
+                Create your first numbering template to get started.
+              </p>
+              <Button
+                onClick={() => setShowCreateForm(true)}
+                className="mt-6 finance-gradient-primary h-11 px-6 rounded-xl"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create First Template
+              </Button>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </DashboardLayout>
   )

@@ -10,10 +10,8 @@ import { PageHeader } from "@/components/ui/page-header"
 import { TableActions } from "@/components/ui/table-actions"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
-  BuildingLibraryIcon, CurrencyDollarIcon, CheckCircleIcon, PlusIcon,
-  EyeIcon, PencilIcon, MagnifyingGlassIcon, ChartBarIcon, CalendarIcon,
-  CreditCardIcon,
-} from "@heroicons/react/24/outline"
+  Building2, DollarSign, CheckCircle2, Plus, Eye, Pencil, Search, BarChart3, Calendar, CreditCard
+} from "lucide-react"
 
 interface LoanAccount {
   id: string; accountNumber: string; customerId: string; accountType: string;
@@ -71,21 +69,21 @@ export default function LoansPage() {
           subtitle="Manage all loan accounts and EMI schedules"
           actions={
             <Button onClick={() => router.push('/dashboard/loans/create')} className="finance-gradient-primary text-white h-9 px-4 rounded-xl font-medium shadow-sm">
-              <PlusIcon className="h-4 w-4 mr-2" /> Create Loan
+              <Plus className="h-4 w-4 mr-2" /> Create Loan
             </Button>
           }
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          <StatCard title="Total Loans" value={filtered.length} subtitle="All accounts" icon={<CreditCardIcon />} iconVariant="primary" borderVariant="primary" />
-          <StatCard title="Active Loans" value={filtered.filter(a => a.status?.toLowerCase() === 'active').length} subtitle="Currently active" icon={<CheckCircleIcon />} iconVariant="success" borderVariant="success" />
-          <StatCard title="Total Principal" value={`₹${(totalPrincipal / 100000).toFixed(1)}L`} subtitle="Outstanding exposure" icon={<CurrencyDollarIcon />} iconVariant="danger" borderVariant="danger" />
-          <StatCard title="Avg Interest Rate" value={`${avgRate.toFixed(1)}%`} subtitle="Across all loans" icon={<ChartBarIcon />} iconVariant="warning" borderVariant="warning" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+          <StatCard title="Total Loans" value={filtered.length} subtitle="All accounts" icon={<CreditCard />} iconVariant="primary" borderVariant="primary" className="p-4 sm:p-6" />
+          <StatCard title="Active Loans" value={filtered.filter(a => a.status?.toLowerCase() === 'active').length} subtitle="Currently active" icon={<CheckCircle2 />} iconVariant="success" borderVariant="success" className="p-4 sm:p-6" />
+          <StatCard title="Total Principal" value={`₹${(totalPrincipal / 100000).toFixed(1)}L`} subtitle="Outstanding exposure" icon={<DollarSign />} iconVariant="danger" borderVariant="danger" className="p-4 sm:p-6" />
+          <StatCard title="Avg Interest Rate" value={`${avgRate.toFixed(1)}%`} subtitle="Across all loans" icon={<BarChart3 />} iconVariant="warning" borderVariant="warning" className="p-4 sm:p-6" />
         </div>
 
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-          <div className="relative max-w-md">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <div className="relative w-full sm:max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input placeholder="Search by account number or customer..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10 h-10 border-slate-200 bg-slate-50 focus:bg-white rounded-lg text-sm" />
           </div>
         </div>
@@ -102,28 +100,28 @@ export default function LoansPage() {
             </div>
           ) : filtered.length === 0 ? (
             <div className="text-center py-16">
-              <div className="h-14 w-14 rounded-2xl finance-icon-bg flex items-center justify-center mx-auto mb-4"><CreditCardIcon className="h-7 w-7" /></div>
+              <div className="h-14 w-14 rounded-2xl finance-icon-bg flex items-center justify-center mx-auto mb-4"><CreditCard className="h-7 w-7" /></div>
               <h3 className="text-sm font-semibold text-slate-800">No loan accounts found</h3>
               <p className="text-xs text-slate-400 mt-1">{search ? 'Try adjusting your search' : 'Get started by creating your first loan'}</p>
               {!search && (
                 <Button onClick={() => router.push('/dashboard/loans/create')} className="mt-5 finance-gradient-primary text-white h-8 px-4 text-xs rounded-lg">
-                  <PlusIcon className="h-3.5 w-3.5 mr-1.5" /> Create Loan Account
+                  <Plus className="h-3.5 w-3.5 mr-1.5" /> Create Loan Account
                 </Button>
               )}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
+            <div className="overflow-x-auto overflow-y-hidden">
+              <Table className="responsive-table">
                 <TableHeader>
                   <TableRow className="bg-slate-50/60 hover:bg-slate-50 border-slate-100">
-                    <TableHead className="px-5 py-3 text-xs font-semibold text-slate-600 min-w-[150px]">Account</TableHead>
-                    <TableHead className="px-4 py-3 text-xs font-semibold text-slate-600 min-w-[180px]">Customer</TableHead>
-                    <TableHead className="px-4 py-3 text-xs font-semibold text-slate-600 min-w-[120px] text-right">Principal</TableHead>
-                    <TableHead className="px-4 py-3 text-xs font-semibold text-slate-600 min-w-[80px] text-right">Rate</TableHead>
-                    <TableHead className="px-4 py-3 text-xs font-semibold text-slate-600 min-w-[110px] text-right">Monthly EMI</TableHead>
-                    <TableHead className="px-4 py-3 text-xs font-semibold text-slate-600 min-w-[80px]">Tenure</TableHead>
-                    <TableHead className="px-4 py-3 text-xs font-semibold text-slate-600 min-w-[90px]">Status</TableHead>
-                    <TableHead className="px-4 py-3 w-14 text-right text-xs font-semibold text-slate-600">Actions</TableHead>
+                    <TableHead className="px-4 sm:px-5 py-3 text-[10px] font-black uppercase text-slate-400 min-w-[140px] sm:min-w-[150px]">Account</TableHead>
+                    <TableHead className="px-3 sm:px-4 py-3 text-[10px] font-black uppercase text-slate-400 min-w-[160px] sm:min-w-[180px]">Customer</TableHead>
+                    <TableHead className="px-3 sm:px-4 py-3 text-[10px] font-black uppercase text-slate-400 min-w-[110px] sm:min-w-[120px] text-right">Principal</TableHead>
+                    <TableHead className="px-3 sm:px-4 py-3 text-[10px] font-black uppercase text-slate-400 min-w-[70px] sm:min-w-[80px] text-right hide-on-mobile">Rate</TableHead>
+                    <TableHead className="px-3 sm:px-4 py-3 text-[10px] font-black uppercase text-slate-400 min-w-[100px] sm:min-w-[110px] text-right">Monthly EMI</TableHead>
+                    <TableHead className="px-3 sm:px-4 py-3 text-[10px] font-black uppercase text-slate-400 min-w-[70px] sm:min-w-[80px] hide-on-mobile">Tenure</TableHead>
+                    <TableHead className="px-3 sm:px-4 py-3 text-[10px] font-black uppercase text-slate-400 min-w-[80px] sm:min-w-[90px] hide-on-tablet">Status</TableHead>
+                    <TableHead className="px-3 sm:px-4 py-3 w-12 sm:w-14 text-right text-[10px] font-black uppercase text-slate-400">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -136,7 +134,7 @@ export default function LoansPage() {
                         <TableCell className="px-5 py-3.5">
                           <div className="font-mono text-sm font-semibold text-slate-800">{account.accountNumber}</div>
                           <div className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
-                            <CalendarIcon className="h-3 w-3" />
+                            <Calendar className="h-3 w-3" />
                             {new Date(account.startDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: '2-digit' })}
                           </div>
                         </TableCell>
@@ -147,22 +145,22 @@ export default function LoansPage() {
                         <TableCell className="px-4 py-3.5 text-right">
                           <span className="text-sm font-bold text-slate-900 tabular-nums">₹{account.principalAmount.toLocaleString('en-IN')}</span>
                         </TableCell>
-                        <TableCell className="px-4 py-3.5 text-right">
+                        <TableCell className="px-3 sm:px-4 py-3.5 text-right hide-on-mobile">
                           <span className="text-sm font-semibold text-slate-800 tabular-nums">{account.interestRate}%</span>
                         </TableCell>
-                        <TableCell className="px-4 py-3.5 text-right">
+                        <TableCell className="px-3 sm:px-4 py-3.5 text-right">
                           <span className="text-sm font-semibold text-slate-800 tabular-nums">₹{emi.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
                         </TableCell>
-                        <TableCell className="px-4 py-3.5">
+                        <TableCell className="px-3 sm:px-4 py-3.5 hide-on-mobile">
                           <span className="text-sm text-slate-600 tabular-nums">{account.tenure}m</span>
                         </TableCell>
-                        <TableCell className="px-4 py-3.5">
+                        <TableCell className="px-3 sm:px-4 py-3.5 hide-on-tablet">
                           <span className={statusCls}>{account.status || 'ACTIVE'}</span>
                         </TableCell>
-                        <TableCell className="px-4 py-3.5 text-right">
+                        <TableCell className="px-3 sm:px-4 py-3.5 text-right">
                           <TableActions actions={[
-                            { label: "View Details", icon: <EyeIcon />, onClick: () => router.push(`/dashboard/loans/${account.id}`) },
-                            { label: "Edit", icon: <PencilIcon />, onClick: () => router.push(`/dashboard/loans/${account.id}/edit`) },
+                            { label: "View Details", icon: <Eye />, onClick: () => router.push(`/dashboard/loans/${account.id}`) },
+                            { label: "Edit", icon: <Pencil />, onClick: () => router.push(`/dashboard/loans/${account.id}/edit`) },
                           ]} />
                         </TableCell>
                       </TableRow>

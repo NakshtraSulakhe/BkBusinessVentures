@@ -75,21 +75,21 @@ export default function AccountsPage() {
         />
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          <StatCard title="Total Accounts" value={total} subtitle="All account types" icon={<BanknotesIcon />} iconVariant="primary" borderVariant="primary" />
-          <StatCard title="Fixed Deposits" value={accounts.filter(a => a.accountType === 'fd').length} subtitle="Investment accounts" icon={<BuildingLibraryIcon />} iconVariant="success" borderVariant="success" />
-          <StatCard title="Recurring Deposits" value={accounts.filter(a => a.accountType === 'rd').length} subtitle="Monthly savings" icon={<CurrencyDollarIcon />} iconVariant="info" borderVariant="info" />
-          <StatCard title="Loans" value={accounts.filter(a => a.accountType === 'loan').length} subtitle="Active loans" icon={<ChartBarIcon />} iconVariant="danger" borderVariant="danger" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+          <StatCard title="Total Accounts" value={total} subtitle="All account types" icon={<BanknotesIcon />} iconVariant="primary" borderVariant="primary" className="p-4 sm:p-6" />
+          <StatCard title="Fixed Deposits" value={accounts.filter(a => a.accountType === 'fd').length} subtitle="Investment accounts" icon={<BuildingLibraryIcon />} iconVariant="success" borderVariant="success" className="p-4 sm:p-6" />
+          <StatCard title="Recurring Deposits" value={accounts.filter(a => a.accountType === 'rd').length} subtitle="Monthly savings" icon={<CurrencyDollarIcon />} iconVariant="info" borderVariant="info" className="p-4 sm:p-6" />
+          <StatCard title="Loans" value={accounts.filter(a => a.accountType === 'loan').length} subtitle="Active loans" icon={<ChartBarIcon />} iconVariant="danger" borderVariant="danger" className="p-4 sm:p-6" />
         </div>
 
         {/* Filters */}
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-          <div className="flex flex-col md:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1 relative">
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <Input placeholder="Search by account number, customer name..." value={search} onChange={e => { setSearch(e.target.value); setCurrentPage(1) }} className="pl-10 h-10 border-slate-200 bg-slate-50 focus:bg-white rounded-lg text-sm" />
             </div>
-            <div className="w-full md:w-48">
+            <div className="w-full sm:w-48">
               <Select value={accountType} onValueChange={v => { setAccountType(v); setCurrentPage(1) }}>
                 <SelectTrigger className="h-10 rounded-lg border-slate-200 text-sm">
                   <SelectValue placeholder="All Types" />
@@ -102,7 +102,7 @@ export default function AccountsPage() {
                 </SelectContent>
               </Select>
             </div>
-            <Button variant="outline" onClick={() => fetchAccounts(1, '', 'all')} className="h-10 border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">
+            <Button variant="outline" onClick={() => fetchAccounts(1, '', 'all')} className="h-10 border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 w-full sm:w-auto">
               <ArrowPathIcon className="h-4 w-4 mr-2" /> Refresh
             </Button>
           </div>
@@ -129,18 +129,18 @@ export default function AccountsPage() {
               </Button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
+            <div className="overflow-x-auto overflow-y-hidden">
+              <Table className="responsive-table">
                 <TableHeader>
                   <TableRow className="bg-slate-50/60 hover:bg-slate-50 border-slate-100">
-                    <TableHead className="px-5 text-xs font-semibold text-slate-600 py-3 min-w-[150px]">Account</TableHead>
-                    <TableHead className="px-4 text-xs font-semibold text-slate-600 py-3 min-w-[180px]">Customer</TableHead>
-                    <TableHead className="px-4 text-xs font-semibold text-slate-600 py-3 min-w-[100px]">Type</TableHead>
-                    <TableHead className="px-4 text-xs font-semibold text-slate-600 py-3 min-w-[120px] text-right">Principal</TableHead>
-                    <TableHead className="px-4 text-xs font-semibold text-slate-600 py-3 min-w-[80px] text-right">Rate</TableHead>
-                    <TableHead className="px-4 text-xs font-semibold text-slate-600 py-3 min-w-[90px]">Status</TableHead>
-                    <TableHead className="px-4 text-xs font-semibold text-slate-600 py-3 min-w-[110px]">Maturity</TableHead>
-                    <TableHead className="px-4 py-3 w-14 text-right text-xs font-semibold text-slate-600">Actions</TableHead>
+                    <TableHead className="px-4 sm:px-5 text-[10px] font-black uppercase text-slate-400 py-3 min-w-[140px] sm:min-w-[150px]">Account</TableHead>
+                    <TableHead className="px-3 sm:px-4 text-[10px] font-black uppercase text-slate-400 py-3 min-w-[160px] sm:min-w-[180px]">Customer</TableHead>
+                    <TableHead className="px-3 sm:px-4 text-[10px] font-black uppercase text-slate-400 py-3 min-w-[80px] sm:min-w-[100px]">Type</TableHead>
+                    <TableHead className="px-3 sm:px-4 text-[10px] font-black uppercase text-slate-400 py-3 min-w-[100px] sm:min-w-[120px] text-right">Principal</TableHead>
+                    <TableHead className="px-3 sm:px-4 text-[10px] font-black uppercase text-slate-400 py-3 min-w-[70px] sm:min-w-[80px] text-right hide-on-mobile">Rate</TableHead>
+                    <TableHead className="px-3 sm:px-4 text-[10px] font-black uppercase text-slate-400 py-3 min-w-[80px] sm:min-w-[90px] hide-on-tablet">Status</TableHead>
+                    <TableHead className="px-3 sm:px-4 text-[10px] font-black uppercase text-slate-400 py-3 min-w-[100px] sm:min-w-[110px] hide-on-mobile">Maturity</TableHead>
+                    <TableHead className="px-3 sm:px-4 py-3 w-12 sm:w-14 text-right text-[10px] font-black uppercase text-slate-400">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -174,19 +174,19 @@ export default function AccountsPage() {
                         <TableCell className="px-4 py-3.5 text-right">
                           <AmountDisplay amount={account.principalAmount} size="sm" weight="semibold" />
                         </TableCell>
-                        <TableCell className="px-4 py-3.5 text-right">
+                        <TableCell className="px-3 sm:px-4 py-3.5 text-right hide-on-mobile">
                           <div className="text-sm font-semibold text-slate-800 tabular-nums">{account.interestRate}%</div>
                           <div className="text-xs text-slate-400">{account.tenure}m</div>
                         </TableCell>
-                        <TableCell className="px-4 py-3.5">
+                        <TableCell className="px-3 sm:px-4 py-3.5 hide-on-tablet">
                           <span className={statusCls}>{account.state}</span>
                         </TableCell>
-                        <TableCell className="px-4 py-3.5">
+                        <TableCell className="px-3 sm:px-4 py-3.5 hide-on-mobile">
                           <span className="text-xs text-slate-500 tabular-nums">
                             {account.maturityDate ? new Date(account.maturityDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' }) : '—'}
                           </span>
                         </TableCell>
-                        <TableCell className="px-4 py-3.5 text-right">
+                        <TableCell className="px-3 sm:px-4 py-3.5 text-right">
                           <TableActions actions={[
                             { label: "View Details", icon: <EyeIcon />, onClick: () => router.push(`/dashboard/accounts/${account.id}`) },
                             { label: "View Ledger", icon: <BuildingLibraryIcon />, onClick: () => router.push(`/dashboard/accounts/${account.id}/ledger`) },
@@ -202,16 +202,16 @@ export default function AccountsPage() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between px-5 py-4 border-t border-slate-100">
+            <div className="flex flex-col sm:flex-row items-center justify-between px-5 py-4 border-t border-slate-100 gap-4">
               <span className="text-xs text-slate-400 tabular-nums">
                 {((currentPage - 1) * 10) + 1}–{Math.min(currentPage * 10, total)} of {total}
               </span>
-              <div className="flex items-center gap-1.5">
-                <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="h-8 px-3 text-xs border-slate-200 rounded-lg">Prev</Button>
+              <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto max-w-full pb-2 sm:pb-0">
+                <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="h-8 px-2 sm:px-3 text-[10px] sm:text-xs border-slate-200 rounded-lg flex-shrink-0">Prev</Button>
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => i + 1).map(p => (
-                  <Button key={p} variant={currentPage === p ? "default" : "outline"} size="sm" onClick={() => setCurrentPage(p)} className={`h-8 w-8 p-0 text-xs rounded-lg ${currentPage === p ? 'finance-gradient-primary text-white border-0' : 'border-slate-200'}`}>{p}</Button>
+                  <Button key={p} variant={currentPage === p ? "default" : "outline"} size="sm" onClick={() => setCurrentPage(p)} className={`h-8 w-8 p-0 text-[10px] sm:text-xs rounded-lg flex-shrink-0 ${currentPage === p ? 'finance-gradient-primary text-white border-0' : 'border-slate-200'}`}>{p}</Button>
                 ))}
-                <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="h-8 px-3 text-xs border-slate-200 rounded-lg">Next</Button>
+                <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="h-8 px-2 sm:px-3 text-[10px] sm:text-xs border-slate-200 rounded-lg flex-shrink-0">Next</Button>
               </div>
             </div>
           )}

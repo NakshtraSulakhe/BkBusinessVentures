@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { PageHeader } from "@/components/ui/page-header"
 import {
   Select,
   SelectContent,
@@ -16,21 +17,32 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import {
-  ArrowLeftIcon,
-  BuildingLibraryIcon,
-  CurrencyDollarIcon,
-  CalendarIcon,
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-  UserIcon,
-  InformationCircleIcon,
-  SparklesIcon,
-  CreditCardIcon,
-  ChartBarIcon,
-  ArrowTrendingUpIcon,
-  ArrowTrendingDownIcon,
-  DocumentTextIcon
-} from "@heroicons/react/24/outline"
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  ArrowLeft,
+  Building2,
+  DollarSign,
+  Calendar,
+  CheckCircle,
+  AlertTriangle,
+  User,
+  Info,
+  CreditCard,
+  BarChart3,
+  Banknote,
+  Clock,
+  ChevronDown,
+  Receipt,
+  FileText,
+  TrendingUp,
+  ShieldCheck
+} from "lucide-react"
 
 interface Customer {
   id: string
@@ -254,359 +266,323 @@ function CreateEMIComponent() {
     }
   }
 
+  const formatCurrency = (amt: number) => {
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amt)
+  }
+
   const penalty = calculatePenalty()
   const totalAmount = parseFloat(formData.amount || '0') + penalty
 
   return (
-    <DashboardLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          {/* Message */}
-          {message && (
-            <div className={cn(
-              "rounded-xl p-4 flex items-start space-x-3 shadow-sm border mb-6",
-              message.type === 'success' 
-                ? 'bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 text-green-800' 
-                : 'bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 text-red-800'
-            )}>
-              <div className={cn(
-                "flex-shrink-0",
-                message.type === 'success' ? 'text-green-600' : 'text-red-600'
-              )}>
-                {message.type === 'success' ? (
-                  <CheckCircleIcon className="h-6 w-6" />
-                ) : (
-                  <ExclamationTriangleIcon className="h-6 w-6" />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm">{message.text}</p>
-                <p className="text-xs mt-1 opacity-75">
-                  {message.type === 'success' ? 'Operation completed successfully' : 'Please try again'}
-                </p>
-              </div>
-              <button
-                onClick={() => setMessage(null)}
-                className={cn(
-                  "flex-shrink-0 p-1 rounded-lg hover:bg-black/5 transition-colors",
-                  "lg:hidden"
-                )}
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          )}
+    <div className="space-y-6 animate-fade-in-up pb-20">
+      <PageHeader
+        title="Record EMI Payment"
+        subtitle="Process installment payment for active loan account"
+        actions={
+          <Button
+            variant="outline"
+            onClick={() => router.push('/dashboard/loans')}
+            className="h-9 border-slate-200 text-slate-700 rounded-xl px-4 hover:bg-slate-50 font-medium"
+          >
+            Cancel
+          </Button>
+        }
+      />
 
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8 space-y-4 sm:space-y-0">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push('/dashboard/loans')}
-                className="h-10 w-10 p-0 rounded-full hover:bg-blue-50 transition-colors"
-              >
-                <ArrowLeftIcon className="h-5 w-5" />
-              </Button>
-              <div className="min-w-0 flex-1">
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent leading-tight">
-                  Record EMI Payment
-                </h1>
-                <p className="text-gray-600 mt-1 sm:mt-2 flex items-center text-sm sm:text-base">
-                  <DocumentTextIcon className="h-4 w-4 mr-2 text-blue-500 hidden sm:inline flex-shrink-0" />
-                  <span className="hidden sm:inline">Record EMI payment for loan account</span>
-                  <span className="sm:hidden">EMI Payment</span>
-                </p>
+      {message && (
+        <div className={`p-4 rounded-xl border flex items-start gap-3 shadow-lg animate-in fade-in slide-in-from-top-4 duration-300 ${
+          message.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-800' : 'bg-rose-50 border-rose-100 text-rose-800'
+        }`}>
+          {message.type === 'success' ? <CheckCircle className="h-5 w-5 mt-0.5" /> : <AlertTriangle className="h-5 w-5 mt-0.5" />}
+          <div className="text-sm font-bold">{message.text}</div>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div className="lg:col-span-8 space-y-6">
+          {/* Section 1: Account Selection */}
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-4">
+              <CardTitle className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
+                <Building2 className="h-4 w-4 mr-2 text-primary" />
+                1. Account Selection
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Loan Account</label>
+                  <Select value={formData.accountId} onValueChange={(value) => setFormData(prev => ({ ...prev, accountId: value }))}>
+                    <SelectTrigger className={`h-11 border-slate-200 bg-slate-50/30 ${errors.accountId ? 'border-rose-500' : ''}`}>
+                      <SelectValue placeholder="Select loan account..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {customers.map((customer) => (
+                        <SelectItem key={customer.id} value={customer.id}>
+                          <div className="flex flex-col items-start">
+                            <span className="font-bold text-slate-900">{customer.name}</span>
+                            <span className="text-xs text-slate-500">{customer.email}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.accountId && <p className="text-[10px] text-rose-500 font-bold ml-1">Account selection is mandatory</p>}
+                </div>
+
+                {/* Customer Balance Information */}
+                {customerBalance && (
+                  <div className="mt-6 p-4 bg-gradient-to-r from-violet-50 to-indigo-50 border border-violet-200 rounded-xl">
+                    <h4 className="text-xs font-black text-violet-800 uppercase tracking-widest mb-4 flex items-center">
+                      <BarChart3 className="h-4 w-4 mr-2" />
+                      Customer Portfolio Summary
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="text-center p-3 bg-white/60 rounded-lg">
+                        <p className="text-[10px] font-black text-violet-500 uppercase tracking-wider">Total Deposits</p>
+                        <p className="text-lg font-black text-violet-900">{formatCurrency(customerBalance.totalDeposits)}</p>
+                      </div>
+                      <div className="text-center p-3 bg-white/60 rounded-lg">
+                        <p className="text-[10px] font-black text-rose-500 uppercase tracking-wider">Total Loans</p>
+                        <p className="text-lg font-black text-rose-600">{formatCurrency(customerBalance.totalLoans)}</p>
+                      </div>
+                      <div className="text-center p-3 bg-white/60 rounded-lg">
+                        <p className="text-[10px] font-black text-emerald-500 uppercase tracking-wider">Net Position</p>
+                        <p className={`text-lg font-black ${customerBalance.netWorth >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                          {formatCurrency(customerBalance.netWorth)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Selected Account Details */}
+                {selectedAccount && (
+                  <div className="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                    <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest mb-3 flex items-center">
+                      <FileText className="h-4 w-4 mr-2 text-primary" />
+                      Account Details
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase">Account Number</span>
+                        <p className="font-bold text-slate-900">{selectedAccount.accountNumber}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase">Principal Amount</span>
+                        <p className="font-bold text-slate-900">{formatCurrency(selectedAccount.principalAmount)}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase">Interest Rate</span>
+                        <p className="font-bold text-slate-900">{selectedAccount.interestRate}%</p>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase">Tenure</span>
+                        <p className="font-bold text-slate-900">{selectedAccount.tenure} months</p>
+                      </div>
+                    </div>
+                    {selectedAccount.accountRules?.emiAmount && (
+                      <div className="mt-4 pt-4 border-t border-slate-200">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold text-slate-500 uppercase">Scheduled EMI Amount</span>
+                          <p className="font-black text-primary text-lg">{formatCurrency(selectedAccount.accountRules.emiAmount)}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Section 2: Payment Details */}
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-4">
+              <CardTitle className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
+                <CreditCard className="h-4 w-4 mr-2 text-primary" />
+                2. Payment Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">EMI Amount (Rs.)</label>
+                  <div className="relative">
+                    <Banknote className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Input 
+                      type="number" 
+                      step="0.01"
+                      placeholder="0.00" 
+                      value={formData.amount} 
+                      onChange={e => setFormData(p => ({ ...p, amount: e.target.value }))} 
+                      className={`pl-10 h-11 border-slate-200 bg-slate-50/30 font-black tracking-tight ${errors.amount ? 'border-rose-500' : ''}`} 
+                    />
+                  </div>
+                  {errors.amount && <p className="text-[10px] text-rose-500 font-bold ml-1">{errors.amount}</p>}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Payment Date</label>
+                  <div className="relative">
+                    <Calendar className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Input 
+                      type="date" 
+                      value={formData.paymentDate} 
+                      onChange={e => setFormData(p => ({ ...p, paymentDate: e.target.value }))} 
+                      className={`pl-10 h-11 border-slate-200 bg-slate-50/30 font-medium ${errors.paymentDate ? 'border-rose-500' : ''}`} 
+                    />
+                  </div>
+                  {errors.paymentDate && <p className="text-[10px] text-rose-500 font-bold ml-1">{errors.paymentDate}</p>}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Payment Method</label>
+                  <Select value={formData.paymentMethod} onValueChange={v => setFormData(p => ({ ...p, paymentMethod: v as any }))}>
+                    <SelectTrigger className="h-11 border-slate-200 bg-slate-50/30">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="bank">Bank Transfer</SelectItem>
+                      <SelectItem value="cheque">Cheque</SelectItem>
+                      <SelectItem value="online">Online Payment</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Reference Number</label>
+                  <Input 
+                    type="text" 
+                    value={formData.referenceNumber} 
+                    onChange={e => setFormData(p => ({ ...p, referenceNumber: e.target.value }))} 
+                    placeholder="Transaction reference (optional)"
+                    className="h-11 border-slate-200 bg-slate-50/30" 
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Section 3: Additional Information */}
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-4">
+              <CardTitle className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
+                <Info className="h-4 w-4 mr-2 text-primary" />
+                3. Additional Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Notes</label>
+                <textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData(p => ({ ...p, notes: e.target.value }))}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-slate-50/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+                  placeholder="Add any notes about this payment..."
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Sidebar: Payment Summary */}
+        <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-6">
+          <Card className="bg-slate-900 border-slate-800 rounded-3xl overflow-hidden shadow-2xl relative">
+            <div className="absolute top-0 right-0 p-8 opacity-10">
+              <Receipt className="h-24 w-24 text-white" />
+            </div>
+            <CardHeader className="px-8 pt-8 pb-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Payment Summary</p>
+              <CardTitle className="text-white tracking-tight text-xl mt-1">Transaction Preview</CardTitle>
+            </CardHeader>
+            <CardContent className="px-8 pb-8 space-y-6">
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase">EMI Amount</p>
+                  <p className="text-sm font-bold text-white">{formatCurrency(parseFloat(formData.amount) || 0)}</p>
+                </div>
+                
+                {penalty > 0 && (
+                  <div className="flex justify-between items-center p-3 bg-rose-500/10 rounded-lg border border-rose-500/20">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-rose-400" />
+                      <p className="text-[10px] font-bold text-rose-400 uppercase">Late Penalty</p>
+                    </div>
+                    <p className="text-sm font-bold text-rose-400">{formatCurrency(penalty)}</p>
+                  </div>
+                )}
+                
+                <div className="pt-4 border-t border-white/10">
+                  <div className="flex justify-between items-center">
+                    <p className="text-[10px] font-black text-emerald-400 uppercase tracking-wider">Total Payable</p>
+                    <p className="text-2xl font-black text-white tracking-tighter">{formatCurrency(totalAmount)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {selectedAccount && (
+                <div className="space-y-2 pt-4 border-t border-white/10">
+                  <div className="space-y-1">
+                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Due Day</p>
+                    <p className="text-xs font-bold text-slate-300">{selectedAccount.accountRules?.emiDueDay || 'N/A'} of each month</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Grace Period</p>
+                    <p className="text-xs font-bold text-slate-300">{selectedAccount.accountRules?.gracePeriodDays || 'N/A'} days</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="pt-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <ShieldCheck className="h-4 w-4 text-emerald-400" />
+                  <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Payment Verification Ready</span>
+                </div>
+                <Button type="submit" disabled={loading} className="w-full finance-gradient-primary text-white font-black uppercase tracking-widest h-14 rounded-2xl shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">
+                  {loading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                      Processing...
+                    </div>
+                  ) : "Record EMI Payment"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="bg-white border border-slate-200 rounded-2xl p-6">
+            <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-4 flex items-center">
+              <Clock className="h-4 w-4 mr-2 text-primary" />
+              EMI Guidelines
+            </h4>
+            <div className="space-y-3">
+              {[
+                "Payments must be recorded on or before the due date",
+                "Late payments incur penalty after grace period expires",
+                "Reference number is required for online transfers",
+                "Cash payments are capped at Rs.49,999 per transaction"
+              ].map((text, idx) => (
+                <div key={idx} className="flex gap-2 text-[10px] font-bold text-slate-500 leading-tight">
+                  <div className="h-1 w-1 bg-slate-300 rounded-full mt-1.5 flex-shrink-0" />
+                  {text}
+                </div>
+              ))}
             </div>
           </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Loan Account Selection */}
-              <Card className="bg-white/60 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-lg">
-                    <BuildingLibraryIcon className="h-5 w-5 mr-2" />
-                    Loan Account
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Select Loan Account <span className="text-red-500">*</span>
-                    </label>
-                    <Select
-                      value={formData.accountId}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, accountId: value }))}
-                    >
-                      <SelectTrigger className={errors.accountId ? 'border-red-500' : ''}>
-                        <SelectValue placeholder="Choose a loan account..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {customers.map((customer) => (
-                          <SelectItem key={customer.id} value={customer.id}>
-                            <div className="flex flex-col items-start w-full">
-                              <span className="font-medium text-gray-900">{customer.name}</span>
-                              <span className="text-sm text-gray-500">{customer.email}</span>
-                              <div className="text-xs text-gray-400 mt-1">
-                                ID: {customer.id}
-                              </div>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {errors.accountId && (
-                      <p className="text-red-500 text-sm mt-1">{errors.accountId}</p>
-                    )}
-                  </div>
-
-                  {/* Customer Balance Information */}
-                  {customerBalance && (
-                    <div className="mt-6 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg">
-                      <h4 className="text-lg font-semibold text-purple-800 mb-3 flex items-center">
-                        <CurrencyDollarIcon className="h-5 w-5 mr-2" />
-                        Customer Balance Summary
-                      </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div className="text-center">
-                          <p className="text-purple-600 text-sm font-medium">Total Deposits</p>
-                          <p className="text-2xl font-bold text-purple-900">
-                            ₹{customerBalance.totalDeposits.toLocaleString()}
-                          </p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-purple-600 text-sm font-medium">Total Loans</p>
-                          <p className="text-2xl font-bold text-red-600">
-                            ₹{customerBalance.totalLoans.toLocaleString()}
-                          </p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-purple-600 text-sm font-medium">Net Worth</p>
-                          <p className={cn(
-                            "text-2xl font-bold",
-                            customerBalance.netWorth >= 0 ? 'text-green-600' : 'text-red-600'
-                          )}>
-                            ₹{customerBalance.netWorth.toLocaleString()}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-center mt-4">
-                        <p className="text-purple-600 text-sm font-medium">Accounts</p>
-                        <div className="flex justify-center space-x-2 text-xs">
-                          <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                            {customerBalance.fdAccounts.length}
-                          </span>
-                          <span className="bg-green-100 text-green-700 px-2 py-1 rounded">
-                            {customerBalance.rdAccounts.length}
-                          </span>
-                          <span className="bg-red-100 text-red-700 px-2 py-1 rounded">
-                            {customerBalance.loanAccounts.length}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Selected Account Details */}
-                  {selectedAccount && (
-                    <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                      <h4 className="text-lg font-semibold text-blue-800 mb-3">Selected Account Details</h4>
-                      <div className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium text-gray-700">Account Number</span>
-                          <span className="text-sm font-semibold text-gray-900">{selectedAccount.accountNumber}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium text-gray-700">Customer</span>
-                          <span className="text-sm font-semibold text-gray-900">{selectedAccount.customer.name}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium text-gray-700">Principal</span>
-                          <span className="text-sm font-semibold text-gray-900">₹{selectedAccount.principalAmount.toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium text-gray-700">Interest Rate</span>
-                          <span className="text-sm font-semibold text-gray-900">{selectedAccount.interestRate}%</span>
-                        </div>
-                      </div>
-                      {selectedAccount.accountRules?.emiAmount && (
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium text-gray-700">EMI Amount</span>
-                          <span className="text-sm font-semibold text-blue-600">₹{selectedAccount.accountRules.emiAmount.toLocaleString()}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Payment Details */}
-              <Card className="bg-white/60 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-lg">
-                    <CurrencyDollarIcon className="h-5 w-5 mr-2" />
-                    Payment Details
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      EMI Amount (₹) <span className="text-red-500">*</span>
-                    </label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={formData.amount}
-                      onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
-                      className={errors.amount ? 'border-red-500' : ''}
-                      placeholder="Enter EMI amount"
-                    />
-                    {errors.amount && (
-                      <p className="text-red-500 text-sm mt-1">{errors.amount}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Payment Date <span className="text-red-500">*</span>
-                    </label>
-                    <Input
-                      type="date"
-                      value={formData.paymentDate}
-                      onChange={(e) => setFormData(prev => ({ ...prev, paymentDate: e.target.value }))}
-                      className={errors.paymentDate ? 'border-red-500' : ''}
-                    />
-                    {errors.paymentDate && (
-                      <p className="text-red-500 text-sm mt-1">{errors.paymentDate}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Payment Method
-                    </label>
-                    <Select
-                      value={formData.paymentMethod}
-                      onValueChange={(value: string) => setFormData(prev => ({ ...prev, paymentMethod: value as 'cash' | 'bank' | 'cheque' | 'online' }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="cash">Cash</SelectItem>
-                        <SelectItem value="bank">Bank Transfer</SelectItem>
-                        <SelectItem value="cheque">Cheque</SelectItem>
-                        <SelectItem value="online">Online Payment</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Reference Number
-                    </label>
-                    <Input
-                      type="text"
-                      value={formData.referenceNumber}
-                      onChange={(e) => setFormData(prev => ({ ...prev, referenceNumber: e.target.value }))}
-                      placeholder="Transaction reference (optional)"
-                    />
-                  </div>
-
-                  {/* Penalty and Total Amount */}
-                  {penalty > 0 && (
-                    <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                      <p className="text-red-600 text-sm font-medium">
-                        <ExclamationTriangleIcon className="h-4 w-4 mr-2" />
-                        Late Payment Penalty
-                      </p>
-                      <p className="text-red-800 font-bold">
-                        ₹{penalty.toFixed(2)}
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <p className="text-green-600 text-sm font-medium">
-                      <CheckCircleIcon className="h-4 w-4 mr-2" />
-                      Total Amount
-                    </p>
-                    <p className="text-green-800 font-bold">
-                      ₹{totalAmount.toFixed(2)}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Additional Information */}
-              <Card className="bg-white/60 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-lg">
-                    <InformationCircleIcon className="h-5 w-5 mr-2" />
-                    Additional Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Notes
-                    </label>
-                    <textarea
-                      value={formData.notes}
-                      onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Add any notes about this payment..."
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end space-y-4 sm:space-y-0 sm:space-x-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.push('/dashboard/loans')}
-                className="w-full sm:w-auto h-12 px-8"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full sm:w-auto h-12 px-8 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
-              >
-                {loading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-                    <span>Recording Payment...</span>
-                  </>
-                ) : (
-                  <>
-                    <DocumentTextIcon className="h-5 w-5 mr-2" />
-                    Record EMI Payment
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
         </div>
-      </div>
-    </DashboardLayout>
+      </form>
+    </div>
   )
 }
 
 export default function CreateEMI() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <CreateEMIComponent />
-    </Suspense>
+    <DashboardLayout>
+      <Suspense fallback={<div>Loading...</div>}>
+        <CreateEMIComponent />
+      </Suspense>
+    </DashboardLayout>
   )
 }

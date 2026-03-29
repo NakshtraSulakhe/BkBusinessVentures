@@ -85,9 +85,9 @@ function DashboardChartLine({ data }: { data: { label: string; value: number }[]
           })}
         </svg>
       </div>
-      <div className="flex justify-between px-1">
+      <div className="flex flex-wrap justify-between px-1 gap-2">
         {data.map((item, i) => (
-          <span key={i} className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.label}</span>
+          <span key={i} className="text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">{item.label}</span>
         ))}
       </div>
     </div>
@@ -97,7 +97,7 @@ function DashboardChartLine({ data }: { data: { label: string; value: number }[]
 function DashboardChartDistribution({ data }: { data: { label: string; value: number; color: string }[] }) {
   const total = data.reduce((s, d) => s + d.value, 0)
   return (
-    <div className="flex items-center gap-8">
+    <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8">
       <div className="relative w-28 h-28 flex-shrink-0">
         <svg className="w-28 h-28 -rotate-90">
           {data.map((item, i) => {
@@ -143,12 +143,12 @@ function ActionTile({ title, icon: Icon, onClick, color }: { title: string; icon
   return (
     <button
       onClick={onClick}
-      className="group flex flex-col items-center justify-center p-4 bg-white border border-slate-200 rounded-2xl hover:border-primary/40 hover:shadow-lg transition-all active:scale-[0.98]"
+      className="group flex flex-col items-center justify-center p-3 sm:p-4 bg-white border border-slate-200 rounded-xl sm:rounded-2xl hover:border-primary/40 hover:shadow-lg transition-all active:scale-[0.98]"
     >
-      <div className={`h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform ${color}`}>
-        <Icon className="h-5 w-5" />
+      <div className={`h-8 w-8 sm:h-10 sm:w-10 rounded-lg sm:rounded-xl bg-slate-50 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform ${color}`}>
+        <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
       </div>
-      <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest transition-colors group-hover:text-primary">{title}</span>
+      <span className="text-[9px] sm:text-[10px] font-black text-slate-900 uppercase tracking-widest transition-colors group-hover:text-primary text-center">{title}</span>
     </button>
   )
 }
@@ -214,7 +214,7 @@ function DashboardContent() {
         title="Overview"
         subtitle="A quick summary of all your customers, deposits, loans, and payments"
         actions={
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
             <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-sm">
               <CalendarIcon className="h-4 w-4 text-slate-400" />
               <select
@@ -250,49 +250,49 @@ function DashboardContent() {
         }
       />
 
-      {/* Primary Analytics Overlays */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Account Summary Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <StatCard
           title="Total Deposits"
-          value={<AmountDisplay amount={summary.totalBalance} size="xl" weight="bold" className="" />}
+          value={<AmountDisplay amount={summary.totalBalance} size="xl" weight="bold" className="text-xl sm:text-2xl" />}
           icon={<BanknotesIcon />}
           trend={{ value: `${summary.depositsCount} Active Accounts`, isPositive: true }}
-          className="border-primary"
+          className="p-4 sm:p-6 border-primary"
         />
         <StatCard
           title="Loans Given Out"
-          value={<AmountDisplay amount={summary.loanOutstanding} size="xl" weight="bold" className="" />}
+          value={<AmountDisplay amount={summary.loanOutstanding} size="xl" weight="bold" className="text-xl sm:text-2xl" />}
           icon={<WalletIcon />}
           trend={{ value: `${summary.loanCount} Active Loans`, isPositive: true }}
-          className="border-blue-500"
+          className="p-4 sm:p-6 border-blue-500"
         />
         <StatCard
           title="Overdue EMIs"
-          value={<span className="">{summary.overdueEMI}</span>}
+          value={<span className="text-xl sm:text-2xl">{summary.overdueEMI}</span>}
           icon={<ExclamationTriangleIcon />}
           trend={{ value: summary.overdueEMI > 0 ? "Action Needed" : "All Clear", isPositive: summary.overdueEMI === 0 }}
-          className={summary.overdueEMI > 0 ? "border-rose-500 ring-1 ring-rose-500/20" : "border-slate-200"}
+          className={`p-4 sm:p-6 ${summary.overdueEMI > 0 ? "border-rose-500 ring-1 ring-rose-500/20" : "border-slate-200"}`}
         />
         <StatCard
           title="Pending Suggestions"
-          value={<span className="">{summary.pendingSuggestions}</span>}
+          value={<span className="text-xl sm:text-2xl">{summary.pendingSuggestions}</span>}
           icon={<ClockIcon />}
           trend={{ value: summary.pendingSuggestions === 0 ? "Nothing Pending" : "Needs Review", isPositive: summary.pendingSuggestions === 0 }}
-          className="border-indigo-500"
+          className="p-4 sm:p-6 border-indigo-500"
         />
       </div>
 
-      {/* Structural Intelligence */}
+      {/* Analytics & Trends */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Market Trajectory */}
-        <Card className="lg:col-span-8 border-slate-200 shadow-sm overflow-hidden rounded-3xl">
-          <CardHeader className="bg-slate-50/50 border-b border-slate-100 py-5 px-8">
+        {/* Growth Analysis */}
+        <Card className="col-span-1 lg:col-span-8 border-slate-200 shadow-sm overflow-hidden rounded-3xl">
+          <CardHeader className="bg-slate-50/50 border-b border-slate-100 py-4 px-4 sm:py-5 sm:px-8">
             <CardTitle className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center">
               <ChartBarIcon className="h-4 w-4 mr-3 text-primary" />
               Deposit Growth (This Year)
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-8">
+          <CardContent className="p-4 sm:p-8">
             <DashboardChartLine data={[
               { label: 'Jan', value: 45000 }, { label: 'Feb', value: 52000 },
               { label: 'Mar', value: 48000 }, { label: 'Apr', value: 61000 },
@@ -301,15 +301,15 @@ function DashboardContent() {
           </CardContent>
         </Card>
 
-        {/* Portfolio Stratification */}
-        <Card className="lg:col-span-4 border-slate-200 shadow-sm overflow-hidden rounded-3xl">
-          <CardHeader className="bg-slate-50/50 border-b border-slate-100 py-5 px-8">
+        {/* Account Distribution */}
+        <Card className="col-span-1 lg:col-span-4 border-slate-200 shadow-sm overflow-hidden rounded-3xl">
+          <CardHeader className="bg-slate-50/50 border-b border-slate-100 py-4 px-4 sm:py-5 sm:px-8">
             <CardTitle className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center">
               <BuildingLibraryIcon className="h-4 w-4 mr-3 text-primary" />
               Account Type Breakdown
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-8">
+          <CardContent className="p-4 sm:p-8">
             <DashboardChartDistribution data={[
               { label: 'Fixed Deposits', value: 45, color: 'var(--primary)' },
               { label: 'Recurring', value: 30, color: 'hsl(215 90% 40%)' },
@@ -320,11 +320,11 @@ function DashboardContent() {
         </Card>
       </div>
 
-      {/* Activity Log + Command Panel */}
+      {/* Recent Activity & Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Recent Ledger */}
-        <Card className="lg:col-span-8 border-slate-200 shadow-sm overflow-hidden rounded-3xl">
-          <CardHeader className="bg-slate-50/50 border-b border-slate-100 py-5 px-8 flex flex-row items-center justify-between">
+        {/* Recent Transactions */}
+        <Card className="col-span-1 lg:col-span-8 border-slate-200 shadow-sm overflow-hidden rounded-3xl">
+          <CardHeader className="bg-slate-50/50 border-b border-slate-100 py-4 px-4 sm:py-5 sm:px-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <CardTitle className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center">
               <QueueListIcon className="h-4 w-4 mr-3 text-primary" />
               Recent Transactions
@@ -342,15 +342,15 @@ function DashboardContent() {
             <Table>
               <TableHeader className="bg-slate-50/30">
                 <TableRow>
-                  <TableHead className="px-8 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest h-12">Customer / Account</TableHead>
-                  <TableHead className="text-[10px] font-black uppercase text-slate-400 tracking-widest h-12 text-center">Type</TableHead>
-                  <TableHead className="px-8 text-[10px] font-black uppercase text-slate-400 tracking-widest h-12 text-right">Amount</TableHead>
+                  <TableHead className="px-5 sm:px-8 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest h-12 min-w-[160px]">Customer / Account</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase text-slate-400 tracking-widest h-12 text-center hide-on-mobile">Type</TableHead>
+                  <TableHead className="px-5 sm:px-8 text-[10px] font-black uppercase text-slate-400 tracking-widest h-12 text-right">Amount</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {data?.recentTransactions?.map((t: any) => (
                   <TableRow key={t.id} className="hover:bg-slate-50/50 transition-colors border-b border-slate-50 group">
-                    <TableCell className="px-8 py-5">
+                    <TableCell className="px-4 sm:px-8 py-4 sm:py-5">
                       <div className="text-sm font-black text-slate-900 tracking-tight group-hover:text-primary transition-colors">{t.customer}</div>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">{t.item}</span>
@@ -358,13 +358,13 @@ function DashboardContent() {
                         <span className="text-[10px] font-bold text-slate-400">{t.date}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-center">
+                    <TableCell className="text-center hide-on-mobile">
                       <Badge className={`uppercase font-black text-[9px] tracking-widest px-3 py-1 rounded-sm border ${t.type === 'credit' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-rose-50 text-rose-700 border-rose-100'}`}>
                         {t.type === 'credit' ? 'Inflow' : 'Outflow'}
                       </Badge>
                     </TableCell>
-                    <TableCell className="px-8 text-right">
-                      <div className={`text-lg font-black tracking-tighter tabular-nums ${t.type === 'credit' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    <TableCell className="px-4 sm:px-8 text-right">
+                      <div className={`text-base sm:text-lg font-black tracking-tighter tabular-nums ${t.type === 'credit' ? 'text-emerald-600' : 'text-rose-600'}`}>
                         {t.type === 'credit' ? '+' : '-'}{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(t.amount || 0)}
                       </div>
                     </TableCell>
@@ -384,8 +384,8 @@ function DashboardContent() {
         </Card>
 
         {/* Command Panel */}
-        <div className="lg:col-span-4 space-y-6">
-          {/* Delinquency Radar */}
+        <div className="col-span-1 lg:col-span-4 space-y-6">
+          {/* Financial Alerts */}
           <Card className="border-slate-200 shadow-sm overflow-hidden rounded-3xl">
             <CardHeader className="bg-slate-50/50 border-b border-slate-100 py-4 px-6">
               <CardTitle className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center">
@@ -426,7 +426,7 @@ function DashboardContent() {
             <CardHeader className="bg-slate-50/50 border-b border-slate-100 py-4 px-6">
               <CardTitle className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center">
                 <BoltIcon className="h-4 w-4 mr-2 text-primary" />
-                Quick Actions
+                Quick Menu
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 grid grid-cols-2 gap-3">

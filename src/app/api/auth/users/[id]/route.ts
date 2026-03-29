@@ -14,17 +14,38 @@ export async function PATCH(
       return NextResponse.json({ error: "Authorization required" }, { status: 401 })
     }
 
-    const decoded = verifyToken(token)
+    let decoded;
+    try {
+      decoded = verifyToken(token)
+    } catch (error) {
+      console.error("Token verification failed:", error)
+      return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 })
+    }
+
     const adminUser = await prisma.user.findUnique({
       where: { id: decoded.userId }
     })
 
-    if (!adminUser || adminUser.role !== "admin") {
+    if (!adminUser) {
+      return NextResponse.json({ error: "User not found" }, { status: 403 })
+    }
+
+    if (adminUser.role !== "admin") {
       return NextResponse.json({ error: "Admin access required" }, { status: 403 })
     }
 
     const body = await request.json()
     const { isActive, role } = body
+
+    // Validate role if provided
+    if (role && !['admin', 'operator'].includes(role)) {
+      return NextResponse.json({ error: "Invalid role. Must be 'admin' or 'operator'" }, { status: 400 })
+    }
+
+    // Prevent admin from deactivating themselves
+    if (id === adminUser.id && isActive === false) {
+      return NextResponse.json({ error: "Cannot deactivate your own account" }, { status: 400 })
+    }
 
     const updatedUser = await prisma.user.update({
       where: { id },
@@ -61,13 +82,38 @@ export async function DELETE(
       return NextResponse.json({ error: "Authorization required" }, { status: 401 })
     }
 
-    const decoded = verifyToken(token)
+    let decoded;
+    try {
+      decoded = verifyToken(token)
+    } catch (error) {
+      console.error("Token verification failed:", error)
+      return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 })
+    }
+
     const adminUser = await prisma.user.findUnique({
       where: { id: decoded.userId }
     })
 
-    if (!adminUser || adminUser.role !== "admin") {
+    if (!adminUser) {
+      return NextResponse.json({ error: "User not found" }, { status: 403 })
+    }
+
+    if (adminUser.role !== "admin") {
       return NextResponse.json({ error: "Admin access required" }, { status: 403 })
+    }
+
+    // Prevent admin from deleting themselves
+    if (id === adminUser.id) {
+      return NextResponse.json({ error: "Cannot delete your own account" }, { status: 400 })
+    }
+
+    // Check if user exists
+    const userToDelete = await prisma.user.findUnique({
+      where: { id }
+    })
+
+    if (!userToDelete) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
     await prisma.user.delete({

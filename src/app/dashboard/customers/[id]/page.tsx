@@ -51,7 +51,7 @@ import {
   ArrowUpIcon,
   BriefcaseIcon,
   HomeIcon,
-  FingerprintIcon
+  FingerPrintIcon
 } from "@heroicons/react/24/outline"
 
 interface Customer {
@@ -204,6 +204,10 @@ export default function CustomerView() {
     }
   }
 
+  const cancelDelete = () => {
+    setShowDeleteDialog({ show: false, customerId: '', customerName: '' })
+  }
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -352,7 +356,7 @@ export default function CustomerView() {
           <div className="bg-white border border-slate-200 rounded-2xl shadow-sm">
             <div className="p-4 border-b border-slate-100 bg-slate-50/30">
               <h3 className="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center">
-                <FingerprintIcon className="h-4 w-4 mr-2 text-primary" />
+                <FingerPrintIcon className="h-4 w-4 mr-2 text-primary" />
                 Identity & Details
               </h3>
             </div>
@@ -539,13 +543,5 @@ export default function CustomerView() {
         </div>
       </div>
     </DashboardLayout>
-  )
-}
-
-function FingerprintIcon({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M7.864 4.243A7.5 7.5 0 0119.5 10.5c0 2.92-.556 5.709-1.568 8.263a2.25 2.25 0 01-2.122 1.412H7.646l-4.111-4.111a.75.75 0 011.06-1.06l3.27 3.27v-6.372m0-8.25V3h3m0 0v3m0-3h3" />
-    </svg>
   )
 }

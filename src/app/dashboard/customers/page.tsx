@@ -11,10 +11,21 @@ import { PageHeader } from "@/components/ui/page-header"
 import { TableActions } from "@/components/ui/table-actions"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui"
 import {
-  PlusIcon, MagnifyingGlassIcon, UserIcon, EnvelopeIcon, PhoneIcon,
-  CurrencyDollarIcon, EyeIcon, TrashIcon, FunnelIcon, ArrowDownIcon,
-  ArrowUpIcon, BuildingLibraryIcon, BanknotesIcon, CreditCardIcon,
-} from "@heroicons/react/24/outline"
+  Plus,
+  Search,
+  User,
+  Mail,
+  Phone,
+  DollarSign,
+  Eye,
+  Trash2,
+  Filter,
+  ArrowUp,
+  ArrowDown,
+  Building2,
+  Banknote,
+  CreditCard
+} from "lucide-react"
 
 interface Customer {
   id: string; name: string; email: string; phone: string; address: string; city: string;
@@ -91,8 +102,8 @@ export default function CustomerMaster() {
     <button onClick={() => handleSort(field)} className="flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-primary transition-colors group">
       {label}
       {sortField === field
-        ? sortDir === 'asc' ? <ArrowUpIcon className="h-3 w-3 text-primary" /> : <ArrowDownIcon className="h-3 w-3 text-primary" />
-        : <ArrowDownIcon className="h-3 w-3 text-slate-300 group-hover:text-slate-400" />
+        ? sortDir === 'asc' ? <ArrowUp className="h-3 w-3 text-primary" /> : <ArrowDown className="h-3 w-3 text-primary" />
+        : <ArrowDown className="h-3 w-3 text-slate-300 group-hover:text-slate-400" />
       }
     </button>
   )
@@ -112,27 +123,27 @@ export default function CustomerMaster() {
           subtitle="Manage customer information and accounts"
           actions={
             <Button onClick={() => router.push('/dashboard/customers/create')} className="finance-gradient-primary text-white h-9 px-4 rounded-xl font-medium shadow-sm">
-              <PlusIcon className="h-4 w-4 mr-2" /> New Customer
+              <Plus className="h-4 w-4 mr-2" /> New Customer
             </Button>
           }
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          <StatCard title="Total Customers" value={customers.length} subtitle="All registered" icon={<UserIcon />} iconVariant="primary" borderVariant="primary" />
-          <StatCard title="Savings Accounts" value={customers.filter(c => c.accountType === 'savings').length} subtitle="Active savings" icon={<BanknotesIcon />} iconVariant="success" borderVariant="success" />
-          <StatCard title="Current Accounts" value={customers.filter(c => c.accountType === 'current').length} subtitle="Business accounts" icon={<BuildingLibraryIcon />} iconVariant="info" borderVariant="info" />
-          <StatCard title="Loan Accounts" value={customers.filter(c => c.accountType === 'loan').length} subtitle="Active loans" icon={<CreditCardIcon />} iconVariant="danger" borderVariant="danger" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+          <StatCard title="Total Customers" value={customers.length} subtitle="All registered" icon={<User />} iconVariant="primary" borderVariant="primary" className="p-4 sm:p-6" />
+          <StatCard title="Savings Accounts" value={customers.filter(c => c.accountType === 'savings').length} subtitle="Active savings" icon={<Banknote />} iconVariant="success" borderVariant="success" className="p-4 sm:p-6" />
+          <StatCard title="Current Accounts" value={customers.filter(c => c.accountType === 'current').length} subtitle="Business accounts" icon={<Building2 />} iconVariant="info" borderVariant="info" className="p-4 sm:p-6" />
+          <StatCard title="Loan Accounts" value={customers.filter(c => c.accountType === 'loan').length} subtitle="Active loans" icon={<CreditCard />} iconVariant="danger" borderVariant="danger" className="p-4 sm:p-6" />
         </div>
 
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-          <div className="flex flex-col md:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1 relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <Input placeholder="Search by name, email, phone, or city..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10 h-10 border-slate-200 bg-slate-50 focus:bg-white rounded-lg text-sm" />
             </div>
-            <div className="flex items-center gap-2">
-              <FunnelIcon className="h-4 w-4 text-slate-400 flex-shrink-0" />
-              <select value={filterType} onChange={e => setFilterType(e.target.value)} className="h-10 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 min-w-[160px]">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Filter className="h-4 w-4 text-slate-400 flex-shrink-0" />
+              <select value={filterType} onChange={e => setFilterType(e.target.value)} className="h-10 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 w-full sm:min-w-[160px]">
                 <option value="all">All Account Types</option>
                 <option value="savings">Savings</option>
                 <option value="current">Current</option>
@@ -152,7 +163,7 @@ export default function CustomerMaster() {
                 <span className="text-xs text-slate-500">{selected.length} selected</span>
                 {selected.length === 1 && (
                   <Button size="sm" onClick={() => router.push(`/dashboard/ledger?customerId=${selected[0]}`)} className="h-7 px-3 text-xs finance-gradient-primary text-white rounded-lg">
-                    <PlusIcon className="h-3.5 w-3.5 mr-1" /> Add Transaction
+                    <Plus className="h-3.5 w-3.5 mr-1" /> Add Transaction
                   </Button>
                 )}
                 <Button variant="ghost" size="sm" onClick={() => setSelected([])} className="h-7 px-3 text-xs rounded-lg">Clear</Button>
@@ -167,29 +178,29 @@ export default function CustomerMaster() {
             </div>
           ) : filtered.length === 0 ? (
             <div className="text-center py-16">
-              <div className="h-14 w-14 rounded-2xl finance-icon-bg flex items-center justify-center mx-auto mb-4"><UserIcon className="h-7 w-7" /></div>
+              <div className="h-14 w-14 rounded-2xl finance-icon-bg flex items-center justify-center mx-auto mb-4"><User className="h-7 w-7" /></div>
               <h3 className="text-sm font-semibold text-slate-800">No customers found</h3>
               <p className="text-xs text-slate-400 mt-1">{searchTerm || filterType !== 'all' ? 'Try adjusting your search or filter' : 'Get started by creating your first customer'}</p>
               {!searchTerm && filterType === 'all' && (
                 <Button onClick={() => router.push('/dashboard/customers/create')} className="mt-5 finance-gradient-primary text-white h-8 px-4 text-xs rounded-lg">
-                  <PlusIcon className="h-3.5 w-3.5 mr-1.5" /> New Customer
+                  <Plus className="h-3.5 w-3.5 mr-1.5" /> New Customer
                 </Button>
               )}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
+            <div className="overflow-x-auto overflow-y-hidden">
+              <Table className="responsive-table">
                 <TableHeader>
                   <TableRow className="bg-slate-50/60 hover:bg-slate-50 border-slate-100">
-                    <TableHead className="w-10 px-5">
+                    <TableHead className="w-10 px-4 sm:px-5">
                       <Checkbox checked={selected.length === filtered.length && filtered.length > 0} onCheckedChange={v => setSelected(v ? filtered.map(c => c.id) : [])} />
                     </TableHead>
-                    <TableHead className="px-4 min-w-[200px]"><SortBtn field="name" label="Customer" /></TableHead>
-                    <TableHead className="px-4 min-w-[180px]"><SortBtn field="email" label="Contact" /></TableHead>
-                    <TableHead className="px-4 min-w-[140px]"><SortBtn field="accountType" label="Account Type" /></TableHead>
-                    <TableHead className="px-4 min-w-[100px] text-right"><SortBtn field="annualIncome" label="Income" /></TableHead>
-                    <TableHead className="px-4 min-w-[100px]"><SortBtn field="createdAt" label="Created" /></TableHead>
-                    <TableHead className="px-4 w-14 text-right text-xs font-semibold text-slate-600">Actions</TableHead>
+                    <TableHead className="px-3 sm:px-4 min-w-[160px] sm:min-w-[200px]"><SortBtn field="name" label="Customer" /></TableHead>
+                    <TableHead className="px-3 sm:px-4 min-w-[150px] sm:min-w-[180px] hide-on-mobile"><SortBtn field="email" label="Contact" /></TableHead>
+                    <TableHead className="px-3 sm:px-4 min-w-[100px] sm:min-w-[140px]"><SortBtn field="accountType" label="Type" /></TableHead>
+                    <TableHead className="px-3 sm:px-4 min-w-[80px] sm:min-w-[100px] text-right"><SortBtn field="annualIncome" label="Income" /></TableHead>
+                    <TableHead className="px-3 sm:px-4 min-w-[90px] sm:min-w-[100px] hide-on-tablet"><SortBtn field="createdAt" label="Created" /></TableHead>
+                    <TableHead className="px-3 sm:px-4 w-12 sm:w-14 text-right text-[10px] font-black uppercase text-slate-400">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -213,8 +224,8 @@ export default function CustomerMaster() {
                         </TableCell>
                         <TableCell className="px-4 py-3.5">
                           <div className="space-y-1">
-                            <div className="flex items-center gap-1.5 text-xs text-slate-600"><EnvelopeIcon className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" /><span className="truncate max-w-[150px]">{customer.email}</span></div>
-                            <div className="flex items-center gap-1.5 text-xs text-slate-400"><PhoneIcon className="h-3.5 w-3.5 flex-shrink-0" />{customer.phone}</div>
+                            <div className="flex items-center gap-1.5 text-xs text-slate-600"><Mail className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" /><span className="truncate max-w-[150px]">{customer.email}</span></div>
+                            <div className="flex items-center gap-1.5 text-xs text-slate-400"><Phone className="h-3.5 w-3.5 flex-shrink-0" />{customer.phone}</div>
                           </div>
                         </TableCell>
                         <TableCell className="px-4 py-3.5"><span className={badge.cls}>{badge.label}</span></TableCell>
@@ -226,9 +237,9 @@ export default function CustomerMaster() {
                         </TableCell>
                         <TableCell className="px-4 py-3.5 text-right">
                           <TableActions actions={[
-                            { label: "View Details", icon: <EyeIcon />, onClick: () => router.push(`/dashboard/customers/${customer.id}`) },
-                            { label: "Add Transaction", icon: <PlusIcon />, onClick: () => router.push(`/dashboard/ledger?customerId=${customer.id}`) },
-                            { label: "Delete", icon: <TrashIcon />, onClick: () => setDeleteDialog({ show: true, id: customer.id, name: customer.name }), variant: "danger", separator: true },
+                            { label: "View Details", icon: <Eye />, onClick: () => router.push(`/dashboard/customers/${customer.id}`) },
+                            { label: "Add Transaction", icon: <Plus />, onClick: () => router.push(`/dashboard/ledger?customerId=${customer.id}`) },
+                            { label: "Delete", icon: <Trash2 />, onClick: () => setDeleteDialog({ show: true, id: customer.id, name: customer.name }), variant: "danger", separator: true },
                           ]} />
                         </TableCell>
                       </TableRow>
@@ -245,12 +256,12 @@ export default function CustomerMaster() {
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDeleteDialog({ show: false, id: '', name: '' })} />
           <div className="relative bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-sm w-full mx-4 p-6 animate-fade-in-up">
-            <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-50 rounded-xl mb-4"><TrashIcon className="h-6 w-6 text-red-500" /></div>
+            <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-50 rounded-xl mb-4"><Trash2 className="h-6 w-6 text-red-500" /></div>
             <h3 className="text-base font-semibold text-slate-900 text-center">Delete Customer?</h3>
             <p className="text-sm text-slate-500 text-center mt-2 mb-6">This will permanently delete <span className="font-semibold text-slate-700">{deleteDialog.name}</span> and all associated data.</p>
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => setDeleteDialog({ show: false, id: '', name: '' })} className="flex-1 border-slate-200 rounded-xl h-10">Cancel</Button>
-              <Button onClick={confirmDelete} className="flex-1 bg-red-500 hover:bg-red-600 text-white rounded-xl h-10"><TrashIcon className="h-4 w-4 mr-2" />Delete</Button>
+              <Button onClick={confirmDelete} className="flex-1 bg-red-500 hover:bg-red-600 text-white rounded-xl h-10"><Trash2 className="h-4 w-4 mr-2" />Delete</Button>
             </div>
           </div>
         </div>

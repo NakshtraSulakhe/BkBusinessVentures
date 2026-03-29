@@ -9,10 +9,10 @@ import { StatCard } from "@/components/ui/stat-card"
 import { PageHeader } from "@/components/ui/page-header"
 import { Badge } from "@/components/ui/badge"
 import {
-  ChartBarIcon, UserGroupIcon, ArrowTrendingUpIcon, CurrencyDollarIcon,
-  DocumentDuplicateIcon, ArrowDownTrayIcon, ClockIcon, CheckBadgeIcon,
-  BuildingLibraryIcon, ChartPieIcon, PresentationChartLineIcon, ArrowRightIcon,
-} from "@heroicons/react/24/outline"
+  BarChart3, Users, TrendingUp, DollarSign,
+  Copy, Download, Clock, CheckCircle2,
+  Building2, PieChart, ArrowRight
+} from "lucide-react"
 
 interface ReportSummary {
   customers: number; activeAccounts: number; totalFDPrincipal: number;
@@ -41,7 +41,7 @@ function ReportCard({ title, description, href, icon, badge, badgeColor }: {
         </div>
         <p className="text-xs text-slate-500 leading-relaxed">{description}</p>
       </div>
-      <ArrowRightIcon className="h-4 w-4 text-slate-300 group-hover:text-primary flex-shrink-0 transition-colors mt-0.5" />
+      <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-primary flex-shrink-0 transition-colors mt-0.5" />
     </div>
   )
 }
@@ -76,26 +76,26 @@ export default function ReportsDashboard() {
           subtitle="Consolidated financial reporting & portfolio health"
           actions={
             <Button variant="outline" className="h-9 px-4 border-slate-200 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-50">
-              <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
+              <Download className="h-4 w-4 mr-2" />
               Export Report
             </Button>
           }
         />
 
         {/* Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          <StatCard title="FD Principal" value={fmt(summary.totalFDPrincipal)} subtitle="Fixed deposit corpus" icon={<BuildingLibraryIcon />} iconVariant="primary" borderVariant="primary" />
-          <StatCard title="Loan Exposure" value={fmt(summary.totalLoanOutstanding)} subtitle="Outstanding balance" icon={<CurrencyDollarIcon />} iconVariant="danger" borderVariant="danger" />
-          <StatCard title="Pending EMI" value={fmt(summary.pendingEMIAmount)} subtitle="Collection due" icon={<ClockIcon />} iconVariant="warning" borderVariant="warning" />
-          <StatCard title="Open Suggestions" value={summary.unprocessedSuggestions ?? 0} subtitle="Awaiting processing" icon={<PresentationChartLineIcon />} iconVariant="teal" borderVariant="teal" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+          <StatCard title="FD Principal" value={fmt(summary.totalFDPrincipal)} subtitle="Fixed deposit corpus" icon={<Building2 />} iconVariant="primary" borderVariant="primary" className="p-4 sm:p-6" />
+          <StatCard title="Loan Exposure" value={fmt(summary.totalLoanOutstanding)} subtitle="Outstanding balance" icon={<DollarSign />} iconVariant="danger" borderVariant="danger" className="p-4 sm:p-6" />
+          <StatCard title="Pending EMI" value={fmt(summary.pendingEMIAmount)} subtitle="Collection due" icon={<Clock />} iconVariant="warning" borderVariant="warning" className="p-4 sm:p-6" />
+          <StatCard title="Open Suggestions" value={summary.unprocessedSuggestions ?? 0} subtitle="Awaiting processing" icon={<TrendingUp />} iconVariant="teal" borderVariant="teal" className="p-4 sm:p-6" />
         </div>
 
         {/* Report categories */}
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-20">
           {/* Audit & Portfolio */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 mb-1">
-              <ChartPieIcon className="h-4 w-4 text-primary" />
+              <PieChart className="h-4 w-4 text-primary" />
               <h2 className="text-sm font-semibold text-slate-800 uppercase tracking-wide">Audit & Portfolio Architecture</h2>
             </div>
             <div className="space-y-3">
@@ -103,20 +103,20 @@ export default function ReportsDashboard() {
                 title="Consolidated Customer Ledger"
                 description="Complete financial snapshot of every customer with active exposure and payment history."
                 href="/dashboard/reports/customers"
-                icon={<UserGroupIcon />}
+                icon={<Users />}
               />
               <ReportCard
                 title="FD Maturity Matrix"
                 description="Forecast liquidity requirements by analyzing Fixed Deposits maturing in upcoming cycles."
                 href="/dashboard/reports/fd"
-                icon={<DocumentDuplicateIcon />}
+                icon={<Copy />}
                 badge="STRATEGY"
               />
               <ReportCard
                 title="Collection Velocity"
                 description="Real-time analysis of RD and EMI collection trends against projected targets."
                 href="/dashboard/reports/rd"
-                icon={<ChartBarIcon />}
+                icon={<BarChart3 />}
               />
             </div>
           </div>
@@ -124,7 +124,7 @@ export default function ReportsDashboard() {
           {/* Compliance & Recovery */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 mb-1">
-              <PresentationChartLineIcon className="h-4 w-4 text-primary" />
+              <Users className="h-4 w-4 text-primary" />
               <h2 className="text-sm font-semibold text-slate-800 uppercase tracking-wide">Compliance & Recovery Logs</h2>
             </div>
             <div className="space-y-3">
@@ -132,7 +132,7 @@ export default function ReportsDashboard() {
                 title="Default & Delinquency"
                 description="Risk analysis identifying accounts with missed payments or pending penalty accruals."
                 href="/dashboard/reports/loans"
-                icon={<ClockIcon />}
+                icon={<Clock />}
                 badge="RISK"
                 badgeColor="badge-type-loan"
               />
@@ -140,13 +140,13 @@ export default function ReportsDashboard() {
                 title="Accrual Verification"
                 description="Audit log of all interest disbursements approved through the suggestions engine."
                 href="#"
-                icon={<CheckBadgeIcon />}
+                icon={<CheckCircle2 />}
               />
               <ReportCard
                 title="Unified Statement Hub"
                 description="Institutional-grade statement generation for audit-ready customer reports."
                 href="#"
-                icon={<ArrowDownTrayIcon />}
+                icon={<Download />}
               />
             </div>
           </div>

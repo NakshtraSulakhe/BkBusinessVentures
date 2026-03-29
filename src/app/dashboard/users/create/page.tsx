@@ -37,7 +37,7 @@ function CreateUserContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (formData.password !== formData.confirmPassword) {
-      alert('Security keys do not match. Verification failed.')
+      alert('Passwords do not match. Please check and try again.')
       return
     }
 
@@ -62,11 +62,11 @@ function CreateUserContent() {
         router.push('/dashboard/users')
       } else {
         const error = await res.json()
-        alert(error.error || 'Identity authorization failed.')
+        alert(error.error || 'Failed to create user account.')
       }
     } catch (error) {
       console.error(error)
-      alert('Internal security protocol error.')
+      alert('Network error. Please try again.')
     } finally {
       setSubmitting(false)
     }
@@ -77,8 +77,8 @@ function CreateUserContent() {
   return (
     <div className="space-y-6 animate-fade-in-up pb-20">
       <PageHeader
-        title="Authorize New Identity"
-        subtitle="Provision unified access credentials and authorization tiers for system operators"
+        title="Create New User"
+        subtitle="Add a new user account with appropriate access permissions"
         actions={
           <Button
             variant="outline"
@@ -86,7 +86,7 @@ function CreateUserContent() {
             className="h-9 border-slate-200 text-slate-700 rounded-xl px-4 hover:bg-slate-50 font-medium transition-all"
           >
             <ArrowLeftIcon className="h-4 w-4 mr-2" />
-            Registry
+            Users
           </Button>
         }
       />
@@ -98,14 +98,14 @@ function CreateUserContent() {
             <CardHeader className="bg-slate-50/50 border-b border-slate-100 py-6 px-8">
               <CardTitle className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center">
                 <UserPlusIcon className="h-4 w-4 mr-3 text-primary" />
-                Identity Configuration
+                User Account Setup
               </CardTitle>
             </CardHeader>
             <CardContent className="p-8">
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Legal Name</Label>
+                    <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Full Name</Label>
                     <div className="relative">
                       <UserIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                       <Input
@@ -118,7 +118,7 @@ function CreateUserContent() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Email Interface</Label>
+                    <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Email Address</Label>
                     <div className="relative">
                       <EnvelopeIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                       <Input
@@ -135,14 +135,14 @@ function CreateUserContent() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Access Logic Tier</Label>
+                    <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">User Role</Label>
                     <Select value={formData.role} onValueChange={(v) => setFormData({ ...formData, role: v })}>
                       <SelectTrigger className="h-12 border-slate-200 bg-slate-50/50 rounded-2xl font-bold shadow-none text-left">
-                        <SelectValue placeholder="Select Tier" />
+                        <SelectValue placeholder="Select Role" />
                       </SelectTrigger>
                       <SelectContent className="rounded-2xl border-slate-200">
-                        <SelectItem value="operator">Operations Tier (Standard)</SelectItem>
-                        <SelectItem value="admin">Administrative Tier (Full)</SelectItem>
+                        <SelectItem value="operator">Operator (Standard Access)</SelectItem>
+                        <SelectItem value="admin">Administrator (Full Access)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -151,7 +151,7 @@ function CreateUserContent() {
                 <div className="pt-4 border-t border-slate-50">
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Security Key</Label>
+                        <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Password</Label>
                         <div className="relative">
                           <KeyIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                           <Input
@@ -165,7 +165,7 @@ function CreateUserContent() {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Verify Security Key</Label>
+                        <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Confirm Password</Label>
                         <div className="relative">
                           <CheckCircleIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                           <Input
@@ -187,7 +187,7 @@ function CreateUserContent() {
                     disabled={submitting}
                     className="h-12 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl px-10 font-black uppercase text-[10px] tracking-widest shadow-xl transition-all active:scale-[0.98]"
                   >
-                    {submitting ? 'Authenticating...' : 'Authorize Identity'}
+                    {submitting ? 'Creating User...' : 'Create User'}
                   </Button>
                 </div>
               </form>
@@ -201,12 +201,12 @@ function CreateUserContent() {
             <CardHeader className="p-8 pb-4">
               <CardTitle className="text-white text-xl font-black tracking-tight flex items-center">
                 <ShieldCheckIcon className="h-5 w-5 mr-3 text-primary animate-pulse" />
-                Authorization Pulse
+                User Permissions
               </CardTitle>
             </CardHeader>
             <CardContent className="p-8 pt-0 space-y-6">
               <p className="text-xs text-slate-400 font-bold leading-relaxed border-b border-white/10 pb-4">
-                Identities provisioned in this portal inherit systematic authorization tiers. Ensure compliance with institutional access logs.
+                Users created here will have access to the system based on their assigned role. Choose the appropriate role for each user.
               </p>
               
               <div className="space-y-6">
@@ -215,8 +215,8 @@ function CreateUserContent() {
                     <CheckCircleIcon className="h-4 w-4" />
                   </div>
                   <div>
-                    <h5 className="text-[10px] font-black text-white uppercase tracking-widest">Administrative Domain</h5>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-1 leading-relaxed">Full recursive access to all financial instrument clusters and system parameters.</p>
+                    <h5 className="text-[10px] font-black text-white uppercase tracking-widest">Administrator</h5>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-1 leading-relaxed">Full access to all features including user management and system settings.</p>
                   </div>
                 </div>
                 <div className="flex gap-4 items-start">
@@ -224,8 +224,8 @@ function CreateUserContent() {
                     <CheckCircleIcon className="h-4 w-4" />
                   </div>
                   <div>
-                    <h5 className="text-[10px] font-black text-white uppercase tracking-widest">Operations Tier</h5>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-1 leading-relaxed">Standardized interaction for customer onboarding, loan management, and ledgers.</p>
+                    <h5 className="text-[10px] font-black text-white uppercase tracking-widest">Operator</h5>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-1 leading-relaxed">Standard access for daily operations like managing customers, accounts, and transactions.</p>
                   </div>
                 </div>
               </div>
@@ -233,9 +233,9 @@ function CreateUserContent() {
               <div className="pt-6 border-t border-white/10">
                 <div className="flex items-center gap-2 mb-4">
                   <InformationCircleIcon className="h-4 w-4 text-primary" />
-                  <span className="text-[9px] font-black text-primary uppercase tracking-widest">Protocol Check</span>
+                  <span className="text-[9px] font-black text-primary uppercase tracking-widest">Important Note</span>
                 </div>
-                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest leading-relaxed">Once authorized, identifiers are immutable across historical audit logs. Triple-verify all identity strings before commit.</p>
+                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest leading-relaxed">User accounts cannot be deleted once created. Please verify all information before submitting.</p>
               </div>
             </CardContent>
           </Card>
@@ -248,7 +248,7 @@ function CreateUserContent() {
 export default function CreateUserPage() {
   return (
     <DashboardLayout>
-      <Suspense fallback={<div>Querying Identity Matrix...</div>}>
+      <Suspense fallback={<div>Loading...</div>}>
         <CreateUserContent />
       </Suspense>
     </DashboardLayout>

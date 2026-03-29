@@ -49,14 +49,14 @@ export function StatCard({
   children,
 }: StatCardProps) {
   // Support both component references (ElementType) and pre-rendered elements (ReactNode)
-  const IconContent = typeof icon === "function"
-    ? React.createElement(icon as React.ElementType, { className: "h-5 w-5" })
-    : icon
+  const IconContent = React.isValidElement(icon)
+    ? icon
+    : React.createElement(icon as React.ElementType, { className: "h-5 w-5" })
 
   return (
     <div
       className={cn(
-        "bg-white border border-slate-200 rounded-xl p-6 shadow-sm finance-hover-lift transition-all duration-300 hover:shadow-md relative",
+        "bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm finance-hover-lift transition-all duration-300 hover:shadow-md relative",
         borderVariant !== "none" && "border-l-4",
         borderVariant !== "none" && borderColorMap[borderVariant],
         highlight && "ring-2 ring-red-400 ring-offset-1",

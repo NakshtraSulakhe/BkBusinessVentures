@@ -52,6 +52,7 @@ import {
   SidebarMenuSubItem,
   SidebarMenuSubButton,
   SidebarHeader,
+  SidebarMenuAction,
 } from "@/components/ui/sidebar"
 
 import {
@@ -202,24 +203,30 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 className="group/collapsible"
               >
                 <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton
-                      isActive={isParentActive}
-                      tooltip={item.name}
-                      className={cn(
-                        "rounded-lg transition-colors",
-                        isParentActive
-                          ? "bg-primary/8 text-primary border-l-[3px] border-l-primary font-medium pl-[calc(0.75rem-3px)]"
-                          : "hover:bg-slate-50 text-slate-600 hover:text-slate-900"
-                      )}
-                    >
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isParentActive}
+                    tooltip={item.name}
+                    className={cn(
+                      "rounded-lg transition-colors pr-8",
+                      isParentActive
+                        ? "bg-primary/8 text-primary border-l-[3px] border-l-primary font-medium pl-[calc(0.75rem-3px)]"
+                        : "hover:bg-slate-50 text-slate-600 hover:text-slate-900"
+                    )}
+                  >
+                    <a href={item.href} className="flex items-center gap-2">
                       <item.icon className={cn(
                         "h-4 w-4 flex-shrink-0",
                         isParentActive ? "text-primary" : "text-slate-400"
                       )} />
                       <span>{item.name}</span>
-                      <ChevronRightIcon className="ml-auto h-3.5 w-3.5 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 text-slate-400" />
-                    </SidebarMenuButton>
+                    </a>
+                  </SidebarMenuButton>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuAction className="transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90">
+                      <ChevronRightIcon />
+                      <span className="sr-only">Toggle</span>
+                    </SidebarMenuAction>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <SidebarMenuSub>
@@ -361,10 +368,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <SidebarInset className="flex flex-col h-screen">
         {/* Top Header */}
         <header className="sticky top-0 z-30 flex items-center justify-between h-14 px-5 border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 flex-shrink-0">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <SidebarTrigger className="text-slate-400 hover:text-slate-700 transition-colors" />
-            <div className="h-5 w-px bg-slate-200 hidden sm:block" />
-            <span className="text-sm font-semibold text-slate-800 hidden sm:block tracking-tight">
+            <div className="h-5 w-px bg-slate-200 hidden xs:block sm:block" />
+            <span className="text-sm font-semibold text-slate-800 tracking-tight block truncate max-w-[150px] sm:max-w-none">
               {pageTitle}
             </span>
           </div>
@@ -424,8 +431,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-6 bg-slate-50/50">
-          {children}
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-slate-50/50">
+          <div className="max-w-7xl mx-auto">
+            {children}
+          </div>
         </main>
       </SidebarInset>
     </SidebarProvider>

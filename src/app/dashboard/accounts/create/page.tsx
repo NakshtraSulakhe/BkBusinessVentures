@@ -181,14 +181,14 @@ function CreateAccountComponent() {
       })
 
       if (response.ok) {
-        setMessage({ type: 'success', text: 'Account provisioned successfully' })
+        setMessage({ type: 'success', text: 'Account created successfully' })
         setTimeout(() => router.push('/dashboard/accounts'), 2000)
       } else {
         const err = await response.json()
-        setMessage({ type: 'error', text: err.error || 'Failed to create instrument' })
+        setMessage({ type: 'error', text: err.error || 'Failed to create account' })
       }
     } catch (error) {
-      setMessage({ type: 'error', text: 'Network failure during provisioning' })
+      setMessage({ type: 'error', text: 'Network error. Please try again.' })
     } finally {
       setLoading(false)
     }
@@ -201,15 +201,15 @@ function CreateAccountComponent() {
   return (
     <div className="space-y-6 animate-fade-in-up pb-20">
       <PageHeader
-        title="Provision New Account"
-        subtitle="Initialize a financial instrument for a verified client"
+        title="Create New Account"
+        subtitle="Open a new account for your customer"
         actions={
           <Button
             variant="outline"
             onClick={() => router.push('/dashboard/accounts')}
             className="h-9 border-slate-200 text-slate-700 rounded-xl px-4 hover:bg-slate-50 font-medium"
           >
-            Cancel setup
+            Cancel
           </Button>
         }
       />
@@ -230,19 +230,19 @@ function CreateAccountComponent() {
             <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-4">
               <CardTitle className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
                 <UsersIcon className="h-4 w-4 mr-2 text-primary" />
-                1. Entity Linkage
+                1. Customer Information
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Verified Client</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Select Customer</label>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" className="w-full h-11 justify-between border-slate-200 rounded-lg bg-slate-50/30 hover:bg-white transition-all text-slate-900 font-bold">
                         <div className="flex items-center gap-2">
                           <UserIcon className="h-4 w-4 text-slate-400" />
-                          {selectedCustomer ? selectedCustomer.name : "Select account holder..."}
+                          {selectedCustomer ? selectedCustomer.name : "Choose customer..."}
                         </div>
                         <ChevronDownIcon className="h-4 w-4 text-slate-400" />
                       </Button>
@@ -258,7 +258,7 @@ function CreateAccountComponent() {
                       ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
-                  {errors.customerId && <p className="text-[10px] text-rose-500 font-bold ml-1">Client selection is mandatory</p>}
+                  {errors.customerId && <p className="text-[10px] text-rose-500 font-bold ml-1">Please select a customer</p>}
                 </div>
               </div>
             </CardContent>
@@ -269,13 +269,13 @@ function CreateAccountComponent() {
             <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-4">
               <CardTitle className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
                 <CurrencyDollarIcon className="h-4 w-4 mr-2 text-primary" />
-                2. Financial Parameters
+                2. Account Details
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Instrument Type</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Account Type</label>
                   <Select value={formData.accountType} onValueChange={v => setFormData(p => ({ ...p, accountType: v as any }))}>
                     <SelectTrigger className="h-11 border-slate-200 bg-slate-50/30 font-bold">
                       <SelectValue />
@@ -288,7 +288,7 @@ function CreateAccountComponent() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Commencement Date</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Start Date</label>
                   <div className="relative">
                     <CalendarIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <Input type="date" value={formData.startDate} onChange={e => setFormData(p => ({ ...p, startDate: e.target.value }))} className="pl-10 h-11 border-slate-200 bg-slate-50/30 font-medium" />
@@ -307,7 +307,7 @@ function CreateAccountComponent() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Annual Yield (%)</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Interest Rate (%)</label>
                   <div className="relative">
                     <ReceiptPercentIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <Input type="number" placeholder="0.00" value={formData.interestRate} onChange={e => setFormData(p => ({ ...p, interestRate: e.target.value }))} className="pl-10 h-11 border-slate-200 bg-slate-50/30 font-black tracking-tight" />
@@ -329,7 +329,7 @@ function CreateAccountComponent() {
             <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-4">
               <CardTitle className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
                 <Cog6ToothIcon className="h-4 w-4 mr-2 text-primary" />
-                3. Operational Protocol
+                3. Account Settings
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
@@ -337,26 +337,26 @@ function CreateAccountComponent() {
                 {formData.accountType === 'FD' && (
                   <>
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Interest Posting</label>
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Interest Payment</label>
                       <Select value={formData.interestMode} onValueChange={v => setFormData(p => ({ ...p, interestMode: v as any }))}>
                         <SelectTrigger className="h-11 border-slate-200 bg-slate-50/30">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="monthly">Monthly Accrual</SelectItem>
-                          <SelectItem value="maturity-only">Maturity Finalization</SelectItem>
+                          <SelectItem value="monthly">Pay Monthly</SelectItem>
+                          <SelectItem value="maturity-only">Pay at Maturity</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Payout Protocol</label>
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Interest Payout</label>
                       <Select value={formData.payoutMode} onValueChange={v => setFormData(p => ({ ...p, payoutMode: v as any }))}>
                         <SelectTrigger className="h-11 border-slate-200 bg-slate-50/30">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="reinvest">Auto Reinvest (Cumulative)</SelectItem>
-                          <SelectItem value="paid-out">Liquid Payout (Non-cumulative)</SelectItem>
+                          <SelectItem value="reinvest">Add to Balance</SelectItem>
+                          <SelectItem value="paid-out">Pay Out Monthly</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -366,19 +366,19 @@ function CreateAccountComponent() {
                 {formData.accountType === 'LOAN' && (
                   <>
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Amortization Logic</label>
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Interest Calculation</label>
                       <Select value={formData.loanMethod} onValueChange={v => setFormData(p => ({ ...p, loanMethod: v as any }))}>
                         <SelectTrigger className="h-11 border-slate-200 bg-slate-50/30 font-bold">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="flat">Flat Interest Rate</SelectItem>
-                          <SelectItem value="reducing">Reducing Balance EMI</SelectItem>
+                          <SelectItem value="flat">Simple Interest</SelectItem>
+                          <SelectItem value="reducing">Reducing Balance</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Penalty / Overdue (%)</label>
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Late Fee (%)</label>
                       <Input type="number" step="0.1" value={formData.penaltyRate} onChange={e => setFormData(p => ({ ...p, penaltyRate: e.target.value }))} className="h-11 border-slate-200 bg-slate-50/30 font-bold" />
                     </div>
                   </>
@@ -387,19 +387,19 @@ function CreateAccountComponent() {
                 {formData.accountType === 'RD' && (
                   <>
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Yield Calculation</label>
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Interest Method</label>
                       <Select value={formData.interestMethod} onValueChange={v => setFormData(p => ({ ...p, interestMethod: v as any }))}>
                         <SelectTrigger className="h-11 border-slate-200 bg-slate-50/30">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="installment_weighted">Installment Weighted</SelectItem>
-                          <SelectItem value="monthly_balance">Daily Balance Average</SelectItem>
+                          <SelectItem value="installment_weighted">Based on Installments</SelectItem>
+                          <SelectItem value="monthly_balance">Average Balance</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Balance Cut-off Day</label>
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Monthly Calculation Day</label>
                       <Input type="number" min="1" max="28" value={formData.rdBalanceDay} onChange={e => setFormData(p => ({ ...p, rdBalanceDay: e.target.value }))} className="h-11 border-slate-200 bg-slate-50/30 font-bold" />
                     </div>
                   </>
@@ -416,13 +416,13 @@ function CreateAccountComponent() {
               <CircleStackIcon className="h-24 w-24 text-white" />
             </div>
             <CardHeader className="px-8 pt-8 pb-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Account Projection</p>
-              <CardTitle className="text-white tracking-tight text-xl mt-1">Instrument Preview</CardTitle>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Account Summary</p>
+              <CardTitle className="text-white tracking-tight text-xl mt-1">Preview</CardTitle>
             </CardHeader>
             <CardContent className="px-8 pb-8 space-y-6">
               <div className="space-y-1">
                 <p className="text-[10px] font-bold text-slate-500 uppercase">
-                  {formData.accountType === 'LOAN' ? "Standard Monthly EMI" : "Estimated Lifecycle Yield"}
+                  {formData.accountType === 'LOAN' ? "Monthly Payment" : "Total Interest Earned"}
                 </p>
                 <p className="text-3xl font-black text-white tracking-tighter">
                   {formData.accountType === 'LOAN' ? formatCurrency(calculateEMI()) : formatCurrency(calculateYield())}
@@ -431,11 +431,11 @@ function CreateAccountComponent() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Maturity Date</p>
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">End Date</p>
                   <p className="text-xs font-bold text-slate-300">{calculateMaturityDate() || "TBD"}</p>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Net Exposure</p>
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Total Amount</p>
                   <p className="text-xs font-bold text-slate-300">
                     {formData.accountType === 'RD' ? formatCurrency((parseFloat(formData.monthlyInstallment) || 0) * (parseInt(formData.tenure) || 0)) : formatCurrency(parseFloat(formData.principalAmount) || 0)}
                   </p>
@@ -445,15 +445,15 @@ function CreateAccountComponent() {
               <div className="pt-6 border-t border-white/10">
                 <div className="flex items-center gap-2 mb-4">
                   <ShieldCheckIcon className="h-4 w-4 text-emerald-400" />
-                  <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Compliance Ready</span>
+                  <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Ready to Create</span>
                 </div>
                 <Button type="submit" disabled={loading} className="w-full finance-gradient-primary text-white font-black uppercase tracking-widest h-14 rounded-2xl shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">
                   {loading ? (
                     <div className="flex items-center gap-2">
                     <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                    Provisioning...
+                    Creating...
                     </div>
-                  ) : "Provision Instrument"}
+                  ) : "Create Account"}
                 </Button>
               </div>
             </CardContent>
@@ -462,14 +462,14 @@ function CreateAccountComponent() {
           <div className="bg-white border border-slate-200 rounded-2xl p-6">
             <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-4 flex items-center">
               <InformationCircleIcon className="h-4 w-4 mr-2 text-primary" />
-              Provisioning Guidelines
+              Account Creation Tips
             </h4>
             <div className="space-y-3">
               {[
-                "Account IDs are generated based on active templates",
-                "Start date determines initial yield accrual period",
-                "Interest protocols cannot be modified after creation",
-                "System performs automated KYC depth check"
+                "Account numbers are created automatically",
+                "Start date affects when interest begins",
+                "Account settings cannot be changed later",
+                "Customer details are verified automatically"
               ].map((text, idx) => (
                 <div key={idx} className="flex gap-2 text-[10px] font-bold text-slate-500 leading-tight">
                   <div className="h-1 w-1 bg-slate-300 rounded-full mt-1.5 flex-shrink-0" />

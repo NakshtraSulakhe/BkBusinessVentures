@@ -33,7 +33,7 @@ import {
   ExclamationTriangleIcon,
   BriefcaseIcon,
   HomeIcon,
-  FingerprintIcon,
+  FingerPrintIcon,
   ArrowPathIcon
 } from "@heroicons/react/24/outline"
 
@@ -219,7 +219,7 @@ export default function EditCustomer() {
             <Card className="border-slate-200 shadow-sm overflow-hidden">
               <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-4">
                 <CardTitle className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
-                  <FingerprintIcon className="h-4 w-4 mr-2 text-primary" />
+                  <FingerPrintIcon className="h-4 w-4 mr-2 text-primary" />
                   1. Identity & Personal Info
                 </CardTitle>
               </CardHeader>

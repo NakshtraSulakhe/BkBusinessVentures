@@ -11,13 +11,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Authorization required" }, { status: 401 })
     }
 
-    const decoded = verifyToken(token)
+    let decoded;
+    try {
+      decoded = verifyToken(token)
+    } catch (error) {
+      console.error("Token verification failed:", error)
+      return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 })
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId }
     })
 
-    if (!user || !user.isActive) {
-      return NextResponse.json({ error: "Valid user access required" }, { status: 403 })
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 403 })
+    }
+
+    if (!user.isActive) {
+      return NextResponse.json({ error: "Account is inactive" }, { status: 403 })
     }
 
     // Only admins can see all users, operators can only see themselves
@@ -30,7 +41,6 @@ export async function GET(request: NextRequest) {
           role: true,
           isActive: true,
           createdAt: true,
-          passwordHash: false
         },
         orderBy: { createdAt: "desc" }
       })
@@ -61,7 +71,7 @@ export async function POST(request: NextRequest) {
     const userCount = await prisma.user.count()
     const isFirstUser = userCount === 0
     
-    // If not first user, require authentication (admin or operator)
+    // If not first user, require authentication (admin only)
     if (!isFirstUser) {
       const token = request.headers.get("authorization")?.replace("Bearer ", "")
       
@@ -69,8 +79,13 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Authorization required" }, { status: 401 })
       }
 
-      const decoded = verifyToken(token)
-      console.log('Decoded token userId:', decoded.userId)
+      let decoded;
+      try {
+        decoded = verifyToken(token)
+      } catch (error) {
+        console.error("Token verification failed:", error)
+        return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 })
+      }
       
       const requestingUser = await prisma.user.findUnique({
         where: { id: decoded.userId }
@@ -86,7 +101,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Access denied: Inactive account" }, { status: 403 })
       }
 
-      // Security improvement: Only admins should be able to create any user
+      // Only admins should be able to create users
       if (requestingUser.role !== "admin") {
         console.log('Non-admin user attempted to create a user. Role:', requestingUser.role)
         return NextResponse.json({ error: "Admin access required to create users" }, { status: 403 })
@@ -95,6 +110,11 @@ export async function POST(request: NextRequest) {
 
     if (!name || !email || !password || !role) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 })
+    }
+
+    // Validate role
+    if (!['admin', 'operator'].includes(role)) {
+      return NextResponse.json({ error: "Invalid role. Must be 'admin' or 'operator'" }, { status: 400 })
     }
 
     const existingUser = await prisma.user.findUnique({
@@ -112,7 +132,8 @@ export async function POST(request: NextRequest) {
         name,
         email,
         passwordHash,
-        role
+        role,
+        isActive: true
       },
       select: {
         id: true,

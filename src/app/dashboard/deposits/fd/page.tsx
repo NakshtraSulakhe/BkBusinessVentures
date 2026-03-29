@@ -10,10 +10,8 @@ import { PageHeader } from "@/components/ui/page-header"
 import { TableActions } from "@/components/ui/table-actions"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
-  BuildingLibraryIcon, CurrencyDollarIcon, CheckCircleIcon,
-  ExclamationTriangleIcon, PlusIcon, EyeIcon, PencilIcon,
-  MagnifyingGlassIcon, ChartBarIcon, CalendarIcon,
-} from "@heroicons/react/24/outline"
+  Building2, DollarSign, CheckCircle2, AlertTriangle, Plus, Eye, Pencil, Search, BarChart3, Calendar
+} from "lucide-react"
 
 interface FDAccount {
   id: string; accountNumber: string; customerId: string; accountType: string;
@@ -64,22 +62,22 @@ export default function FDPage() {
           subtitle="Manage all fixed deposit accounts"
           actions={
             <Button onClick={() => router.push('/dashboard/deposits/fd/create')} className="finance-gradient-primary text-white h-9 px-4 rounded-xl font-medium shadow-sm">
-              <PlusIcon className="h-4 w-4 mr-2" /> Create FD
+              <Plus className="h-4 w-4 mr-2" /> Create FD
             </Button>
           }
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          <StatCard title="Total FD Accounts" value={filtered.length} subtitle="All accounts" icon={<BuildingLibraryIcon />} iconVariant="primary" borderVariant="primary" />
-          <StatCard title="Active FDs" value={filtered.filter(a => a.status?.toLowerCase() === 'active').length} subtitle="Currently active" icon={<CheckCircleIcon />} iconVariant="success" borderVariant="success" />
-          <StatCard title="Total Deposits" value={`₹${(totalPrincipal / 100000).toFixed(1)}L`} subtitle="Principal deployed" icon={<CurrencyDollarIcon />} iconVariant="info" borderVariant="info" />
-          <StatCard title="Avg Interest Rate" value={`${avgRate.toFixed(1)}%`} subtitle="Across all FDs" icon={<ChartBarIcon />} iconVariant="warning" borderVariant="warning" />
+          <StatCard title="Total FD Accounts" value={filtered.length} subtitle="All accounts" icon={<Building2 />} iconVariant="primary" borderVariant="primary" />
+          <StatCard title="Active FDs" value={filtered.filter(a => a.status?.toLowerCase() === 'active').length} subtitle="Currently active" icon={<CheckCircle2 />} iconVariant="success" borderVariant="success" />
+          <StatCard title="Total Deposits" value={`₹${(totalPrincipal / 100000).toFixed(1)}L`} subtitle="Principal deployed" icon={<DollarSign />} iconVariant="info" borderVariant="info" />
+          <StatCard title="Avg Interest Rate" value={`${avgRate.toFixed(1)}%`} subtitle="Across all FDs" icon={<BarChart3 />} iconVariant="warning" borderVariant="warning" />
         </div>
 
         {/* Search */}
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-          <div className="relative max-w-md">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <div className="relative w-full sm:max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input placeholder="Search by account number or customer..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10 h-10 border-slate-200 bg-slate-50 focus:bg-white rounded-lg text-sm" />
           </div>
         </div>
@@ -97,12 +95,12 @@ export default function FDPage() {
             </div>
           ) : filtered.length === 0 ? (
             <div className="text-center py-16">
-              <div className="h-14 w-14 rounded-2xl finance-icon-bg flex items-center justify-center mx-auto mb-4"><BuildingLibraryIcon className="h-7 w-7" /></div>
+              <div className="h-14 w-14 rounded-2xl finance-icon-bg flex items-center justify-center mx-auto mb-4"><Building2 className="h-7 w-7" /></div>
               <h3 className="text-sm font-semibold text-slate-800">No FD accounts found</h3>
               <p className="text-xs text-slate-400 mt-1">{search ? 'Try adjusting your search' : 'Get started by creating your first FD'}</p>
               {!search && (
                 <Button onClick={() => router.push('/dashboard/deposits/fd/create')} className="mt-5 finance-gradient-primary text-white h-8 px-4 text-xs rounded-lg">
-                  <PlusIcon className="h-3.5 w-3.5 mr-1.5" /> Create FD Account
+                  <Plus className="h-3.5 w-3.5 mr-1.5" /> Create FD Account
                 </Button>
               )}
             </div>
@@ -130,7 +128,7 @@ export default function FDPage() {
                         <TableCell className="px-5 py-3.5">
                           <div className="font-mono text-sm font-semibold text-slate-800">{account.accountNumber}</div>
                           <div className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
-                            <CalendarIcon className="h-3 w-3" />
+                            <Calendar className="h-3 w-3" />
                             {new Date(account.startDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: '2-digit' })}
                           </div>
                         </TableCell>
@@ -157,8 +155,8 @@ export default function FDPage() {
                         </TableCell>
                         <TableCell className="px-4 py-3.5 text-right">
                           <TableActions actions={[
-                            { label: "View Details", icon: <EyeIcon />, onClick: () => router.push(`/dashboard/deposits/fd/${account.id}`) },
-                            { label: "Edit", icon: <PencilIcon />, onClick: () => router.push(`/dashboard/deposits/fd/${account.id}/edit`) },
+                            { label: "View Details", icon: <Eye />, onClick: () => router.push(`/dashboard/deposits/fd/${account.id}`) },
+                            { label: "Edit", icon: <Pencil />, onClick: () => router.push(`/dashboard/deposits/fd/${account.id}/edit`) },
                           ]} />
                         </TableCell>
                       </TableRow>

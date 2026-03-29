@@ -87,7 +87,7 @@ export async function GET() {
       recentTransactions: recentTransactions.map(t => ({
         id: t.id,
         item: t.description || t.type,
-        amount: (t.type === 'INTEREST' || t.type === 'INSTALLMENT' ? '+' : '-') + '₹' + t.amount.toLocaleString(),
+        amount: t.amount || 0,
         type: t.type === 'INTEREST' || t.type === 'INSTALLMENT' ? 'credit' : 'debit',
         date: new Date(t.transactionDate).toLocaleDateString(),
         customer: t.account.customer.name
