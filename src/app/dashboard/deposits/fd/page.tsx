@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
+import { fetchWithAuth } from "@/lib/api"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -30,6 +32,7 @@ const STATUS_CLS: Record<string, string> = {
 
 export default function FDPage() {
   const router = useRouter()
+  const { token } = useAuth()
   const [fdAccounts, setFdAccounts] = useState<FDAccount[]>([])
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
@@ -38,7 +41,7 @@ export default function FDPage() {
     const fetchFD = async () => {
       try {
         setLoading(true)
-        const res = await fetch('/api/accounts?accountType=FD')
+        const res = await fetchWithAuth('/api/accounts?accountType=FD', { token })
         if (res.ok) { const d = await res.json(); setFdAccounts(d.accounts || []) }
       } catch (e) { console.error(e) } finally { setLoading(false) }
     }

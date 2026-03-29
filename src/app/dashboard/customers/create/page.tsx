@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
+import { fetchWithAuth } from "@/lib/api"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -39,6 +41,7 @@ import {
 
 export default function CreateCustomer() {
   const router = useRouter()
+  const { token } = useAuth()
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [formData, setFormData] = useState({
@@ -109,9 +112,10 @@ export default function CreateCustomer() {
 
     try {
       setLoading(true)
-      const response = await fetch('/api/customers', {
+      const response = await fetchWithAuth('/api/customers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        token,
         body: JSON.stringify({
           ...formData,
           annualIncome: parseFloat(formData.annualIncome) || 0

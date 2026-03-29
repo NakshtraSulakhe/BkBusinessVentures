@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
+import { fetchWithAuth } from "@/lib/api"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -42,6 +44,7 @@ interface SuggestedEntry {
 
 export default function PendingSuggestionsPage() {
   const router = useRouter()
+  const { token } = useAuth()
   const [suggestions, setSuggestions] = useState<SuggestedEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -53,7 +56,7 @@ export default function PendingSuggestionsPage() {
   const fetchPending = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/suggestions?status=pending')
+      const response = await fetchWithAuth('/api/suggestions?status=pending', { token })
       if (response.ok) {
         const data = await response.json()
         setSuggestions(data.suggestions)
@@ -68,9 +71,10 @@ export default function PendingSuggestionsPage() {
   const approveBulk = async () => {
     if (selectedIds.length === 0) return
     try {
-      const response = await fetch('/api/suggestions/approve', {
+      const response = await fetchWithAuth('/api/suggestions/approve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        token,
         body: JSON.stringify({ ids: selectedIds })
       })
       if (response.ok) {

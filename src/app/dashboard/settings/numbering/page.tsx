@@ -25,6 +25,8 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { PageHeader } from "@/components/ui/page-header"
+import { useAuth } from "@/contexts/auth-context"
+import { fetchWithAuth } from "@/lib/api"
 
 interface NumberingTemplate {
   id: string
@@ -40,6 +42,7 @@ interface NumberingTemplate {
 
 function NumberingContent() {
   const router = useRouter()
+  const { token } = useAuth()
   const [mounted, setMounted] = useState(false)
   const [templates, setTemplates] = useState<NumberingTemplate[]>([])
   const [loading, setLoading] = useState(true)
@@ -53,7 +56,7 @@ function NumberingContent() {
   const fetchTemplates = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/settings/numbering')
+      const response = await fetchWithAuth('/api/settings/numbering', { token })
       if (response.ok) {
         const data = await response.json()
         setTemplates(data.templates || [])
@@ -68,9 +71,10 @@ function NumberingContent() {
   const handleUpdate = async (id: string, updates: Partial<NumberingTemplate>) => {
     try {
       setSaving(true)
-      const response = await fetch(`/api/settings/numbering/${id}`, {
+      const response = await fetchWithAuth(`/api/settings/numbering/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
+        token,
         body: JSON.stringify(updates)
       })
       if (response.ok) {

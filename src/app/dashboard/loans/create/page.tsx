@@ -2,6 +2,8 @@
 
 import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
+import { fetchWithAuth } from "@/lib/api"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -54,6 +56,7 @@ interface Customer {
 function CreateLoanComponent() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { token } = useAuth()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
@@ -76,7 +79,7 @@ function CreateLoanComponent() {
 
   const fetchCustomers = async () => {
     try {
-      const response = await fetch('/api/customers?limit=1000')
+      const response = await fetchWithAuth('/api/customers?limit=1000', { token })
       if (response.ok) {
         const data = await response.json()
         setCustomers(data.customers || [])
@@ -126,9 +129,10 @@ function CreateLoanComponent() {
 
     try {
       setLoading(true)
-      const response = await fetch('/api/accounts', {
+      const response = await fetchWithAuth('/api/accounts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        token,
         body: JSON.stringify({
           ...formData,
           accountType: 'loan',

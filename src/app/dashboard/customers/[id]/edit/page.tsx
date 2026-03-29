@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
+import { fetchWithAuth } from "@/lib/api"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -59,6 +61,7 @@ interface Customer {
 
 export default function EditCustomer() {
   const router = useRouter()
+  const { token } = useAuth()
   const params = useParams()
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [loading, setLoading] = useState(false)
@@ -85,7 +88,7 @@ export default function EditCustomer() {
   const fetchCustomer = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/customers/${params.id}`)
+      const response = await fetchWithAuth(`/api/customers/${params.id}`, { token })
       if (response.ok) {
         const data = await response.json()
         setCustomer(data.customer)
@@ -145,9 +148,10 @@ export default function EditCustomer() {
 
     try {
       setLoading(true)
-      const response = await fetch(`/api/customers/${params.id}`, {
+      const response = await fetchWithAuth(`/api/customers/${params.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        token,
         body: JSON.stringify({
           ...formData,
           annualIncome: parseFloat(formData.annualIncome) || 0

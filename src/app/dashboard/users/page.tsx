@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react"
 import { useRouter } from "next/navigation"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { useAuth } from "@/contexts/auth-context"
+import { fetchWithAuth } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -47,7 +48,7 @@ interface User {
 }
 
 function UsersContent() {
-  const { user, isAdmin } = useAuth()
+  const { user, isAdmin, token } = useAuth()
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
   const [users, setUsers] = useState<User[]>([])
@@ -66,10 +67,7 @@ function UsersContent() {
   const fetchUsers = async () => {
     try {
       setLoading(true)
-      const token = localStorage.getItem('auth_token')
-      const res = await fetch('/api/auth/users', { 
-        headers: { 'Authorization': `Bearer ${token}` } 
-      })
+      const res = await fetchWithAuth('/api/auth/users', { token })
       if (res.ok) { 
         const d = await res.json()
         setUsers(d || []) 
@@ -83,13 +81,12 @@ function UsersContent() {
 
   const handleToggle = async (userId: string, current: boolean) => {
     try {
-      const token = localStorage.getItem('auth_token')
-      await fetch(`/api/auth/users/${userId}`, { 
+      await fetchWithAuth(`/api/auth/users/${userId}`, { 
         method: 'PATCH', 
         headers: { 
           'Content-Type': 'application/json', 
-          'Authorization': `Bearer ${token}` 
         }, 
+        token,
         body: JSON.stringify({ isActive: !current }) 
       })
       fetchUsers()
@@ -106,10 +103,9 @@ function UsersContent() {
   const confirmDelete = async () => {
     if (!userIdToDelete) return
     try {
-      const token = localStorage.getItem('auth_token')
-      await fetch(`/api/auth/users/${userIdToDelete}`, { 
+      await fetchWithAuth(`/api/auth/users/${userIdToDelete}`, { 
         method: 'DELETE', 
-        headers: { 'Authorization': `Bearer ${token}` } 
+        token
       })
       fetchUsers()
     } catch (e) {

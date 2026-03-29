@@ -2,6 +2,8 @@
 
 import { useState, useEffect, Suspense } from "react"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
+import { fetchWithAuth } from "@/lib/api"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -37,6 +39,7 @@ interface SuggestedEntry {
 
 function SuggestionsContent() {
   const router = useRouter()
+  const { token } = useAuth()
   const [mounted, setMounted] = useState(false)
   const [suggestions, setSuggestions] = useState<SuggestedEntry[]>([])
   const [loading, setLoading] = useState(false)
@@ -56,7 +59,7 @@ function SuggestionsContent() {
     try {
       setLoading(true)
       const params = statusFilter && statusFilter !== 'all' ? `?status=${statusFilter}` : ''
-      const res = await fetch(`/api/suggestions${params}`)
+      const res = await fetchWithAuth(`/api/suggestions${params}`, { token })
       if (res.ok) { 
         const d = await res.json()
         setSuggestions(d.suggestions || []) 
@@ -70,9 +73,10 @@ function SuggestionsContent() {
 
   const approveSuggestions = async (ids: string[]) => {
     try {
-      const res = await fetch('/api/suggestions/approve', { 
+      const res = await fetchWithAuth('/api/suggestions/approve', { 
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' }, 
+        token,
         body: JSON.stringify({ ids }) 
       })
       if (res.ok) { 
@@ -86,9 +90,10 @@ function SuggestionsContent() {
 
   const rejectSuggestion = async (id: string, reason: string) => {
     try {
-      const res = await fetch(`/api/suggestions/${id}/reject`, { 
+      const res = await fetchWithAuth(`/api/suggestions/${id}/reject`, { 
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' }, 
+        token,
         body: JSON.stringify({ reason }) 
       })
       if (res.ok) { 

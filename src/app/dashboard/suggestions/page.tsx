@@ -13,6 +13,7 @@ import { AmountDisplay } from "@/components/ui"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/contexts/auth-context"
+import { fetchWithAuth } from "@/lib/api"
 import {
   ClockIcon,
   CheckCircleIcon,
@@ -46,7 +47,7 @@ interface SuggestedEntry {
 }
 
 function SuggestionsContent() {
-  const { user } = useAuth()
+  const { user, token } = useAuth()
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
   const [suggestions, setSuggestions] = useState<SuggestedEntry[]>([])
@@ -66,7 +67,7 @@ function SuggestionsContent() {
       const params = new URLSearchParams()
       if (statusFilter !== 'all') params.append('status', statusFilter)
       
-      const res = await fetch(`/api/suggestions?${params.toString()}`)
+      const res = await fetchWithAuth(`/api/suggestions?${params.toString()}`, { token })
       if (res.ok) {
         const data = await res.json()
         setSuggestions(data.suggestions || [])
@@ -81,9 +82,10 @@ function SuggestionsContent() {
   const handleApprove = async (id: string) => {
     try {
       setProcessing(prev => [...prev, id])
-      const res = await fetch(`/api/suggestions/approve`, {
+      const res = await fetchWithAuth(`/api/suggestions/approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        token,
         body: JSON.stringify({ suggestionIds: [id] })
       })
       
@@ -100,9 +102,10 @@ function SuggestionsContent() {
   const handleReject = async (id: string, reason?: string) => {
     try {
       setProcessing(prev => [...prev, id])
-      const res = await fetch(`/api/suggestions/reject`, {
+      const res = await fetchWithAuth(`/api/suggestions/reject`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        token,
         body: JSON.stringify({ suggestionIds: [id], reason })
       })
       

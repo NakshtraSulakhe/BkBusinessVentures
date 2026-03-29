@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
+import { fetchWithAuth } from "@/lib/api"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -38,6 +40,7 @@ const STATUS_BADGE: Record<string, string> = {
 
 export default function AccountsPage() {
   const router = useRouter()
+  const { token } = useAuth()
   const [accounts, setAccounts] = useState<Account[]>([])
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
@@ -50,7 +53,7 @@ export default function AccountsPage() {
     try {
       setLoading(true)
       const params = new URLSearchParams({ page: page.toString(), limit: '10', ...(q && { search: q }), ...(type && type !== 'all' && { accountType: type }) })
-      const res = await fetch(`/api/accounts?${params}`)
+      const res = await fetchWithAuth(`/api/accounts?${params}`, { token })
       if (res.ok) {
         const data = await res.json()
         setAccounts(data.accounts); setCurrentPage(data.pagination.page)

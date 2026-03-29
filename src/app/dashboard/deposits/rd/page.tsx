@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
+import { fetchWithAuth } from "@/lib/api"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -32,6 +34,7 @@ const STATUS_CLS: Record<string, string> = {
 
 export default function RDPage() {
   const router = useRouter()
+  const { token } = useAuth()
   const [rdAccounts, setRdAccounts] = useState<RDAccount[]>([])
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
@@ -40,7 +43,7 @@ export default function RDPage() {
     const fetch_ = async () => {
       try {
         setLoading(true)
-        const res = await fetch('/api/accounts?accountType=RD')
+        const res = await fetchWithAuth('/api/accounts?accountType=RD', { token })
         if (res.ok) { const d = await res.json(); setRdAccounts(d.accounts || []) }
       } catch (e) { console.error(e) } finally { setLoading(false) }
     }

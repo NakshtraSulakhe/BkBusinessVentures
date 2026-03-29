@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
+import { fetchWithAuth } from "@/lib/api"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -31,6 +33,7 @@ const STATUS_CLS: Record<string, string> = {
 
 export default function LoansPage() {
   const router = useRouter()
+  const { token } = useAuth()
   const [loans, setLoans] = useState<LoanAccount[]>([])
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
@@ -39,7 +42,7 @@ export default function LoansPage() {
     const fetch_ = async () => {
       try {
         setLoading(true)
-        const res = await fetch('/api/accounts?accountType=LOAN')
+        const res = await fetchWithAuth('/api/accounts?accountType=LOAN', { token })
         if (res.ok) { const d = await res.json(); setLoans(d.accounts || []) }
       } catch (e) { console.error(e) } finally { setLoading(false) }
     }

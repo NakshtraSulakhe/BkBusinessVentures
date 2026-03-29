@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
+import { fetchWithAuth } from "@/lib/api"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -48,6 +50,7 @@ function ReportCard({ title, description, href, icon, badge, badgeColor }: {
 
 export default function ReportsDashboard() {
   const router = useRouter()
+  const { token } = useAuth()
   const [summary, setSummary] = useState<ReportSummary>({
     customers: 0, activeAccounts: 0, totalFDPrincipal: 0,
     totalRDPrincipal: 0, totalLoanOutstanding: 0,
@@ -59,7 +62,7 @@ export default function ReportsDashboard() {
     const fetch_ = async () => {
       try {
         setLoading(true)
-        const res = await fetch('/api/reports/summary')
+        const res = await fetchWithAuth('/api/reports/summary', { token })
         if (res.ok) setSummary(await res.json())
       } catch (e) { console.error(e) } finally { setLoading(false) }
     }

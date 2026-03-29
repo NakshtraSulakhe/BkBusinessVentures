@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
+import { fetchWithAuth } from "@/lib/api"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -47,6 +49,7 @@ interface SuggestedEntry {
 
 export default function RejectedSuggestionsPage() {
   const router = useRouter()
+  const { token } = useAuth()
   const [suggestions, setSuggestions] = useState<SuggestedEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -58,7 +61,7 @@ export default function RejectedSuggestionsPage() {
   const fetchRejected = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/suggestions?status=rejected')
+      const response = await fetchWithAuth('/api/suggestions?status=rejected', { token })
       if (response.ok) {
         const data = await response.json()
         setSuggestions(data.suggestions)

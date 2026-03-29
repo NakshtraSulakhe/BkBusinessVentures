@@ -2,6 +2,8 @@
 
 import { useState, useEffect, Suspense } from "react"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
+import { fetchWithAuth } from "@/lib/api"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -48,6 +50,7 @@ interface CustomerReportItem {
 
 function CustomerReportContent() {
   const router = useRouter()
+  const { token } = useAuth()
   const [mounted, setMounted] = useState(false)
   const [report, setReport] = useState<CustomerReportItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -61,7 +64,7 @@ function CustomerReportContent() {
   const fetchReport = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/reports/customers')
+      const response = await fetchWithAuth('/api/reports/customers', { token })
       if (response.ok) {
         const data = await response.json()
         setReport(data.report || [])

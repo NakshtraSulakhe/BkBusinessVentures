@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { useAuth } from "@/contexts/auth-context"
+import { fetchWithAuth } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -45,6 +47,7 @@ interface AccountFormData {
 }
 
 export default function AccountForm({ customerId, customerName, onSuccess, onCancel }: AccountFormProps) {
+  const { token } = useAuth()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState<AccountFormData>({
     accountType: 'fd',
@@ -73,9 +76,10 @@ export default function AccountForm({ customerId, customerName, onSuccess, onCan
     try {
       setLoading(true)
       
-      const response = await fetch('/api/accounts', {
+      const response = await fetchWithAuth('/api/accounts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        token,
         body: JSON.stringify({
           customerId,
           ...formData,

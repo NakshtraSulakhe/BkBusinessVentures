@@ -4,6 +4,8 @@ import { useState, useEffect, Suspense } from "react"
 import { useRouter } from "next/navigation"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
+import { useAuth } from "@/contexts/auth-context"
+import { fetchWithAuth } from "@/lib/api"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -22,6 +24,7 @@ import {
 
 function CreateUserContent() {
   const router = useRouter()
+  const { token } = useAuth()
   const [mounted, setMounted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [formData, setFormData] = useState({
@@ -43,13 +46,12 @@ function CreateUserContent() {
 
     try {
       setSubmitting(true)
-      const token = localStorage.getItem('auth_token')
-      const res = await fetch('/api/auth/users', {
+      const res = await fetchWithAuth('/api/auth/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
         },
+        token,
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,

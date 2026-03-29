@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
+import { fetchWithAuth } from "@/lib/api"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -75,6 +77,7 @@ interface CustomerLedgerSummary {
 
 export default function CustomerLedger() {
   const router = useRouter()
+  const { token } = useAuth()
   const [customers, setCustomers] = useState<CustomerLedgerSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -97,7 +100,7 @@ export default function CustomerLedger() {
     try {
       setLoading(true)
       
-      const customersResponse = await fetch('/api/customers')
+      const customersResponse = await fetchWithAuth('/api/customers', { token })
       if (!customersResponse.ok) return
       
       const customersData = await customersResponse.json()
@@ -105,7 +108,7 @@ export default function CustomerLedger() {
       
       const ledgerPromises = allCustomers.map(async (customer: Customer) => {
         try {
-          const ledgerResponse = await fetch(`/api/customers/${customer.id}/ledger`)
+          const ledgerResponse = await fetchWithAuth(`/api/customers/${customer.id}/ledger`, { token })
           if (ledgerResponse.ok) {
             const ledgerData = await ledgerResponse.json()
             return {

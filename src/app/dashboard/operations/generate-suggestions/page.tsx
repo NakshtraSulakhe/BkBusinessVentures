@@ -2,6 +2,8 @@
 
 import { useState, useEffect, Suspense } from "react"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
+import { fetchWithAuth } from "@/lib/api"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -23,6 +25,7 @@ import { Badge } from "@/components/ui/badge"
 
 function GenerateSuggestionsContent() {
   const router = useRouter()
+  const { token } = useAuth()
   const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
@@ -33,9 +36,10 @@ function GenerateSuggestionsContent() {
   const handleGenerate = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/suggestions/run-monthly', {
+      const response = await fetchWithAuth('/api/suggestions/run-monthly', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        token,
         body: JSON.stringify({
           month: selectedMonth,
           year: selectedYear

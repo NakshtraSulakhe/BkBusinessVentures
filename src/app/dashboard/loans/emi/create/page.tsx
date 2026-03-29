@@ -2,6 +2,8 @@
 
 import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
+import { fetchWithAuth } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
@@ -86,6 +88,7 @@ interface CustomerBalance {
 
 function CreateEMIComponent() {
   const router = useRouter()
+  const { token } = useAuth()
   const searchParams = useSearchParams()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [selectedAccount, setSelectedAccount] = useState<LoanAccount | null>(null)
@@ -105,7 +108,7 @@ function CreateEMIComponent() {
 
   const fetchCustomers = async () => {
     try {
-      const response = await fetch('/api/customers')
+      const response = await fetchWithAuth('/api/customers', { token })
       if (response.ok) {
         const data = await response.json()
         setCustomers(data.customers || [])
@@ -117,7 +120,7 @@ function CreateEMIComponent() {
 
   const fetchCustomerBalance = async (customerId: string) => {
     try {
-      const response = await fetch(`/api/customers/${customerId}/ledger`)
+      const response = await fetchWithAuth(`/api/customers/${customerId}/ledger`, { token })
       if (response.ok) {
         const data = await response.json()
         setCustomerBalance({
@@ -235,11 +238,12 @@ function CreateEMIComponent() {
       const penalty = calculatePenalty()
       const totalAmount = parseFloat(formData.amount || '0') + penalty
       
-      const response = await fetch('/api/transactions', {
+      const response = await fetchWithAuth('/api/transactions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        token,
         body: JSON.stringify({
           accountId: formData.accountId,
           type: 'deposit', // EMI payment is recorded as deposit

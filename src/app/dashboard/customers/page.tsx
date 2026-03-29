@@ -26,6 +26,8 @@ import {
   Banknote,
   CreditCard
 } from "lucide-react"
+import { useAuth } from "@/contexts/auth-context"
+import { fetchWithAuth } from "@/lib/api"
 
 interface Customer {
   id: string; name: string; email: string; phone: string; address: string; city: string;
@@ -45,6 +47,7 @@ const TYPE_BADGE: Record<string, { label: string; cls: string }> = {
 
 export default function CustomerMaster() {
   const router = useRouter()
+  const { token } = useAuth()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
@@ -60,7 +63,7 @@ export default function CustomerMaster() {
   const fetchCustomers = async () => {
     try {
       setLoading(true)
-      const res = await fetch('/api/customers')
+      const res = await fetchWithAuth('/api/customers', { token })
       if (res.ok) { const d = await res.json(); setCustomers(d.customers) }
     } catch (e) { console.error(e) } finally { setLoading(false) }
   }
@@ -78,7 +81,7 @@ export default function CustomerMaster() {
     const { id, name } = deleteDialog
     setDeleteDialog({ show: false, id: '', name: '' })
     try {
-      const res = await fetch(`/api/customers/${id}`, { method: 'DELETE' })
+      const res = await fetchWithAuth(`/api/customers/${id}`, { method: 'DELETE', token })
       if (res.ok) { showMsg(`${name} deleted`, 'success'); setCustomers(c => c.filter(x => x.id !== id)) }
       else { const e = await res.json(); showMsg(e.error || 'Failed', 'error') }
     } catch { showMsg('Failed to delete', 'error') }

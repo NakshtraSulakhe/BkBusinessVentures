@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
+import { fetchWithAuth } from "@/lib/api"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -56,6 +58,7 @@ interface Transaction {
 
 export default function FDLedgerPage() {
   const router = useRouter()
+  const { token } = useAuth()
   const [mounted, setMounted] = useState(false)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
@@ -71,7 +74,7 @@ export default function FDLedgerPage() {
   const fetchTransactions = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/transactions?accountType=FD')
+      const response = await fetchWithAuth('/api/transactions?accountType=FD', { token })
       if (response.ok) {
         const data = await response.json()
         setTransactions(data.transactions || [])

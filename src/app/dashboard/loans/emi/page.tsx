@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
+import { fetchWithAuth } from "@/lib/api"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -72,6 +74,7 @@ interface PaginatedResponse {
 
 export default function EMIList() {
   const router = useRouter()
+  const { token } = useAuth()
   const [mounted, setMounted] = useState(false)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
@@ -104,7 +107,7 @@ export default function EMIList() {
         type: 'deposit' // EMI payments are recorded as deposits
       })
 
-      const response = await fetch(`/api/transactions?${params}`)
+      const response = await fetchWithAuth(`/api/transactions?${params}`, { token })
       if (response.ok) {
         const data: PaginatedResponse = await response.json()
         // Filter specifically for EMI transactions if API doesn't do it perfectly

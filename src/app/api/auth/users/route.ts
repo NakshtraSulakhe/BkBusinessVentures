@@ -3,6 +3,9 @@ import { prisma } from "@/lib/database"
 import { hashPassword } from "@/lib/auth"
 import { verifyToken } from "@/lib/auth"
 
+// Force Node.js runtime to avoid Edge runtime issues
+export const runtime = "nodejs"
+
 export async function GET(request: NextRequest) {
   try {
     const token = request.headers.get("authorization")?.replace("Bearer ", "")
@@ -63,68 +66,82 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  console.log("🔥 CREATE USER API CALLED")
+  
+  let body
   try {
-    const body = await request.json()
-    const { name, email, password, role } = body
+    body = await request.json()
+    console.log("✅ CREATE USER BODY RECEIVED:", { email: body.email, role: body.role })
+  } catch (err) {
+    console.error("❌ CREATE USER JSON parse error:", err)
+    return NextResponse.json(
+      { error: "Invalid JSON body", details: err instanceof Error ? err.message : 'Unknown error' },
+      { status: 400 }
+    )
+  }
 
-    // Check if this is the first user (allow creation without auth)
-    const userCount = await prisma.user.count()
-    const isFirstUser = userCount === 0
+  const { name, email, password, role } = body
+
+  // Check if this is the first user (allow creation without auth)
+  const userCount = await prisma.user.count()
+  const isFirstUser = userCount === 0
+  
+  // If not first user, require authentication (admin only)
+  if (!isFirstUser) {
+    const token = request.headers.get("authorization")?.replace("Bearer ", "")
     
-    // If not first user, require authentication (admin only)
-    if (!isFirstUser) {
-      const token = request.headers.get("authorization")?.replace("Bearer ", "")
-      
-      if (!token) {
-        return NextResponse.json({ error: "Authorization required" }, { status: 401 })
-      }
-
-      let decoded;
-      try {
-        decoded = verifyToken(token)
-      } catch (error) {
-        console.error("Token verification failed:", error)
-        return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 })
-      }
-      
-      const requestingUser = await prisma.user.findUnique({
-        where: { id: decoded.userId }
-      })
-
-      if (!requestingUser) {
-        console.log('Requesting user not found in database')
-        return NextResponse.json({ error: "Access denied: User not found" }, { status: 403 })
-      }
-
-      if (!requestingUser.isActive) {
-        console.log('Requesting user account is inactive')
-        return NextResponse.json({ error: "Access denied: Inactive account" }, { status: 403 })
-      }
-
-      // Only admins should be able to create users
-      if (requestingUser.role !== "admin") {
-        console.log('Non-admin user attempted to create a user. Role:', requestingUser.role)
-        return NextResponse.json({ error: "Admin access required to create users" }, { status: 403 })
-      }
+    if (!token) {
+      return NextResponse.json({ error: "Authorization required" }, { status: 401 })
     }
 
-    if (!name || !email || !password || !role) {
-      return NextResponse.json({ error: "All fields are required" }, { status: 400 })
+    let decoded;
+    try {
+      decoded = verifyToken(token)
+    } catch (error) {
+      console.error("Token verification failed:", error)
+      return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 })
     }
-
-    // Validate role
-    if (!['admin', 'operator'].includes(role)) {
-      return NextResponse.json({ error: "Invalid role. Must be 'admin' or 'operator'" }, { status: 400 })
-    }
-
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
+    
+    const requestingUser = await prisma.user.findUnique({
+      where: { id: decoded.userId }
     })
 
-    if (existingUser) {
-      return NextResponse.json({ error: "User with this email already exists" }, { status: 409 })
+    if (!requestingUser) {
+      console.log('Requesting user not found in database')
+      return NextResponse.json({ error: "Access denied: User not found" }, { status: 403 })
     }
 
+    if (!requestingUser.isActive) {
+      console.log('Requesting user account is inactive')
+      return NextResponse.json({ error: "Access denied: Inactive account" }, { status: 403 })
+    }
+
+    // Only admins should be able to create users
+    if (requestingUser.role !== "admin") {
+      console.log('Non-admin user attempted to create a user. Role:', requestingUser.role)
+      return NextResponse.json({ error: "Admin access required to create users" }, { status: 403 })
+    }
+  }
+
+  if (!name || !email || !password || !role) {
+    return NextResponse.json({ error: "All fields are required" }, { status: 400 })
+  }
+
+  // Validate role
+  if (!['admin', 'operator'].includes(role)) {
+    return NextResponse.json({ error: "Invalid role. Must be 'admin' or 'operator'" }, { status: 400 })
+  }
+
+  const existingUser = await prisma.user.findUnique({
+    where: { email }
+  })
+
+  if (existingUser) {
+    return NextResponse.json({ error: "User with this email already exists" }, { status: 409 })
+  }
+
+  try {
+    console.log("🔍 Creating user:", email)
     const passwordHash = await hashPassword(password)
 
     const newUser = await prisma.user.create({
@@ -145,9 +162,13 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    console.log("✅ User created successfully:", newUser.id)
     return NextResponse.json(newUser, { status: 201 })
   } catch (error) {
     console.error("Failed to create user:", error)
-    return NextResponse.json({ error: "Failed to create user" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Failed to create user", details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    )
   }
 }

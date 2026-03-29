@@ -2,6 +2,8 @@
 
 import { useState, useEffect, Suspense } from "react"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
+import { fetchWithAuth } from "@/lib/api"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -48,6 +50,7 @@ interface RDReportItem {
 
 function RDReportContent() {
   const router = useRouter()
+  const { token } = useAuth()
   const [mounted, setMounted] = useState(false)
   const [rdData, setRdData] = useState<RDReportItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -61,7 +64,7 @@ function RDReportContent() {
   const fetchRDData = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/accounts?accountType=RD')
+      const response = await fetchWithAuth('/api/accounts?accountType=RD', { token })
       if (response.ok) {
         const data = await response.json()
         const mapped = data.accounts.map((acc: any) => ({

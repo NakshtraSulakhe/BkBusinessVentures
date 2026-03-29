@@ -3,6 +3,8 @@
 import { useState, useEffect, Suspense } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { DashboardLayout } from "@/components/dashboard-layout"
+import { useAuth } from "@/contexts/auth-context"
+import { fetchWithAuth } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -25,6 +27,7 @@ import {
 function EditUserContent() {
   const router = useRouter()
   const { id } = useParams()
+  const { token } = useAuth()
   const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -42,10 +45,7 @@ function EditUserContent() {
   const fetchUser = async () => {
     try {
       setLoading(true)
-      const token = localStorage.getItem('auth_token')
-      const res = await fetch(`/api/auth/users`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
+      const res = await fetchWithAuth(`/api/auth/users`, { token })
       if (res.ok) {
         const users = await res.json()
         const user = users.find((u: any) => u.id === id)
@@ -68,13 +68,12 @@ function EditUserContent() {
     e.preventDefault()
     try {
       setSubmitting(true)
-      const token = localStorage.getItem('auth_token')
-      const res = await fetch(`/api/auth/users/${id}`, {
+      const res = await fetchWithAuth(`/api/auth/users/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
         },
+        token,
         body: JSON.stringify(formData)
       })
 

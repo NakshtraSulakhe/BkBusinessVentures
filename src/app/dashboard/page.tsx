@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/ui/page-header"
 import { AmountDisplay } from "@/components/ui"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useAuth } from "@/contexts/auth-context"
+import { fetchWithAuth } from "@/lib/api"
 import {
   BanknotesIcon,
   CurrencyDollarIcon,
@@ -156,7 +157,7 @@ function ActionTile({ title, icon: Icon, onClick, color }: { title: string; icon
 // ─── Main Interface ──────────────────────────────────────────────────────────
 
 function DashboardContent() {
-  const { user } = useAuth()
+  const { user, token } = useAuth()
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<any>(null)
@@ -173,7 +174,7 @@ function DashboardContent() {
   const fetchSummary = async () => {
     try {
       setLoading(true)
-      const res = await fetch('/api/dashboard/summary')
+      const res = await fetchWithAuth('/api/dashboard/summary', { token })
       if (res.ok) setData(await res.json())
     } catch (e) {
       console.error(e)
@@ -185,9 +186,10 @@ function DashboardContent() {
   const handleQuickRun = async () => {
     try {
       setRunning(true)
-      const res = await fetch('/api/suggestions/run-monthly', {
+      const res = await fetchWithAuth('/api/suggestions/run-monthly', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        token,
         body: JSON.stringify({ month: selectedMonth, year: selectedYear })
       })
       if (res.ok) {

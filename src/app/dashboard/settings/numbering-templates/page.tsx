@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { PageHeader } from "@/components/ui/page-header"
+import { useAuth } from "@/contexts/auth-context"
+import { fetchWithAuth } from "@/lib/api"
 import { 
   Plus,
   Pencil,
@@ -35,6 +37,7 @@ interface NumberingTemplate {
 }
 
 export default function NumberingTemplatesPage() {
+  const { token } = useAuth()
   const [templates, setTemplates] = useState<NumberingTemplate[]>([])
   const [loading, setLoading] = useState(false)
   const [showCreateForm, setShowCreateForm] = useState(false)
@@ -50,7 +53,7 @@ export default function NumberingTemplatesPage() {
   const fetchTemplates = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/numbering-templates')
+      const response = await fetchWithAuth('/api/numbering-templates', { token })
       if (response.ok) {
         const data = await response.json()
         setTemplates(data.templates)
@@ -74,9 +77,10 @@ export default function NumberingTemplatesPage() {
         ? `/api/numbering-templates/${editingTemplate.id}`
         : '/api/numbering-templates'
       
-      const response = await fetch(url, {
+      const response = await fetchWithAuth(url, {
         method: editingTemplate ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
+        token,
         body: JSON.stringify(formData)
       })
 
@@ -119,8 +123,9 @@ export default function NumberingTemplatesPage() {
     }
 
     try {
-      const response = await fetch(`/api/numbering-templates/${templateId}`, {
-        method: 'DELETE'
+      const response = await fetchWithAuth(`/api/numbering-templates/${templateId}`, {
+        method: 'DELETE',
+        token
       })
 
       if (response.ok) {

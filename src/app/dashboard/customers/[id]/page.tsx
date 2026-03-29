@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { DashboardLayout } from "@/components/dashboard-layout"
+import { useAuth } from "@/contexts/auth-context"
+import { fetchWithAuth } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -77,6 +79,7 @@ interface Customer {
 export default function CustomerView() {
   const router = useRouter()
   const params = useParams()
+  const { token } = useAuth()
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [customerLedger, setCustomerLedger] = useState<any>(null)
   const [allTransactions, setAllTransactions] = useState<any[]>([])
@@ -98,7 +101,7 @@ export default function CustomerView() {
 
   const fetchCustomerLedger = async () => {
     try {
-      const response = await fetch(`/api/customers/${params.id}/ledger`)
+      const response = await fetchWithAuth(`/api/customers/${params.id}/ledger`, { token })
       if (response.ok) {
         const data = await response.json()
         setCustomerLedger(data)
@@ -127,7 +130,7 @@ export default function CustomerView() {
         }
       }
 
-      const response = await fetch(`/api/transactions?${queryParams}`)
+      const response = await fetchWithAuth(`/api/transactions?${queryParams}`, { token })
       if (response.ok) {
         const data = await response.json()
         setAllTransactions(data.transactions || [])
@@ -149,7 +152,7 @@ export default function CustomerView() {
   const fetchCustomer = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/customers/${params.id}`)
+      const response = await fetchWithAuth(`/api/customers/${params.id}`, { token })
       if (response.ok) {
         const data = await response.json()
         setCustomer(data.customer)
@@ -186,8 +189,9 @@ export default function CustomerView() {
 
     try {
       setLoading(true)
-      const response = await fetch(`/api/customers/${customerId}`, {
+      const response = await fetchWithAuth(`/api/customers/${customerId}`, {
         method: 'DELETE',
+        token
       })
 
       if (response.ok) {

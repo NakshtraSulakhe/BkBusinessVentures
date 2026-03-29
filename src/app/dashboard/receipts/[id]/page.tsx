@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
+import { fetchWithAuth } from "@/lib/api"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -39,6 +41,7 @@ interface TransactionReceipt {
 export default function ReceiptPage() {
   const { id } = useParams()
   const router = useRouter()
+  const { token } = useAuth()
   const [receipt, setReceipt] = useState<TransactionReceipt | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -49,7 +52,7 @@ export default function ReceiptPage() {
   const fetchReceipt = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/transactions/${id}`)
+      const response = await fetchWithAuth(`/api/transactions/${id}`, { token })
       if (response.ok) {
         const data = await response.json()
         setReceipt(data.transaction)

@@ -2,6 +2,8 @@
 
 import { useState, useEffect, use } from "react"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
+import { fetchWithAuth } from "@/lib/api"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -42,6 +44,7 @@ import {
 export default function AccountDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const accountId = use(params).id
   const router = useRouter()
+  const { token } = useAuth()
   const [account, setAccount] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
@@ -52,7 +55,7 @@ export default function AccountDetailsPage({ params }: { params: Promise<{ id: s
   const fetchAccountDetails = async () => {
     try {
       setLoading(true)
-      const res = await fetch(`/api/accounts/${accountId}`)
+      const res = await fetchWithAuth(`/api/accounts/${accountId}`, { token })
       if (res.ok) {
         const d = await res.json()
         setAccount(d.account)

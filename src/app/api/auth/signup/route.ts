@@ -2,25 +2,43 @@ import { NextRequest, NextResponse } from "next/server";
 import { createUser } from "@/lib/users";
 import { signToken } from "@/lib/auth";
 
+// Force Node.js runtime to avoid Edge runtime issues
+export const runtime = "nodejs";
+
 export async function POST(request: NextRequest) {
+  console.log(" SIGNUP API CALLED");
+  
+  let body;
   try {
-    const body = await request.json();
-    const { email, password, name } = body;
+    body = await request.json();
+    console.log(" SIGNUP BODY RECEIVED:", { email: body.email, name: body.name });
+  } catch (err) {
+    console.error(" SIGNUP JSON parse error:", err);
+    return NextResponse.json(
+      { error: "Invalid JSON body", details: err instanceof Error ? err.message : 'Unknown error' },
+      { status: 400 }
+    );
+  }
 
-    if (!email || !password) {
-      return NextResponse.json(
-        { error: "Email and password are required" },
-        { status: 400 }
-      );
-    }
+  const { email, password, name } = body;
 
-    if (password.length < 6) {
-      return NextResponse.json(
-        { error: "Password must be at least 6 characters" },
-        { status: 400 }
-      );
-    }
+  if (!email || !password) {
+    console.log(" Missing signup credentials:", { email: !!email, password: !!password });
+    return NextResponse.json(
+      { error: "Email and password are required" },
+      { status: 400 }
+    );
+  }
 
+  if (password.length < 6) {
+    return NextResponse.json(
+      { error: "Password must be at least 6 characters" },
+      { status: 400 }
+    );
+  }
+
+  try {
+    console.log(" Creating user:", email);
     const user = await createUser(
       email,
       password,
@@ -28,12 +46,14 @@ export async function POST(request: NextRequest) {
     );
 
     if (!user) {
+      console.log(" User already exists:", email);
       return NextResponse.json(
         { error: "User with this email already exists" },
         { status: 409 }
       );
     }
 
+    console.log(" User created successfully:", user.id);
     const token = signToken({ userId: user.id, email: user.email });
 
     return NextResponse.json({
@@ -46,10 +66,11 @@ export async function POST(request: NextRequest) {
       },
       token,
     });
-  } catch {
+  } catch (error) {
+    console.error(" Signup error:", error);
     return NextResponse.json(
-      { error: "Invalid request body" },
-      { status: 400 }
+      { error: "Signup failed", details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
     );
   }
 }
