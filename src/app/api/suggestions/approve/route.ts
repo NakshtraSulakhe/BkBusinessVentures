@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/database"
+import { 
+  normalizeTransactionType, 
+  isCreditTransaction, 
+  calculateNewBalance, 
+  validateTransaction 
+} from "@/lib/accounting-rules"
 
 export async function POST(request: NextRequest) {
   try {
@@ -41,37 +47,28 @@ export async function POST(request: NextRequest) {
           continue
         }
 
-        // Calculate new balance
+        // Calculate new balance using accounting rules
         const lastTransaction = suggestion.account.transactions[0]
         const currentBalance = lastTransaction?.balance || 0
         
-        let newBalance = currentBalance
-        // Consistent with transactions/route.ts
-        const isCredit = [
-          'deposit', 'interest', 'PRINCIPAL_PAYMENT', 'CREDIT', 'INTEREST', 'INSTALLMENT'
-        ].includes(suggestion.type)
+        // Normalize transaction type and apply accounting rules
+        const normalizedType = normalizeTransactionType(suggestion.type)
         
-        const isDebit = [
-          'withdrawal', 'emi', 'EMI_DUE', 'DEBIT', 'MATURITY_PAYOUT', 'PENALTY'
-        ].includes(suggestion.type)
-
-        const isNeutral = [
-          'INTEREST_PAYOUT'
-        ].includes(suggestion.type)
-
-        if (isCredit) {
-          newBalance = currentBalance + suggestion.amount
-        } else if (isDebit) {
-          newBalance = currentBalance - suggestion.amount
-        } else if (isNeutral) {
-          newBalance = currentBalance
+        // Validate transaction using accounting rules
+        const validation = validateTransaction(currentBalance, normalizedType, suggestion.amount, suggestion.account.accountType)
+        if (!validation.valid) {
+          results.push({ id: suggestionId, error: validation.error })
+          continue
         }
+        
+        // Calculate new balance using standard accounting rules
+        const newBalance = calculateNewBalance(currentBalance, normalizedType, suggestion.amount)
 
-        // Create transaction
+        // Create transaction with normalized type
         await prisma.transaction.create({
           data: {
             accountId: suggestion.accountId,
-            type: suggestion.type,
+            type: normalizedType, // Use normalized type for consistency
             amount: suggestion.amount,
             balance: newBalance,
             description: suggestion.description,

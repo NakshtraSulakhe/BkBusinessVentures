@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { generateFormattedNumber } from "@/lib/numbering"
 import { verifyToken } from "@/lib/auth"
+import { 
+  normalizeTransactionType, 
+  isCreditTransaction, 
+  calculateNewBalance, 
+  validateTransaction,
+  TransactionType 
+} from "@/lib/accounting-rules"
 
 // Force Node.js runtime to avoid Edge runtime issues
 export const runtime = "nodejs"
@@ -122,33 +129,37 @@ export async function POST(request: NextRequest) {
     })
 
     const prevBalance = lastTransaction?.balance || 0
-    let newBalance = prevBalance
     
-    // Determine if it's a credit or debit based on type
-    const isCredit = ['deposit', 'interest', 'PRINCIPAL_PAYMENT', 'CREDIT', 'INSTALLMENT'].includes(type.toLowerCase()) || 
-                    ['deposit', 'interest', 'PRINCIPAL_PAYMENT', 'CREDIT', 'INSTALLMENT'].includes(type.toUpperCase())
+    // Normalize transaction type to standard accounting format
+    const normalizedType = normalizeTransactionType(type)
+    console.log("📋 Normalized transaction type:", type, "→", normalizedType)
     
-    if (isCredit) {
-      newBalance += parsedAmount
-    } else {
-      newBalance -= parsedAmount
-      
-      // Check for insufficient funds
-      if (newBalance < 0 && account.accountType !== 'LOAN') {
-        console.log("❌ Insufficient funds:", { prevBalance, amount: parsedAmount, newBalance })
-        return NextResponse.json(
-          { error: 'Insufficient funds for this transaction' },
-          { status: 400 }
-        )
-      }
+    // Validate transaction using standard accounting rules
+    const validation = validateTransaction(prevBalance, normalizedType, parsedAmount, account.accountType)
+    if (!validation.valid) {
+      console.log("❌ Transaction validation failed:", validation.error)
+      return NextResponse.json(
+        { error: validation.error },
+        { status: 400 }
+      )
     }
-
-    console.log("💰 Creating transaction:", { type, amount: parsedAmount, prevBalance, newBalance })
+    
+    // Calculate new balance using standard accounting rules
+    const newBalance = calculateNewBalance(prevBalance, normalizedType, parsedAmount)
+    
+    console.log("💰 Creating transaction with accounting rules:", { 
+      originalType: type, 
+      normalizedType, 
+      amount: parsedAmount, 
+      prevBalance, 
+      newBalance,
+      isCredit: isCreditTransaction(normalizedType)
+    })
 
     const transaction = await prisma.transaction.create({
       data: {
         accountId,
-        type: type,
+        type: normalizedType, // Store normalized type for consistency
         amount: parsedAmount,
         balance: newBalance,
         description: paymentMethod ? `${description} [${paymentMethod.toUpperCase()}]` : description,

@@ -284,43 +284,7 @@ function DashboardContent() {
         />
       </div>
 
-      {/* Analytics & Trends */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Growth Analysis */}
-        <Card className="col-span-1 lg:col-span-8 border-slate-200 shadow-sm overflow-hidden rounded-3xl">
-          <CardHeader className="bg-slate-50/50 border-b border-slate-100 py-4 px-4 sm:py-5 sm:px-8">
-            <CardTitle className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center">
-              <ChartBarIcon className="h-4 w-4 mr-3 text-primary" />
-              Deposit Growth (This Year)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-8">
-            <DashboardChartLine data={[
-              { label: 'Jan', value: 45000 }, { label: 'Feb', value: 52000 },
-              { label: 'Mar', value: 48000 }, { label: 'Apr', value: 61000 },
-              { label: 'May', value: 58000 }, { label: 'Jun', value: 67000 }
-            ]} />
-          </CardContent>
-        </Card>
-
-        {/* Account Distribution */}
-        <Card className="col-span-1 lg:col-span-4 border-slate-200 shadow-sm overflow-hidden rounded-3xl">
-          <CardHeader className="bg-slate-50/50 border-b border-slate-100 py-4 px-4 sm:py-5 sm:px-8">
-            <CardTitle className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center">
-              <BuildingLibraryIcon className="h-4 w-4 mr-3 text-primary" />
-              Account Type Breakdown
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-8">
-            <DashboardChartDistribution data={[
-              { label: 'Fixed Deposits', value: 45, color: 'var(--primary)' },
-              { label: 'Recurring', value: 30, color: 'hsl(215 90% 40%)' },
-              { label: 'Consumer Loans', value: 15, color: 'hsl(142 70% 45%)' },
-              { label: 'Institutional', value: 10, color: 'hsl(30 90% 50%)' },
-            ]} />
-          </CardContent>
-        </Card>
-      </div>
+      
 
       {/* Recent Activity & Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

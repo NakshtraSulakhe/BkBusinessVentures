@@ -70,7 +70,9 @@ export async function GET(request: NextRequest) {
     }
 
     if (accountType) {
-      where.accountType = accountType.toUpperCase()
+      // Account types in database are stored in lowercase, so convert filter to lowercase
+      where.accountType = accountType.toLowerCase()
+      console.log(`🔍 Filtering accounts by type: ${accountType} -> ${accountType.toLowerCase()}`)
     }
 
     if (customerId) {
@@ -103,6 +105,8 @@ export async function GET(request: NextRequest) {
     ])
 
     console.log("✅ Accounts retrieved:", accounts.length)
+    console.log("📊 Account types found:", accounts.map((acc: any) => acc.accountType))
+    console.log("📋 Account details:", accounts.map((acc: any) => ({ id: acc.id, number: acc.accountNumber, type: acc.accountType, customer: acc.customer.name })))
 
     return NextResponse.json({
       accounts,

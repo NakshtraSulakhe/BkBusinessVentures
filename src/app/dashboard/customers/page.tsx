@@ -63,9 +63,25 @@ export default function CustomerMaster() {
   const fetchCustomers = async () => {
     try {
       setLoading(true)
+      console.log('🔍 Fetching customers with token:', token ? 'present' : 'missing')
       const res = await fetchWithAuth('/api/customers', { token })
-      if (res.ok) { const d = await res.json(); setCustomers(d.customers) }
-    } catch (e) { console.error(e) } finally { setLoading(false) }
+      console.log('📡 Customer API response status:', res.status)
+      
+      if (res.ok) { 
+        const d = await res.json(); 
+        console.log('✅ Customers data received:', d.customers?.length || 0, 'customers')
+        setCustomers(d.customers) 
+      } else {
+        const errorData = await res.json().catch(() => ({}))
+        console.error('❌ Customer API error:', res.status, errorData)
+        showMsg(errorData.error || 'Failed to fetch customers', 'error')
+      }
+    } catch (e) { 
+      console.error('💥 Fetch customers error:', e)
+      showMsg('Network error while fetching customers', 'error')
+    } finally { 
+      setLoading(false) 
+    }
   }
 
   const showMsg = (text: string, type: 'success' | 'error') => {

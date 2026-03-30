@@ -41,12 +41,24 @@ export default function FDPage() {
     const fetchFD = async () => {
       try {
         setLoading(true)
+        console.log("🔍 Fetching FD accounts...")
         const res = await fetchWithAuth('/api/accounts?accountType=FD', { token })
-        if (res.ok) { const d = await res.json(); setFdAccounts(d.accounts || []) }
-      } catch (e) { console.error(e) } finally { setLoading(false) }
+        if (res.ok) { 
+          const d = await res.json(); 
+          console.log("📊 FD accounts response:", d)
+          console.log("📋 FD accounts found:", d.accounts?.length || 0)
+          setFdAccounts(d.accounts || []) 
+        } else {
+          console.error("❌ Failed to fetch FD accounts:", res.status)
+        }
+      } catch (e) { 
+        console.error("❌ Error fetching FD accounts:", e) 
+      } finally { 
+        setLoading(false) 
+      }
     }
     fetchFD()
-  }, [])
+  }, [token])
 
   const filtered = fdAccounts.filter(a =>
     a.accountNumber.toLowerCase().includes(search.toLowerCase()) ||

@@ -43,12 +43,24 @@ export default function RDPage() {
     const fetch_ = async () => {
       try {
         setLoading(true)
+        console.log("🔍 Fetching RD accounts...")
         const res = await fetchWithAuth('/api/accounts?accountType=RD', { token })
-        if (res.ok) { const d = await res.json(); setRdAccounts(d.accounts || []) }
-      } catch (e) { console.error(e) } finally { setLoading(false) }
+        if (res.ok) { 
+          const d = await res.json(); 
+          console.log("📊 RD accounts response:", d)
+          console.log("📋 RD accounts found:", d.accounts?.length || 0)
+          setRdAccounts(d.accounts || []) 
+        } else {
+          console.error("❌ Failed to fetch RD accounts:", res.status)
+        }
+      } catch (e) { 
+        console.error("❌ Error fetching RD accounts:", e) 
+      } finally { 
+        setLoading(false) 
+      }
     }
     fetch_()
-  }, [])
+  }, [token])
 
   const filtered = rdAccounts.filter(a =>
     a.accountNumber.toLowerCase().includes(search.toLowerCase()) ||

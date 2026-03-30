@@ -90,7 +90,7 @@ function CreateEMIComponent() {
   const router = useRouter()
   const { token } = useAuth()
   const searchParams = useSearchParams()
-  const [customers, setCustomers] = useState<Customer[]>([])
+  const [loanAccounts, setLoanAccounts] = useState<LoanAccount[]>([])
   const [selectedAccount, setSelectedAccount] = useState<LoanAccount | null>(null)
   const [customerBalance, setCustomerBalance] = useState<CustomerBalance | null>(null)
   const [loading, setLoading] = useState(false)
@@ -106,15 +106,15 @@ function CreateEMIComponent() {
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const fetchCustomers = async () => {
+  const fetchLoanAccounts = async () => {
     try {
-      const response = await fetchWithAuth('/api/customers', { token })
+      const response = await fetchWithAuth('/api/accounts?accountType=LOAN', { token })
       if (response.ok) {
         const data = await response.json()
-        setCustomers(data.customers || [])
+        setLoanAccounts(data.accounts || [])
       }
     } catch (error) {
-      console.error('Failed to fetch customers:', error)
+      console.error('Failed to fetch loan accounts:', error)
     }
   }
 
@@ -138,52 +138,31 @@ function CreateEMIComponent() {
   }
 
   useEffect(() => {
-    fetchCustomers()
+    fetchLoanAccounts()
   }, [])
 
   useEffect(() => {
-    if (formData.accountId && customers.length > 0) {
-      const customer = customers.find(c => c.id === formData.accountId)
-      if (customer) {
-        // Create a mock loan account for the customer
-        const mockLoanAccount: LoanAccount = {
-          id: customer.id,
-          accountNumber: `LOAN-${customer.id}`,
-          customerId: customer.id,
-          principalAmount: 100000,
-          interestRate: 12.5,
-          tenure: 24,
-          startDate: new Date().toISOString(),
-          accountType: 'LOAN',
-          customer: {
-            name: customer.name,
-            email: customer.email
-          },
-          accountRules: {
-            emiAmount: 5000,
-            emiDueDay: 5,
-            gracePeriodDays: 3,
-            penaltyRate: 2
-          }
-        }
-        setSelectedAccount(mockLoanAccount)
+    if (formData.accountId && loanAccounts.length > 0) {
+      const account = loanAccounts.find(a => a.id === formData.accountId)
+      if (account) {
+        setSelectedAccount(account)
         
         // Pre-fill EMI amount if available
-        if (mockLoanAccount.accountRules?.emiAmount) {
+        if (account.accountRules?.emiAmount) {
           setFormData(prev => ({ 
             ...prev, 
-            amount: mockLoanAccount.accountRules?.emiAmount?.toString() || '' 
+            amount: account.accountRules?.emiAmount?.toString() || '' 
           }))
         }
         
         // Fetch customer balance data
-        fetchCustomerBalance(customer.id)
+        fetchCustomerBalance(account.customerId)
       } else {
         setSelectedAccount(null)
         setCustomerBalance(null)
       }
     }
-  }, [formData.accountId, customers])
+  }, [formData.accountId, loanAccounts])
 
   const showMessage = (text: string, type: 'success' | 'error') => {
     setMessage({ text, type })
@@ -321,11 +300,11 @@ function CreateEMIComponent() {
                       <SelectValue placeholder="Select loan account..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {customers.map((customer) => (
-                        <SelectItem key={customer.id} value={customer.id}>
+                      {loanAccounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
                           <div className="flex flex-col items-start">
-                            <span className="font-bold text-slate-900">{customer.name}</span>
-                            <span className="text-xs text-slate-500">{customer.email}</span>
+                            <span className="font-bold text-slate-900">{account.accountNumber}</span>
+                            <span className="text-xs text-slate-500">{account.customer.name} — ₹{(account.principalAmount / 100000).toFixed(1)}L</span>
                           </div>
                         </SelectItem>
                       ))}

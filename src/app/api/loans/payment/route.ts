@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/database"
+import { 
+  normalizeTransactionType, 
+  isCreditTransaction, 
+  calculateNewBalance, 
+  validateTransaction,
+  TransactionType 
+} from "@/lib/accounting-rules"
 
 export async function POST(request: NextRequest) {
   try {
@@ -70,17 +77,19 @@ export async function POST(request: NextRequest) {
       allocation.principal = remaining
     }
 
-    // Create the transaction
+    // Create the transaction using accounting rules
+    const transactionType = TransactionType.EMI_PAYMENT_RECEIVED
+    const newBalance = calculateNewBalance(lastBalance, transactionType, totalPaid)
+    
     const transaction = await prisma.transaction.create({
       data: {
         accountId,
-        type: 'EMI',
+        type: transactionType, // Use standardized type
         amount: totalPaid,
-        balance: lastBalance - totalPaid, // Reducing the outstanding balance
+        balance: newBalance,
         description: `Loan Payment: ${description || ''} (Allocated: P:${allocation.principal}, I:${allocation.interest}, Pen:${allocation.penalty})`,
         reference: `PAY-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
         transactionDate: date ? new Date(date) : new Date(),
-        // metadata would go here if schema supported it
       }
     })
 

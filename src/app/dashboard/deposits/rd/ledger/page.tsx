@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { fetchWithAuth } from "@/lib/api"
+import { isCreditTransaction, normalizeTransactionType } from "@/lib/accounting-rules"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -247,7 +248,7 @@ export default function RDLedgerPage() {
                 </TableHeader>
                 <TableBody>
                   {filteredTransactions.map((tx) => {
-                    const isCredit = ['installment', 'deposit', 'interest'].some(t => tx.type.toLowerCase().includes(t))
+                    const isCredit = isCreditTransaction(tx.type)
                     return (
                       <TableRow key={tx.id} className="hover:bg-slate-50/50 transition-colors border-b border-slate-50">
                         <TableCell className="px-8 py-4">

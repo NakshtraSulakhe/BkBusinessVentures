@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { fetchWithAuth } from "@/lib/api"
+import { isCreditTransaction, normalizeTransactionType } from "@/lib/accounting-rules"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -102,11 +103,32 @@ function LedgerContent() {
     if (mounted) fetchTransactions()
   }, [searchTerm, accountFilter, typeFilter, dateFilter])
 
+  useEffect(() => {
+    // Refetch accounts when transaction dialog opens to ensure fresh data
+    if (showAddTransaction) {
+      fetchAccounts()
+    }
+  }, [showAddTransaction])
+
+  // Also clear any invalid account selection when accounts change
+  useEffect(() => {
+    if (accounts.length > 0) {
+      const selectedAccount = accounts.find(acc => acc.id === newTransaction.accountId)
+      if (!selectedAccount && newTransaction.accountId) {
+        console.log("🧹 Clearing invalid account selection:", newTransaction.accountId)
+        setNewTransaction(prev => ({ ...prev, accountId: '' }))
+      }
+    }
+  }, [accounts, newTransaction.accountId])
+
   const fetchAccounts = async () => {
     try {
+      console.log("🔍 Fetching accounts for transaction dropdown...")
       const response = await fetchWithAuth('/api/accounts', { token })
       if (response.ok) {
         const data = await response.json()
+        console.log("📊 Accounts loaded for dropdown:", data.accounts?.length || 0)
+        console.log("📋 Account IDs:", data.accounts?.map((acc: any) => ({ id: acc.id, number: acc.accountNumber, name: acc.customer.name })))
         setAccounts(data.accounts || [])
       }
     } catch (error) {
@@ -129,7 +151,7 @@ function LedgerContent() {
         const data = await response.json()
         setTransactions(data.transactions || [])
         const balance = (data.transactions || []).reduce((acc: number, t: Transaction) => {
-          return ['deposit', 'interest', 'credit'].includes(t.type) ? acc + t.amount : acc - t.amount
+          return isCreditTransaction(t.type) ? acc + t.amount : acc - t.amount
         }, 0)
         setRunningBalance(balance)
       }
@@ -165,8 +187,22 @@ function LedgerContent() {
   }
 
   const handleAddTransaction = async () => {
-    if (!newTransaction.accountId || !newTransaction.amount) return
+    if (!newTransaction.accountId || !newTransaction.amount) {
+      setMessage({ type: 'error', text: 'Please select an account and enter an amount' })
+      return
+    }
+    
+    // Verify selected account exists in current accounts list
+    const selectedAccount = accounts.find(acc => acc.id === newTransaction.accountId)
+    if (!selectedAccount) {
+      setMessage({ type: 'error', text: 'Selected account not found. Please refresh the page and try again.' })
+      // Clear the invalid selection
+      setNewTransaction(prev => ({ ...prev, accountId: '' }))
+      return
+    }
+    
     try {
+      console.log("💰 Creating transaction:", { ...newTransaction, accountNumber: selectedAccount.accountNumber, customerName: selectedAccount.customer.name })
       const response = await fetchWithAuth('/api/transactions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -178,13 +214,25 @@ function LedgerContent() {
       })
       if (response.ok) {
         setMessage({ type: 'success', text: 'Transaction recorded successfully' })
+        setNewTransaction({
+          accountId: '',
+          type: 'deposit',
+          amount: '',
+          description: '',
+          reference: '',
+          date: new Date().toISOString().split('T')[0],
+          paymentMethod: 'cash'
+        })
         setShowAddTransaction(false)
         fetchTransactions()
       } else {
-        setMessage({ type: 'error', text: 'Failed to record transaction. Please check your inputs.' })
+        const errorData = await response.json()
+        console.error("❌ Transaction failed:", errorData)
+        setMessage({ type: 'error', text: errorData.error || 'Failed to record transaction. Please check your inputs.' })
       }
     } catch (error) {
-      setMessage({ type: 'error', text: 'Network connection failure' })
+      console.error('❌ Transaction error:', error)
+      setMessage({ type: 'error', text: 'Network error. Please try again.' })
     }
   }
 
@@ -240,14 +288,13 @@ function LedgerContent() {
         />
         <StatCard
           title="Total Deposits"
-          value={formatCurrency(transactions.filter(t => ['deposit', 'interest', 'credit'].includes(t.type)).reduce((s, t) => s + t.amount, 0))}
+          value={formatCurrency(transactions.filter(t => isCreditTransaction(t.type)).reduce((s, t) => s + t.amount, 0))}
           icon={ArrowTrendingUpIcon}
           trend={{ value: "Total Credits", isPositive: true }}
-          className="p-4 sm:p-6 border-blue-500"
         />
         <StatCard
           title="Total Withdrawals"
-          value={formatCurrency(transactions.filter(t => ['withdrawal', 'disbursement', 'debit'].includes(t.type)).reduce((s, t) => s + t.amount, 0))}
+          value={formatCurrency(transactions.filter(t => !isCreditTransaction(t.type)).reduce((s, t) => s + t.amount, 0))}
           icon={ArrowTrendingDownIcon}
           trend={{ value: "Total Debits", isPositive: false }}
           className="p-4 sm:p-6 border-rose-500"
@@ -300,6 +347,7 @@ function LedgerContent() {
                     <SelectItem value="withdrawal">Withdrawal</SelectItem>
                     <SelectItem value="interest">Interest</SelectItem>
                     <SelectItem value="disbursement">Disbursement</SelectItem>
+                    <SelectItem value="emi">EMI Payment</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -355,7 +403,7 @@ function LedgerContent() {
                   </TableHeader>
                   <TableBody>
                     {transactions.map((tx) => {
-                      const isInflow = ['deposit', 'interest', 'credit'].includes(tx.type)
+                      const isInflow = isCreditTransaction(tx.type)
                       return (
                         <TableRow key={tx.id} className="hover:bg-slate-50/50 transition-colors border-b border-slate-50 group">
                           <TableCell className="px-4 sm:px-8 py-3 sm:py-5">
@@ -493,6 +541,7 @@ function LedgerContent() {
                     <SelectItem value="withdrawal">Withdrawal</SelectItem>
                     <SelectItem value="interest">Interest</SelectItem>
                     <SelectItem value="disbursement">Disbursement</SelectItem>
+                    <SelectItem value="emi">EMI Payment</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

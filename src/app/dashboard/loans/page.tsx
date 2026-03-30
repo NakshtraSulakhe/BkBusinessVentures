@@ -42,12 +42,24 @@ export default function LoansPage() {
     const fetch_ = async () => {
       try {
         setLoading(true)
+        console.log("🔍 Fetching Loan accounts...")
         const res = await fetchWithAuth('/api/accounts?accountType=LOAN', { token })
-        if (res.ok) { const d = await res.json(); setLoans(d.accounts || []) }
-      } catch (e) { console.error(e) } finally { setLoading(false) }
+        if (res.ok) { 
+          const d = await res.json(); 
+          console.log("📊 Loan accounts response:", d)
+          console.log("📋 Loan accounts found:", d.accounts?.length || 0)
+          setLoans(d.accounts || []) 
+        } else {
+          console.error("❌ Failed to fetch Loan accounts:", res.status)
+        }
+      } catch (e) { 
+        console.error("❌ Error fetching Loan accounts:", e) 
+      } finally { 
+        setLoading(false) 
+      }
     }
     fetch_()
-  }, [])
+  }, [token])
 
   const calcEMI = (p: number, r: number, t: number) => {
     const mr = r / 12 / 100
