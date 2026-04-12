@@ -46,7 +46,7 @@ const TYPE_BADGE: Record<string, { label: string; cls: string }> = {
   loan:    { label: "Loan",          cls: "badge-type badge-type-loan" },
 }
 
-const STATUS_BADGE: Record<boolean, { label: string; cls: string }> = {
+const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   true:  { label: "Active",   cls: "px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200" },
   false: { label: "Inactive", cls: "px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200" },
 }
@@ -230,7 +230,7 @@ export default function CustomerMaster() {
                 </TableHeader>
                 <TableBody>
                   {filtered.map(customer => {
-                    const statusBadge = STATUS_BADGE[customer.isActive] ?? { label: customer.isActive ? 'Active' : 'Inactive', cls: "badge-type" }
+                    const statusBadge = STATUS_BADGE[String(customer.isActive)] ?? { label: customer.isActive ? 'Active' : 'Inactive', cls: "badge-type" }
                     return (
                       <TableRow key={customer.id} className={`border-slate-100 transition-colors ${selected.includes(customer.id) ? 'bg-primary/5' : 'hover:bg-slate-50'} ${!customer.isActive ? 'opacity-60' : ''}`}>
                         <TableCell className="px-5 py-3.5 w-10">
