@@ -77,6 +77,7 @@ export async function GET(request: NextRequest) {
         zipCode: true,
         panNumber: true,
         aadhaarNumber: true,
+        isActive: true,
         createdAt: true,
         updatedAt: true,
         _count: {
@@ -134,8 +135,8 @@ export async function POST(request: NextRequest) {
     )
   }
   
-  // Validate required fields
-  const requiredFields = ['name', 'email', 'phone', 'address', 'city', 'state', 'zipCode'];
+  // Validate required fields (address fields are now optional)
+  const requiredFields = ['name', 'email', 'phone'];
   for (const field of requiredFields) {
     if (!body[field]) {
       console.log("❌ Missing required field:", field)
@@ -185,6 +186,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    console.log("🔍 Checking for existing customer with email:", body.email)
+    
     // Check if email already exists
     const existingCustomer = await prisma.customer.findUnique({
       where: { email: body.email }
@@ -198,7 +201,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log("👤 Creating customer:", { name: body.name, email: body.email })
+    console.log("👤 Creating customer in database:", { name: body.name, email: body.email })
+    console.log("📦 Full customer data:", JSON.stringify(body, null, 2))
 
     // Create customer
     const customer = await prisma.customer.create({
@@ -216,6 +220,7 @@ export async function POST(request: NextRequest) {
         occupation: body.occupation || null,
         annualIncome: body.annualIncome ? parseFloat(body.annualIncome) : null,
         accountType: body.accountType || 'GENERAL',
+        isActive: body.isActive !== undefined ? body.isActive : true,
       },
       select: {
         id: true,
@@ -228,6 +233,7 @@ export async function POST(request: NextRequest) {
         zipCode: true,
         panNumber: true,
         aadhaarNumber: true,
+        isActive: true,
         createdAt: true,
         updatedAt: true
       }

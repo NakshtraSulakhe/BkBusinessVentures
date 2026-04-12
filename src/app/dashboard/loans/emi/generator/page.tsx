@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { DashboardLayout } from "@/components/dashboard-layout"
+import { formatDateSafe } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -198,7 +199,7 @@ export default function EMIGeneratorPage() {
                           <TableRow key={row.period} className="hover:bg-indigo-50/30 transition-colors border-b border-slate-100">
                             <TableCell className="text-center font-mono text-indigo-600">{row.period}</TableCell>
                             <TableCell className="font-medium text-slate-700">
-                              {new Date(row.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                              {formatDateSafe(row.dueDate)}
                             </TableCell>
                             <TableCell className="text-right font-bold text-indigo-700">{formatCurrency(row.emi)}</TableCell>
                             <TableCell className="text-right text-emerald-600 font-medium">{formatCurrency(row.principal)}</TableCell>

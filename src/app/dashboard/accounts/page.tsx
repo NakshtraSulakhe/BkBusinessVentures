@@ -20,7 +20,7 @@ import {
 interface Account {
   id: string; accountNumber: string; accountType: string; principalAmount: number;
   interestRate: number; tenure: number; startDate: string; maturityDate?: string;
-  state: string; createdAt: string;
+  status: string; createdAt: string;
   customer: { id: string; name: string; email: string };
   _count: { transactions: number }
 }
@@ -149,8 +149,8 @@ export default function AccountsPage() {
                 <TableBody>
                   {accounts.map(account => {
                     const typeCls = TYPE_BADGE[account.accountType] ?? "badge-type"
-                    const statusKey = account.state?.toLowerCase()
-                    const statusCls = STATUS_BADGE[statusKey] ?? "badge-status badge-status-closed"
+                    const statusKey = account.status?.toLowerCase()
+                    const statusCls = STATUS_BADGE[statusKey] ?? "badge-status badge-status-active"
                     return (
                       <TableRow key={account.id} className="hover:bg-slate-50 border-slate-100 transition-colors">
                         <TableCell className="px-5 py-3.5">
@@ -182,7 +182,7 @@ export default function AccountsPage() {
                           <div className="text-xs text-slate-400">{account.tenure}m</div>
                         </TableCell>
                         <TableCell className="px-3 sm:px-4 py-3.5 hide-on-tablet">
-                          <span className={statusCls}>{account.state}</span>
+                          <span className={statusCls}>{account.status || 'ACTIVE'}</span>
                         </TableCell>
                         <TableCell className="px-3 sm:px-4 py-3.5 hide-on-mobile">
                           <span className="text-xs text-slate-500 tabular-nums">

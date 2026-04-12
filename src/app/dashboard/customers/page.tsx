@@ -34,6 +34,7 @@ interface Customer {
   state: string; zipCode: string; panNumber: string; aadhaarNumber: string;
   dateOfBirth: string; occupation: string; annualIncome: number;
   accountType: 'savings' | 'current' | 'fd' | 'rd' | 'loan'; purpose: string;
+  isActive: boolean;
   createdAt: string; updatedAt: string;
 }
 
@@ -43,6 +44,11 @@ const TYPE_BADGE: Record<string, { label: string; cls: string }> = {
   fd:      { label: "Fixed Deposit", cls: "badge-type badge-type-fd" },
   rd:      { label: "Recurring",     cls: "badge-type badge-type-rd" },
   loan:    { label: "Loan",          cls: "badge-type badge-type-loan" },
+}
+
+const STATUS_BADGE: Record<boolean, { label: string; cls: string }> = {
+  true:  { label: "Active",   cls: "px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200" },
+  false: { label: "Inactive", cls: "px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200" },
 }
 
 export default function CustomerMaster() {
@@ -216,7 +222,7 @@ export default function CustomerMaster() {
                     </TableHead>
                     <TableHead className="px-3 sm:px-4 min-w-[160px] sm:min-w-[200px]"><SortBtn field="name" label="Customer" /></TableHead>
                     <TableHead className="px-3 sm:px-4 min-w-[150px] sm:min-w-[180px] hide-on-mobile"><SortBtn field="email" label="Contact" /></TableHead>
-                    <TableHead className="px-3 sm:px-4 min-w-[100px] sm:min-w-[140px]"><SortBtn field="accountType" label="Type" /></TableHead>
+                    <TableHead className="px-3 sm:px-4 min-w-[100px] sm:min-w-[140px]"><SortBtn field="isActive" label="Status" /></TableHead>
                     <TableHead className="px-3 sm:px-4 min-w-[80px] sm:min-w-[100px] text-right"><SortBtn field="annualIncome" label="Income" /></TableHead>
                     <TableHead className="px-3 sm:px-4 min-w-[90px] sm:min-w-[100px] hide-on-tablet"><SortBtn field="createdAt" label="Created" /></TableHead>
                     <TableHead className="px-3 sm:px-4 w-12 sm:w-14 text-right text-[10px] font-black uppercase text-slate-400">Actions</TableHead>
@@ -224,9 +230,9 @@ export default function CustomerMaster() {
                 </TableHeader>
                 <TableBody>
                   {filtered.map(customer => {
-                    const badge = TYPE_BADGE[customer.accountType] ?? { label: customer.accountType, cls: "badge-type" }
+                    const statusBadge = STATUS_BADGE[customer.isActive] ?? { label: customer.isActive ? 'Active' : 'Inactive', cls: "badge-type" }
                     return (
-                      <TableRow key={customer.id} className={`border-slate-100 transition-colors ${selected.includes(customer.id) ? 'bg-primary/5' : 'hover:bg-slate-50'}`}>
+                      <TableRow key={customer.id} className={`border-slate-100 transition-colors ${selected.includes(customer.id) ? 'bg-primary/5' : 'hover:bg-slate-50'} ${!customer.isActive ? 'opacity-60' : ''}`}>
                         <TableCell className="px-5 py-3.5 w-10">
                           <Checkbox checked={selected.includes(customer.id)} onCheckedChange={v => setSelected(prev => v ? [...prev, customer.id] : prev.filter(i => i !== customer.id))} />
                         </TableCell>
@@ -247,7 +253,7 @@ export default function CustomerMaster() {
                             <div className="flex items-center gap-1.5 text-xs text-slate-400"><Phone className="h-3.5 w-3.5 flex-shrink-0" />{customer.phone}</div>
                           </div>
                         </TableCell>
-                        <TableCell className="px-4 py-3.5"><span className={badge.cls}>{badge.label}</span></TableCell>
+                        <TableCell className="px-4 py-3.5"><span className={statusBadge.cls}>{statusBadge.label}</span></TableCell>
                         <TableCell className="px-4 py-3.5 text-right">
                           <span className="text-sm font-semibold text-slate-800 tabular-nums">{customer.annualIncome ? `₹${(customer.annualIncome / 1000).toFixed(0)}K` : '—'}</span>
                         </TableCell>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { fetchWithAuth } from "@/lib/api"
 import { isCreditTransaction, normalizeTransactionType } from "@/lib/accounting-rules"
+import { formatDateSafe, formatTimeSafe } from "@/lib/utils"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -127,11 +128,7 @@ export default function AccountLedgerPage({ params }: { params: Promise<{ id: st
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    })
+    return formatDateSafe(dateString)
   }
 
   const isCredit = (type: string) => {
@@ -166,13 +163,28 @@ export default function AccountLedgerPage({ params }: { params: Promise<{ id: st
     return typeDescriptions[normalizedType] || type
   }
 
-  const filteredTransactions = transactions.filter(tx => 
+  // Sort transactions chronologically (oldest first) for proper ledger display
+  const sortedTransactions = [...transactions].sort((a, b) => 
+    new Date(a.transactionDate).getTime() - new Date(b.transactionDate).getTime()
+  )
+
+  const filteredTransactions = sortedTransactions.filter(tx => 
     tx.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
     tx.reference.toLowerCase().includes(searchTerm.toLowerCase()) ||
     tx.type.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const currentBalance = transactions.length > 0 ? transactions[0].balance : 0
+  // Calculate running balance for each transaction (chronological order)
+  const transactionsWithRunningBalance = filteredTransactions.map((tx, index) => {
+    const runningBalance = sortedTransactions
+      .slice(0, sortedTransactions.findIndex(t => t.id === tx.id) + 1)
+      .reduce((acc, t) => isCredit(t.type) ? acc + t.amount : acc - t.amount, 0)
+    return { ...tx, displayBalance: runningBalance }
+  })
+
+  const currentBalance = sortedTransactions.length > 0 
+    ? sortedTransactions.reduce((acc, t) => isCredit(t.type) ? acc + t.amount : acc - t.amount, 0)
+    : 0
   const totalCredits = transactions.filter(tx => isCredit(tx.type)).reduce((sum, tx) => sum + tx.amount, 0)
   const totalDebits = transactions.filter(tx => !isCredit(tx.type)).reduce((sum, tx) => sum + tx.amount, 0)
 
@@ -373,17 +385,14 @@ export default function AccountLedgerPage({ params }: { params: Promise<{ id: st
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredTransactions.map((transaction, index) => (
+                  {transactionsWithRunningBalance.map((transaction, index) => (
                     <TableRow key={transaction.id} className="hover:bg-slate-50 border-slate-100 transition-colors">
                       <TableCell className="px-5 py-3.5">
                         <div className="text-sm font-semibold text-slate-800">
                           {formatDate(transaction.transactionDate)}
                         </div>
                         <div className="text-xs text-slate-400">
-                          {new Date(transaction.createdAt).toLocaleTimeString('en-IN', { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          })}
+                          {formatTimeSafe(transaction.createdAt)}
                         </div>
                       </TableCell>
                       <TableCell className="px-4 py-3.5">
@@ -417,16 +426,16 @@ export default function AccountLedgerPage({ params }: { params: Promise<{ id: st
                         {isCredit(transaction.type) ? (
                           <div className="text-sm font-semibold text-green-600">
                             {formatCurrency(transaction.amount)}
-                          </div>
+                            </div>
                         ) : (
                           <div className="text-sm text-slate-400">—</div>
                         )}
                       </TableCell>
                       <TableCell className="px-4 py-3.5 text-right">
                         <div className={`text-sm font-bold tabular-nums ${
-                          transaction.balance >= 0 ? 'text-slate-800' : 'text-red-600'
+                          transaction.displayBalance >= 0 ? 'text-slate-800' : 'text-red-600'
                         }`}>
-                          {formatCurrency(transaction.balance)}
+                          {formatCurrency(transaction.displayBalance)}
                         </div>
                       </TableCell>
                     </TableRow>

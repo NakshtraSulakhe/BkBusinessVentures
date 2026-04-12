@@ -77,6 +77,15 @@ export default function CreateCustomer() {
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
 
+    console.log('🔍 Validating form data:', { 
+      name: formData.name, 
+      email: formData.email, 
+      phone: formData.phone,
+      nameTrimmed: formData.name?.trim(),
+      emailTrimmed: formData.email?.trim(),
+      phoneTrimmed: formData.phone?.trim()
+    })
+
     if (!formData.name.trim()) newErrors.name = 'Name is required'
     if (!formData.email.trim()) newErrors.email = 'Email is required'
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -86,10 +95,7 @@ export default function CreateCustomer() {
     const phoneRegex = /^[0-9]{10}$/
     if (formData.phone && !phoneRegex.test(formData.phone.replace(/\D/g, ''))) newErrors.phone = 'Phone must be 10 digits'
     
-    if (!formData.address.trim()) newErrors.address = 'Address is required'
-    if (!formData.city.trim()) newErrors.city = 'City is required'
-    if (!formData.state.trim()) newErrors.state = 'State is required'
-    if (!formData.zipCode.trim()) newErrors.zipCode = 'ZIP code is required'
+    // Address fields are optional
 
     if (formData.panNumber && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formData.panNumber.toUpperCase())) {
       newErrors.panNumber = 'Invalid PAN format'
@@ -98,6 +104,9 @@ export default function CreateCustomer() {
     if (formData.aadhaarNumber && !/^[0-9]{12}$/.test(formData.aadhaarNumber.replace(/\D/g, ''))) {
       newErrors.aadhaarNumber = 'Aadhaar must be 12 digits'
     }
+
+    console.log('📋 Validation errors found:', newErrors)
+    console.log('📊 Error count:', Object.keys(newErrors).length)
 
     setErrors(newErrors)
     if (Object.keys(newErrors).length > 0) {
@@ -108,10 +117,20 @@ export default function CreateCustomer() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!validateForm()) return
+    console.log('🚀 Form submitted')
+    
+    if (!validateForm()) {
+      console.log('❌ Form validation failed', errors)
+      return
+    }
+    
+    console.log('✅ Form validated, token:', token ? 'present' : 'missing')
+    console.log('📦 Form data:', formData)
 
     try {
       setLoading(true)
+      console.log('📡 Sending POST to /api/customers')
+      
       const response = await fetchWithAuth('/api/customers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -121,15 +140,21 @@ export default function CreateCustomer() {
           annualIncome: parseFloat(formData.annualIncome) || 0
         }),
       })
+      
+      console.log('📡 Response status:', response.status)
 
       if (response.ok) {
+        const data = await response.json()
+        console.log('✅ Customer created:', data)
         showMessage(`Customer ${formData.name} created successfully`, 'success')
         setTimeout(() => router.push('/dashboard/customers'), 2000)
       } else {
         const errorData = await response.json()
+        console.error('❌ API error:', errorData)
         showMessage(errorData.error || 'Failed to create customer', 'error')
       }
     } catch (error) {
+      console.error('💥 Exception:', error)
       showMessage('Failed to create customer', 'error')
     } finally {
       setLoading(false)

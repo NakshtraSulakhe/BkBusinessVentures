@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { fetchWithAuth } from "@/lib/api"
+import { formatShortDate } from "@/lib/utils"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -82,11 +83,10 @@ export default function FDPage() {
           }
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           <StatCard title="Total FD Accounts" value={filtered.length} subtitle="All accounts" icon={<Building2 />} iconVariant="primary" borderVariant="primary" />
           <StatCard title="Active FDs" value={filtered.filter(a => a.status?.toLowerCase() === 'active').length} subtitle="Currently active" icon={<CheckCircle2 />} iconVariant="success" borderVariant="success" />
           <StatCard title="Total Deposits" value={`₹${(totalPrincipal / 100000).toFixed(1)}L`} subtitle="Principal deployed" icon={<DollarSign />} iconVariant="info" borderVariant="info" />
-          <StatCard title="Avg Interest Rate" value={`${avgRate.toFixed(1)}%`} subtitle="Across all FDs" icon={<BarChart3 />} iconVariant="warning" borderVariant="warning" />
         </div>
 
         {/* Search */}
@@ -130,6 +130,7 @@ export default function FDPage() {
                     <TableHead className="px-4 py-3 text-xs font-semibold text-slate-600 min-w-[80px] text-right">Rate</TableHead>
                     <TableHead className="px-4 py-3 text-xs font-semibold text-slate-600 min-w-[80px]">Period</TableHead>
                     <TableHead className="px-4 py-3 text-xs font-semibold text-slate-600 min-w-[110px]">Maturity</TableHead>
+                    <TableHead className="px-4 py-3 text-xs font-semibold text-slate-600 min-w-[120px] text-right">Maturity Amt</TableHead>
                     <TableHead className="px-4 py-3 text-xs font-semibold text-slate-600 min-w-[90px]">Status</TableHead>
                     <TableHead className="px-4 py-3 w-14 text-right text-xs font-semibold text-slate-600">Actions</TableHead>
                   </TableRow>
@@ -144,7 +145,7 @@ export default function FDPage() {
                           <div className="font-mono text-sm font-semibold text-slate-800">{account.accountNumber}</div>
                           <div className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
                             <Calendar className="h-3 w-3" />
-                            {new Date(account.startDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: '2-digit' })}
+                            {formatShortDate(account.startDate)}
                           </div>
                         </TableCell>
                         <TableCell className="px-4 py-3.5">
@@ -162,16 +163,28 @@ export default function FDPage() {
                         </TableCell>
                         <TableCell className="px-4 py-3.5">
                           <span className="text-xs text-slate-500 tabular-nums">
-                            {account.maturityDate ? new Date(account.maturityDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: '2-digit' }) : '—'}
+                            {account.maturityDate ? formatShortDate(account.maturityDate) : '—'}
                           </span>
+                        </TableCell>
+                        <TableCell className="px-4 py-3.5 text-right">
+                          {(() => {
+                            const principal = account.principalAmount || 0
+                            const rate = account.interestRate || 0
+                            const tenure = account.tenure || 0
+                            const interest = (principal * rate * tenure) / (100 * 12)
+                            const maturityAmount = principal + interest
+                            return (
+                              <span className="text-sm font-bold text-emerald-700 tabular-nums">₹{maturityAmount.toLocaleString('en-IN')}</span>
+                            )
+                          })()}
                         </TableCell>
                         <TableCell className="px-4 py-3.5">
                           <span className={statusCls}>{account.status || 'ACTIVE'}</span>
                         </TableCell>
                         <TableCell className="px-4 py-3.5 text-right">
                           <TableActions actions={[
-                            { label: "View Details", icon: <Eye />, onClick: () => router.push(`/dashboard/deposits/fd/${account.id}`) },
-                            { label: "Edit", icon: <Pencil />, onClick: () => router.push(`/dashboard/deposits/fd/${account.id}/edit`) },
+                            { label: "View Details", icon: <Eye />, onClick: () => router.push(`/dashboard/accounts/${account.id}`) },
+                            { label: "Edit", icon: <Pencil />, onClick: () => router.push(`/dashboard/accounts/${account.id}/edit`) },
                           ]} />
                         </TableCell>
                       </TableRow>

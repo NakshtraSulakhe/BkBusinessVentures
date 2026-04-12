@@ -326,7 +326,7 @@ function DashboardContent() {
                     </TableCell>
                     <TableCell className="text-center hide-on-mobile">
                       <Badge className={`uppercase font-black text-[9px] tracking-widest px-3 py-1 rounded-sm border ${t.type === 'credit' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-rose-50 text-rose-700 border-rose-100'}`}>
-                        {t.type === 'credit' ? 'Inflow' : 'Outflow'}
+                        {t.type === 'credit' ? 'Credit' : 'Debit'}
                       </Badge>
                     </TableCell>
                     <TableCell className="px-4 sm:px-8 text-right">

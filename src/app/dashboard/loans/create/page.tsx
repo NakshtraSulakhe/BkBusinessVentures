@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { fetchWithAuth } from "@/lib/api"
+import { formatDateSafe } from "@/lib/utils"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -64,6 +65,7 @@ function CreateLoanComponent() {
   
   const [formData, setFormData] = useState({
     customerId: searchParams.get('customerId') || '',
+    accountNumber: '',
     principalAmount: '',
     interestRate: '',
     tenure: '',
@@ -117,13 +119,17 @@ function CreateLoanComponent() {
     if (!formData.startDate || !formData.tenure) return ''
     const d = new Date(formData.startDate)
     d.setMonth(d.getMonth() + parseInt(formData.tenure))
-    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+    return formatDateSafe(d)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.customerId || !formData.principalAmount) {
-      setErrors({ customerId: !formData.customerId ? 'Required' : '', amount: 'Required' })
+    if (!formData.customerId || !formData.principalAmount || !formData.accountNumber) {
+      setErrors({ 
+        customerId: !formData.customerId ? 'Required' : '', 
+        accountNumber: !formData.accountNumber ? 'Required' : '',
+        amount: 'Required' 
+      })
       return
     }
 
@@ -201,13 +207,13 @@ function CreateLoanComponent() {
             <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-4">
               <CardTitle className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
                 <UsersIcon className="h-4 w-4 mr-2 text-primary" />
-                1. Borrower Linkage
+                1. Select Borrower
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Verified Borrower</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Borrower Name</label>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" className="w-full h-11 justify-between border-slate-200 rounded-lg bg-slate-50/30 hover:bg-white transition-all text-slate-900 font-bold">
@@ -240,20 +246,31 @@ function CreateLoanComponent() {
             <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-4">
               <CardTitle className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
                 <CurrencyDollarIcon className="h-4 w-4 mr-2 text-primary" />
-                2. Debt Parameters
+                2. Loan Details
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Loan Principal (₹)</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Loan Number</label>
+                  <div className="relative">
+                    <BuildingLibraryIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Input type="text" placeholder="e.g., LN260400001" value={formData.accountNumber} onChange={e => setFormData(p => ({ ...p, accountNumber: e.target.value }))} className="pl-10 h-11 border-slate-200 bg-slate-50/30 font-black tracking-tight" />
+                  </div>
+                  {errors.accountNumber && <p className="text-[10px] text-rose-500 font-bold ml-1">Account number is mandatory</p>}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Loan Amount</label>
                   <div className="relative">
                     <BanknotesIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <Input type="number" placeholder="0.00" value={formData.principalAmount} onChange={e => setFormData(p => ({ ...p, principalAmount: e.target.value }))} className="pl-10 h-11 border-slate-200 bg-slate-50/30 font-black tracking-tight" />
                   </div>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Disbursement Date</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Start Date</label>
                   <div className="relative">
                     <CalendarIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <Input type="date" value={formData.startDate} onChange={e => setFormData(p => ({ ...p, startDate: e.target.value }))} className="pl-10 h-11 border-slate-200 bg-slate-50/30 font-medium" />
@@ -263,14 +280,14 @@ function CreateLoanComponent() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Annual Interest (%)</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Interest Rate (%)</label>
                   <div className="relative">
                     <ReceiptPercentIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <Input type="number" placeholder="0.00" value={formData.interestRate} onChange={e => setFormData(p => ({ ...p, interestRate: e.target.value }))} className="pl-10 h-11 border-slate-200 bg-slate-50/30 font-black tracking-tight" />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Repayment Tenure (Months)</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Duration (Months)</label>
                   <div className="relative">
                     <ClockIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <Input type="number" placeholder="0" value={formData.tenure} onChange={e => setFormData(p => ({ ...p, tenure: e.target.value }))} className="pl-10 h-11 border-slate-200 bg-slate-50/30 font-black tracking-tight" />
@@ -285,13 +302,13 @@ function CreateLoanComponent() {
             <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-4">
               <CardTitle className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
                 <Cog6ToothIcon className="h-4 w-4 mr-2 text-primary" />
-                3. Operational Protocol
+                3. Loan Settings
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Amortization Logic</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Interest Method</label>
                   <Select value={formData.loanMethod} onValueChange={v => setFormData(p => ({ ...p, loanMethod: v as any }))}>
                     <SelectTrigger className="h-11 border-slate-200 bg-slate-50/30 font-bold">
                       <SelectValue />
@@ -303,7 +320,7 @@ function CreateLoanComponent() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">EMI Cycle Day</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">EMI Due Date</label>
                   <Select value={formData.emiDueDay} onValueChange={v => setFormData(p => ({ ...p, emiDueDay: v }))}>
                     <SelectTrigger className="h-11 border-slate-200 bg-slate-50/30">
                       <SelectValue />
@@ -318,7 +335,7 @@ function CreateLoanComponent() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Default Grace Period (Days)</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Grace Period (Days)</label>
                   <Input type="number" value={formData.gracePeriodDays} onChange={e => setFormData(p => ({ ...p, gracePeriodDays: e.target.value }))} className="h-11 border-slate-200 bg-slate-50/30 font-bold" />
                 </div>
                 <div className="space-y-2">
@@ -337,12 +354,12 @@ function CreateLoanComponent() {
               <CircleStackIcon className="h-24 w-24 text-white" />
             </div>
             <CardHeader className="px-8 pt-8 pb-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Repayment Forecast</p>
-              <CardTitle className="text-white tracking-tight text-xl mt-1">Portfolio Preview</CardTitle>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Repayment Schedule</p>
+              <CardTitle className="text-white tracking-tight text-xl mt-1">EMI Preview</CardTitle>
             </CardHeader>
             <CardContent className="px-8 pb-8 space-y-6">
               <div className="space-y-1">
-                <p className="text-[10px] font-bold text-slate-500 uppercase">Monthly Principal + Interest (EMI)</p>
+                <p className="text-[10px] font-bold text-slate-500 uppercase">Monthly EMI</p>
                 <p className="text-3xl font-black text-white tracking-tighter">
                   {formatCurrency(emi)}
                 </p>
@@ -350,11 +367,11 @@ function CreateLoanComponent() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Termination Date</p>
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">End Date</p>
                   <p className="text-xs font-bold text-slate-300">{calculateMaturityDate() || "TBD"}</p>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Gross Repayable</p>
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Total Payable</p>
                   <p className="text-xs font-bold text-slate-300">{formatCurrency(totalPayable)}</p>
                 </div>
               </div>
@@ -362,15 +379,15 @@ function CreateLoanComponent() {
               <div className="pt-6 border-t border-white/10">
                 <div className="flex items-center gap-2 mb-4">
                   <ShieldCheckIcon className="h-4 w-4 text-emerald-400" />
-                  <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">CREDIT DEPTH: APPROVED</span>
+                  <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Credit Approved</span>
                 </div>
                 <Button type="submit" disabled={loading} className="w-full finance-gradient-primary text-white font-black uppercase tracking-widest h-14 rounded-2xl shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">
                   {loading ? (
                     <div className="flex items-center gap-2">
                     <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                    Provisioning...
+                    Creating Loan...
                     </div>
-                  ) : "Provision Loan"}
+                  ) : "Create Loan"}
                 </Button>
               </div>
             </CardContent>
@@ -379,14 +396,14 @@ function CreateLoanComponent() {
           <div className="bg-white border border-slate-200 rounded-2xl p-6">
             <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-4 flex items-center">
               <InformationCircleIcon className="h-4 w-4 mr-2 text-primary" />
-              Lending Guidelines
+              Key Points
             </h4>
             <div className="space-y-3">
               {[
-                "Disbursement occurs immediately upon provisioning",
-                "Interest recalculates monthly based on amortization rule",
-                "Grace period applies before penalty state is triggered",
-                "EMI cycle day determines automated notification window"
+                "Loan is disbursed immediately upon creation",
+                "Interest is calculated based on selected method",
+                "Grace period applies before penalty is charged",
+                "EMI due date determines payment reminders"
               ].map((text, idx) => (
                 <div key={idx} className="flex gap-2 text-[10px] font-bold text-slate-500 leading-tight">
                   <div className="h-1 w-1 bg-slate-300 rounded-full mt-1.5 flex-shrink-0" />

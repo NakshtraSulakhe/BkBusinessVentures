@@ -49,16 +49,21 @@ function SettingsSection({ title, icon, children, description }: { title: string
 }
 
 export default function SettingsPage() {
-  const { user } = useAuth()
+  const { user, isLoading } = useAuth()
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
-    if (!user) router.push("/login")
-  }, [user, router])
+  }, [])
 
-  if (!user || !mounted) return null
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push("/login")
+    }
+  }, [user, isLoading, router])
+
+  if (isLoading || !user || !mounted) return null
 
   return (
     <RBACGuard requireAdmin>

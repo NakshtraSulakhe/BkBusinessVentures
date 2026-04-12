@@ -4,6 +4,7 @@ import { useState, useEffect, use } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { fetchWithAuth } from "@/lib/api"
+import { formatDateSafe } from "@/lib/utils"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -76,11 +77,7 @@ export default function AccountDetailsPage({ params }: { params: Promise<{ id: s
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    })
+    return formatDateSafe(dateString)
   }
 
   if (loading) return (
@@ -203,15 +200,21 @@ export default function AccountDetailsPage({ params }: { params: Promise<{ id: s
                 <CircleStackIcon className="h-24 w-24 text-white" />
               </div>
               <CardContent className="p-8">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Total Interest You'll Earn</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
+                  {account.accountType === 'FD' ? 'Total Maturity Amount' : "Total Interest You'll Earn"}
+                </p>
                 <p className="text-3xl font-black text-white tracking-tight italic">
-                  {formatCurrency(totalYield)}
+                  {formatCurrency(account.accountType === 'FD' ? account.principalAmount + totalYield : totalYield)}
                 </p>
                 <div className="mt-6 flex items-center gap-2">
-                  <Badge className="bg-white/10 text-white border-white/20 text-[10px] py-0.5 font-bold">ESTIMATED GROWTH</Badge>
+                  <Badge className="bg-white/10 text-white border-white/20 text-[10px] py-0.5 font-bold">
+                    {account.accountType === 'FD' ? 'PRINCIPAL + INTEREST' : 'ESTIMATED GROWTH'}
+                  </Badge>
                 </div>
                 <p className="text-xs text-slate-400 font-medium italic mt-4 leading-relaxed">
-                  Estimated interest over {account.tenure} months at {account.interestRate}% per year.
+                  {account.accountType === 'FD' 
+                    ? `Principal ₹${formatCurrency(account.principalAmount)} + Interest ₹${formatCurrency(totalYield)} over ${account.tenure} months at ${account.interestRate}% per year.`
+                    : `Estimated interest over ${account.tenure} months at ${account.interestRate}% per year.`}
                 </p>
                 <Button className="w-full mt-8 bg-white text-slate-900 font-black uppercase tracking-widest text-[10px] h-11 rounded-xl hover:bg-slate-100 transition-all shadow-lg active:scale-95">
                   Request Interest Summary
@@ -290,33 +293,62 @@ export default function AccountDetailsPage({ params }: { params: Promise<{ id: s
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {account.suggestedEntries?.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={3} className="py-20 text-center">
-                          <p className="text-xs text-slate-400 italic">No historical engine logs found for this instrument.</p>
+                    {/* Opening Entry - Initial Deposit */}
+                    <TableRow className="hover:bg-slate-50/50 transition-colors border-b border-slate-50">
+                      <TableCell className="px-8 py-5">
+                        <div className="text-xs font-bold text-slate-900">{formatDate(account.startDate)}</div>
+                        <div className="text-[9px] font-medium text-slate-400 uppercase tracking-tighter mt-0.5">OPENING</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-xs text-slate-600 italic max-w-xs truncate">Fixed Deposit Account Opened</div>
+                      </TableCell>
+                      <TableCell className="px-8 text-right">
+                        <div className="text-sm font-black text-slate-900 italic tracking-tight">{formatCurrency(account.principalAmount)}</div>
+                        <Badge className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0 mt-1 bg-blue-50 text-blue-700">
+                          DEPOSIT
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+
+                    {/* Interest/Suggested Entries */}
+                    {account.suggestedEntries?.map((entry: any) => (
+                      <TableRow key={entry.id} className="hover:bg-slate-50/50 transition-colors border-b border-slate-50">
+                        <TableCell className="px-8 py-5">
+                          <div className="text-xs font-bold text-slate-900">{formatDate(entry.periodStartDate)}</div>
+                          <div className="text-[9px] font-medium text-slate-400 uppercase tracking-tighter mt-0.5">{entry.type}</div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-xs text-slate-600 italic max-w-xs truncate">{entry.description || 'Interest calculated automatically'}</div>
+                        </TableCell>
+                        <TableCell className="px-8 text-right">
+                          <div className="text-sm font-black text-slate-900 italic tracking-tight">{formatCurrency(entry.amount)}</div>
+                          <Badge className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0 mt-1 ${
+                              entry.status === 'approved' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
+                            }`}>
+                            {entry.status}
+                          </Badge>
                         </TableCell>
                       </TableRow>
-                    ) : (
-                      account.suggestedEntries?.map((entry: any) => (
-                        <TableRow key={entry.id} className="hover:bg-slate-50/50 transition-colors border-b border-slate-50">
-                          <TableCell className="px-8 py-5">
-                            <div className="text-xs font-bold text-slate-900">{formatDate(entry.periodStartDate)}</div>
-                            <div className="text-[9px] font-medium text-slate-400 uppercase tracking-tighter mt-0.5">{entry.type}</div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-xs text-slate-600 italic max-w-xs truncate">{entry.description || 'Interest calculated automatically'}</div>
-                          </TableCell>
-                          <TableCell className="px-8 text-right">
-                            <div className="text-sm font-black text-slate-900 italic tracking-tight">{formatCurrency(entry.amount)}</div>
-                            <Badge className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0 mt-1 ${
-                                entry.status === 'approved' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
-                              }`}>
-                              {entry.status}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
+                    ))}
+
+                    {/* Maturity Entry */}
+                    <TableRow className="hover:bg-slate-50/50 transition-colors border-b border-slate-50 bg-emerald-50/30">
+                      <TableCell className="px-8 py-5">
+                        <div className="text-xs font-bold text-slate-900">{formatDate(account.maturityDate)}</div>
+                        <div className="text-[9px] font-medium text-slate-400 uppercase tracking-tighter mt-0.5">MATURITY</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-xs text-slate-600 italic max-w-xs truncate">Principal + Interest at Maturity</div>
+                      </TableCell>
+                      <TableCell className="px-8 text-right">
+                        <div className="text-sm font-black text-emerald-700 italic tracking-tight">
+                          {formatCurrency(account.principalAmount + totalYield)}
+                        </div>
+                        <Badge className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0 mt-1 bg-emerald-100 text-emerald-800">
+                          MATURITY
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
                   </TableBody>
                 </Table>
               </div>

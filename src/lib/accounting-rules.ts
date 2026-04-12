@@ -282,9 +282,11 @@ export function calculateNewBalance(
         : currentBalance - amount;
     
     case 'LIABILITY':
-      // Liability accounts: Debit increases, Credit decreases
-      return rule.normalBalance === 'DEBIT' 
-        ? currentBalance + amount 
+      // Liability accounts (Customer Deposits): Credit increases, Debit decreases
+      // When customer deposits money, bank's liability increases
+      // When customer withdraws money, bank's liability decreases
+      return rule.normalBalance === 'CREDIT'
+        ? currentBalance + amount
         : currentBalance - amount;
     
     case 'REVENUE':
@@ -351,11 +353,10 @@ export function getTransactionTypesByCategory(category: string): TransactionType
  * Maps old types to new standardized types
  */
 export const LEGACY_TYPE_MAPPING: Record<string, TransactionType> = {
-  'deposit': TransactionType.CUSTOMER_DEPOSIT,
-  'withdrawal': TransactionType.CUSTOMER_WITHDRAWAL,
-  'interest': TransactionType.INTEREST_INCOME,
-  'loan': TransactionType.LOAN_DISBURSEMENT,
-  'emi': TransactionType.EMI_PAYMENT_RECEIVED,
+  'DEPOSIT': TransactionType.CUSTOMER_DEPOSIT,
+  'WITHDRAWAL': TransactionType.CUSTOMER_WITHDRAWAL,
+  'INTEREST': TransactionType.INTEREST_INCOME,
+  'LOAN': TransactionType.LOAN_DISBURSEMENT,
   'EMI': TransactionType.EMI_PAYMENT_RECEIVED,
   'CREDIT': TransactionType.ADJUSTMENT_CREDIT,
   'DEBIT': TransactionType.ADJUSTMENT_DEBIT,
@@ -365,7 +366,22 @@ export const LEGACY_TYPE_MAPPING: Record<string, TransactionType> = {
 
 /**
  * Converts legacy transaction types to standardized types
+ * Case-insensitive matching for legacy types
  */
 export function normalizeTransactionType(type: string): TransactionType {
-  return LEGACY_TYPE_MAPPING[type.toUpperCase()] || type as TransactionType;
+  if (!type) return type as TransactionType;
+  const upperType = type.toUpperCase();
+  
+  // Try legacy mapping first (for frontend inputs like "deposit", "withdrawal")
+  if (LEGACY_TYPE_MAPPING[upperType]) {
+    return LEGACY_TYPE_MAPPING[upperType];
+  }
+  
+  // Check if it's already a valid standard type
+  if (ACCOUNTING_RULES[upperType as TransactionType]) {
+    return upperType as TransactionType;
+  }
+  
+  // Return as-is if no mapping found
+  return type as TransactionType;
 }

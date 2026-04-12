@@ -70,9 +70,9 @@ export async function GET(request: NextRequest) {
     }
 
     if (accountType) {
-      // Account types in database are stored in lowercase, so convert filter to lowercase
-      where.accountType = accountType.toLowerCase()
-      console.log(`🔍 Filtering accounts by type: ${accountType} -> ${accountType.toLowerCase()}`)
+      // Use case-insensitive matching for account type
+      where.accountType = { equals: accountType, mode: 'insensitive' }
+      console.log(`🔍 Filtering accounts by type: ${accountType}`)
     }
 
     if (customerId) {
@@ -156,13 +156,13 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const { customerId, accountType, principalAmount, interestRate, tenure } = body
+  const { customerId, accountType, principalAmount, interestRate, tenure, accountNumber: manualAccountNumber } = body
 
   // Validate required fields
-  if (!customerId || !accountType || !principalAmount) {
-    console.log("❌ Missing account fields:", { customerId: !!customerId, accountType: !!accountType, principalAmount: !!principalAmount })
+  if (!customerId || !accountType || !principalAmount || !manualAccountNumber) {
+    console.log("❌ Missing account fields:", { customerId: !!customerId, accountType: !!accountType, principalAmount: !!principalAmount, accountNumber: !!manualAccountNumber })
     return NextResponse.json(
-      { error: "Customer ID, account type, and principal amount are required" },
+      { error: "Customer ID, account type, principal amount, and account number are required" },
       { status: 400 }
     )
   }
@@ -205,8 +205,19 @@ export async function POST(request: NextRequest) {
 
     console.log("✅ Customer found:", customer.name)
 
-    // Generate account number using static method
-    const accountNumber = await AccountNumberGenerator.generateAccountNumber(accountType.toUpperCase())
+    // Use manual account number from form
+    const accountNumber = manualAccountNumber.trim()
+
+    // Check if account number already exists
+    const existingAccount = await prisma.account.findUnique({
+      where: { accountNumber }
+    })
+    if (existingAccount) {
+      return NextResponse.json(
+        { error: "Account number already exists" },
+        { status: 400 }
+      )
+    }
 
     // Calculate dates
     const startDate = new Date()

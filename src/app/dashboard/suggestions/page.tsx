@@ -193,38 +193,6 @@ function SuggestionsContent() {
         }
       />
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-        <StatCard
-          title="Pending Review"
-          value={<span className="text-xl sm:text-2xl">{stats.pending}</span>}
-          icon={<ClockIcon />}
-          trend={{ value: "Needs Action", isPositive: false }}
-          className="p-4 sm:p-6 border-amber-500"
-        />
-        <StatCard
-          title="Approved"
-          value={<span className="text-xl sm:text-2xl">{stats.approved}</span>}
-          icon={<CheckCircleIcon />}
-          trend={{ value: "Processed", isPositive: true }}
-          className="p-4 sm:p-6 border-emerald-500"
-        />
-        <StatCard
-          title="Rejected"
-          value={<span className="text-xl sm:text-2xl">{stats.rejected}</span>}
-          icon={<XCircleIcon />}
-          trend={{ value: "Declined", isPositive: false }}
-          className="p-4 sm:p-6 border-rose-500"
-        />
-        <StatCard
-          title="Total Suggestions"
-          value={<span className="text-xl sm:text-2xl">{stats.total}</span>}
-          icon={<CurrencyDollarIcon />}
-          trend={{ value: "All Time", isPositive: true }}
-          className="p-4 sm:p-6 border-slate-200"
-        />
-      </div>
-
       {/* Suggestions Table */}
       <Card className="border-slate-200 shadow-sm overflow-hidden rounded-3xl">
         <CardHeader className="bg-slate-50/50 border-b border-slate-100 py-4 px-4 sm:py-5 sm:px-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { fetchWithAuth } from "@/lib/api"
+import { formatShortDate } from "@/lib/utils"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -84,11 +85,10 @@ export default function RDPage() {
           }
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           <StatCard title="Total RD Accounts" value={filtered.length} subtitle="All accounts" icon={<ArrowPathIcon />} iconVariant="primary" borderVariant="primary" />
           <StatCard title="Active RDs" value={filtered.filter(a => a.status?.toLowerCase() === 'active').length} subtitle="Currently active" icon={<CheckCircleIcon />} iconVariant="success" borderVariant="success" />
           <StatCard title="Monthly Installments" value={`₹${totalMonthly.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`} subtitle="Combined monthly" icon={<CurrencyDollarIcon />} iconVariant="teal" borderVariant="teal" />
-          <StatCard title="Avg Interest Rate" value={`${avgRate.toFixed(1)}%`} subtitle="Across all RDs" icon={<ChartBarIcon />} iconVariant="warning" borderVariant="warning" />
         </div>
 
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
@@ -129,6 +129,7 @@ export default function RDPage() {
                     <TableHead className="px-4 py-3 text-xs font-semibold text-slate-600 min-w-[130px] text-right">Monthly Install.</TableHead>
                     <TableHead className="px-4 py-3 text-xs font-semibold text-slate-600 min-w-[80px] text-right">Rate</TableHead>
                     <TableHead className="px-4 py-3 text-xs font-semibold text-slate-600 min-w-[80px]">Tenure</TableHead>
+                    <TableHead className="px-4 py-3 text-xs font-semibold text-slate-600 min-w-[130px] text-right">Maturity Amt</TableHead>
                     <TableHead className="px-4 py-3 text-xs font-semibold text-slate-600 min-w-[110px]">Maturity</TableHead>
                     <TableHead className="px-4 py-3 text-xs font-semibold text-slate-600 min-w-[90px]">Status</TableHead>
                     <TableHead className="px-4 py-3 w-14 text-right text-xs font-semibold text-slate-600">Actions</TableHead>
@@ -145,7 +146,7 @@ export default function RDPage() {
                           <div className="font-mono text-sm font-semibold text-slate-800">{account.accountNumber}</div>
                           <div className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
                             <CalendarIcon className="h-3 w-3" />
-                            {new Date(account.startDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: '2-digit' })}
+                            {formatShortDate(account.startDate)}
                           </div>
                         </TableCell>
                         <TableCell className="px-4 py-3.5">
@@ -161,9 +162,21 @@ export default function RDPage() {
                         <TableCell className="px-4 py-3.5">
                           <span className="text-sm text-slate-600 tabular-nums">{account.tenure}m</span>
                         </TableCell>
+                        <TableCell className="px-4 py-3.5 text-right">
+                          <span className="text-sm font-bold text-slate-900 tabular-nums">
+                            ₹{(() => {
+                              const monthly = account.tenure > 0 ? account.principalAmount / account.tenure : 0
+                              const totalPrincipal = monthly * account.tenure
+                              const r = account.interestRate / 100
+                              const n = account.tenure
+                              const rdInterest = monthly * (n * (n + 1) / 2) * (r / 12)
+                              return Math.round(totalPrincipal + rdInterest).toLocaleString('en-IN')
+                            })()}
+                          </span>
+                        </TableCell>
                         <TableCell className="px-4 py-3.5">
                           <span className="text-xs text-slate-500 tabular-nums">
-                            {account.maturityDate ? new Date(account.maturityDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: '2-digit' }) : '—'}
+                            {account.maturityDate ? formatShortDate(account.maturityDate) : '—'}
                           </span>
                         </TableCell>
                         <TableCell className="px-4 py-3.5">

@@ -21,8 +21,11 @@ export class AccountNumberGenerator {
     try {
       // Get template (specific or default)
       const template = await this.getTemplate(accountType, templateId)
+      
       if (!template) {
-        throw new Error('No numbering template found')
+        // Fallback: Generate account number without template
+        console.log(`⚠️ No numbering template found for ${accountType}, using fallback generation`)
+        return this.generateFallbackAccountNumber(accountType)
       }
 
       // Prepare variables
@@ -39,6 +42,23 @@ export class AccountNumberGenerator {
       console.error('Failed to generate account number:', error)
       throw error
     }
+  }
+
+  /**
+   * Generate fallback account number when no template exists
+   */
+  private static async generateFallbackAccountNumber(accountType: string): Promise<string> {
+    const prefix = accountType.toUpperCase()
+    const year = new Date().getFullYear().toString().slice(-2)
+    const month = (new Date().getMonth() + 1).toString().padStart(2, '0')
+    
+    // Get count of existing accounts for this type to generate sequence
+    const count = await prisma.account.count({
+      where: { accountType: accountType.toUpperCase() }
+    })
+    const sequence = (count + 1).toString().padStart(6, '0')
+    
+    return `${prefix}${year}${month}${sequence}`
   }
 
   /**

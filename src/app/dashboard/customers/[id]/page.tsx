@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { useAuth } from "@/contexts/auth-context"
 import { fetchWithAuth } from "@/lib/api"
+import { isCreditTransaction, normalizeTransactionType } from "@/lib/accounting-rules"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -221,11 +222,14 @@ export default function CustomerView() {
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    })
+    if (!dateString) return '—'
+    const date = new Date(dateString)
+    // Use fixed format to avoid hydration mismatch between server/client locales
+    const day = date.getDate().toString().padStart(2, '0')
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const month = months[date.getMonth()]
+    const year = date.getFullYear()
+    return `${day} ${month} ${year}`
   }
 
   const getAccountTypeBadgeClass = (type: string) => {
@@ -479,7 +483,8 @@ export default function CustomerView() {
                   <TableHead className="text-[10px] font-black uppercase text-slate-400 h-10 tracking-widest">Type</TableHead>
                   <TableHead className="text-[10px] font-black uppercase text-slate-400 h-10 tracking-widest">Account & Ref</TableHead>
                   <TableHead className="text-[10px] font-black uppercase text-slate-400 h-10 tracking-widest">Description</TableHead>
-                  <TableHead className="text-[10px] font-black uppercase text-slate-400 h-10 text-right pr-6 tracking-widest">Amount</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase text-slate-400 h-10 text-right tracking-widest">Amount</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase text-slate-400 h-10 text-right pr-6 tracking-widest">Balance</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -490,7 +495,18 @@ export default function CustomerView() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  allTransactions.map((tx) => (
+                  (() => {
+                    // Sort transactions chronologically (oldest first) for proper running balance
+                    const sortedTx = [...allTransactions].sort((a, b) => 
+                      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+                    )
+                    // Calculate running balance for each transaction
+                    let runningBal = 0
+                    const txWithBalance = sortedTx.map(tx => {
+                      runningBal += isCreditTransaction(normalizeTransactionType(tx.type)) ? tx.amount : -tx.amount
+                      return { ...tx, displayBalance: runningBal }
+                    })
+                    return txWithBalance.map((tx) => (
                     <TableRow key={tx.id} className="hover:bg-slate-50/50 transition-colors group">
                       <TableCell className="px-6 py-4">
                         <div className="text-xs font-bold text-slate-900">{formatDate(tx.createdAt)}</div>
@@ -498,9 +514,9 @@ export default function CustomerView() {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <div className={`h-6 w-6 rounded-lg flex items-center justify-center ${
-                            tx.type === 'deposit' || tx.type === 'interest' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
+                            isCreditTransaction(normalizeTransactionType(tx.type)) ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
                           }`}>
-                            {['deposit', 'interest'].includes(tx.type) ? <ArrowDownIcon className="h-3 w-3" /> : <ArrowUpIcon className="h-3 w-3" />}
+                            {isCreditTransaction(normalizeTransactionType(tx.type)) ? <ArrowDownIcon className="h-3 w-3" /> : <ArrowUpIcon className="h-3 w-3" />}
                           </div>
                           <span className="text-xs font-bold text-slate-700 capitalize">{tx.type}</span>
                         </div>
@@ -512,15 +528,22 @@ export default function CustomerView() {
                       <TableCell>
                         <div className="text-xs text-slate-600 max-w-[200px] truncate">{tx.description || 'System transaction'}</div>
                       </TableCell>
-                      <TableCell className="text-right pr-6">
+                      <TableCell className="text-right">
                         <div className={`text-sm font-black tracking-tight ${
-                          ['deposit', 'interest'].includes(tx.type) ? 'text-emerald-600' : 'text-rose-600'
+                          isCreditTransaction(normalizeTransactionType(tx.type)) ? 'text-emerald-600' : 'text-rose-600'
                         }`}>
-                          {['deposit', 'interest'].includes(tx.type) ? '+' : '-'}{formatCurrency(tx.amount)}
+                          {isCreditTransaction(normalizeTransactionType(tx.type)) ? '+' : '-'}{formatCurrency(tx.amount)}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right pr-6">
+                        <div className={`text-sm font-bold tabular-nums ${
+                          tx.displayBalance >= 0 ? 'text-slate-800' : 'text-rose-600'
+                        }`}>
+                          {formatCurrency(tx.displayBalance)}
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))
+                  ))})()
                 )}
               </TableBody>
             </Table>

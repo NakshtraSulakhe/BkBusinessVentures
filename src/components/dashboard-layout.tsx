@@ -77,7 +77,6 @@ const navigation = [
   { name: "Customer Master", href: "/dashboard/customers", icon: UsersIcon, section: "main", indent: true },
   { name: "Account Master", href: "/dashboard/accounts", icon: BuildingLibraryIcon, section: "main", indent: true },
   { name: "Ledger", href: "/dashboard/ledger", icon: DocumentTextIcon, section: "main", indent: true },
-  { name: "Suggestions", href: "/dashboard/suggestions", icon: ClipboardDocumentListIcon, section: "main", indent: true },
   { name: "Users", href: "/dashboard/users", icon: UsersIcon, section: "main", indent: true },
   { name: "Customer Ledger View", href: "/dashboard/customers/ledger", icon: BookOpenIcon, section: "main", indent: true },
 
@@ -92,11 +91,6 @@ const navigation = [
   { name: "Create Loan", href: "/dashboard/loans/create", icon: DocumentTextIcon, section: "loans", indent: true },
   { name: "EMI Entry", href: "/dashboard/loans/emi", icon: ReceiptPercentIcon, section: "loans", indent: true },
   { name: "Loan Ledger", href: "/dashboard/loans/ledger", icon: BookOpenIcon, section: "loans", indent: true },
-
-  { name: "Suggestions Queue", href: "/dashboard/operations/suggestions", icon: QueueListIcon, section: "operations" },
-  { name: "Generate Suggestions", href: "/dashboard/operations/generate-suggestions", icon: ArrowDownTrayIcon, section: "operations", indent: true },
-  { name: "Pending Approvals", href: "/dashboard/operations/pending", icon: ClipboardDocumentListIcon, section: "operations", indent: true },
-  { name: "Rejected Log", href: "/dashboard/operations/rejected", icon: XMarkIcon, section: "operations", indent: true },
 
   { name: "Reports", href: "/dashboard/reports", icon: DocumentIcon, section: "reports" },
   { name: "Customer Report", href: "/dashboard/reports/customers", icon: UsersIcon, section: "reports", indent: true },
@@ -147,10 +141,6 @@ const pageTitleMap: Record<string, string> = {
   "/dashboard/reports/loans": "Loan Reports",
   "/dashboard/reports/outstanding": "Outstanding / EMI Pending",
   "/dashboard/reports": "Reports",
-  "/dashboard/operations/suggestions": "Suggestions Queue",
-  "/dashboard/operations/generate-suggestions": "Generate Suggestions",
-  "/dashboard/operations/pending": "Pending Approvals",
-  "/dashboard/operations/rejected": "Rejected Log",
   "/dashboard/settings": "Settings",
   "/dashboard/users": "Users",
   "/dashboard": "Dashboard",
@@ -327,16 +317,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </SidebarGroupLabel>
             <SidebarGroupContent>
               {renderItems(navigation.filter(i => i.section === "loans"))}
-            </SidebarGroupContent>
-          </SidebarGroup>
-
-          {/* OPERATIONS */}
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold px-3 py-2">
-              Operations
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              {renderItems(navigation.filter(i => i.section === "operations"))}
             </SidebarGroupContent>
           </SidebarGroup>
 

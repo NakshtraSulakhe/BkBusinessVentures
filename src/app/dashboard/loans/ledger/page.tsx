@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { fetchWithAuth } from "@/lib/api"
+import { formatDateSafe } from "@/lib/utils"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -257,7 +258,7 @@ export default function LoanLedgerPage() {
                       <TableRow key={tx.id} className="hover:bg-slate-50/50 transition-colors border-b border-slate-50">
                         <TableCell className="px-8 py-4">
                           <div className="text-xs font-bold text-slate-900">
-                            {new Date(tx.transactionDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            {formatDateSafe(tx.transactionDate)}
                           </div>
                           <div className="text-[10px] font-medium text-slate-400 tracking-tighter mt-0.5 uppercase">
                             Cycle Marker

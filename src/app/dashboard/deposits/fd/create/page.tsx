@@ -63,6 +63,7 @@ function CreateFDComponent() {
   
   const [formData, setFormData] = useState({
     customerId: searchParams.get('customerId') || '',
+    accountNumber: '',
     principalAmount: '',
     interestRate: '',
     tenure: '',
@@ -111,8 +112,12 @@ function CreateFDComponent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.customerId || !formData.principalAmount) {
-      setErrors({ customerId: !formData.customerId ? 'Required' : '', amount: 'Required' })
+    if (!formData.customerId || !formData.principalAmount || !formData.accountNumber) {
+      setErrors({ 
+        customerId: !formData.customerId ? 'Required' : '', 
+        accountNumber: !formData.accountNumber ? 'Required' : '',
+        amount: 'Required' 
+      })
       return
     }
 
@@ -183,7 +188,7 @@ function CreateFDComponent() {
             <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-4">
               <CardTitle className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
                 <UsersIcon className="h-4 w-4 mr-2 text-primary" />
-                1. Client Linkage
+                1. Select Account Holder
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
@@ -222,37 +227,48 @@ function CreateFDComponent() {
             <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-4">
               <CardTitle className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
                 <CurrencyDollarIcon className="h-4 w-4 mr-2 text-primary" />
-                2. Instrument Matrix
+                2. Account Details
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Initial Principal (₹)</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">FD Number</label>
+                  <div className="relative">
+                    <BuildingLibraryIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Input type="text" placeholder="e.g., FD260400001" value={formData.accountNumber} onChange={e => setFormData(p => ({ ...p, accountNumber: e.target.value }))} className="pl-10 h-11 border-slate-200 bg-slate-50/30 font-black tracking-tight" />
+                  </div>
+                  {errors.accountNumber && <p className="text-[10px] text-rose-500 font-bold ml-1">Account number is mandatory</p>}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Deposit Amount</label>
                   <div className="relative">
                     <BanknotesIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <Input type="number" placeholder="0.00" value={formData.principalAmount} onChange={e => setFormData(p => ({ ...p, principalAmount: e.target.value }))} className="pl-10 h-11 border-slate-200 bg-slate-50/30 font-black tracking-tight" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Commencement Date</label>
-                  <div className="relative">
-                    <CalendarIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <Input type="date" value={formData.startDate} onChange={e => setFormData(p => ({ ...p, startDate: e.target.value }))} className="pl-10 h-11 border-slate-200 bg-slate-50/30 font-medium" />
                   </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Annual Yield (%)</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Start Date</label>
+                  <div className="relative">
+                    <CalendarIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Input type="date" value={formData.startDate} onChange={e => setFormData(p => ({ ...p, startDate: e.target.value }))} className="pl-10 h-11 border-slate-200 bg-slate-50/30 font-medium" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Interest Rate (%)</label>
                   <div className="relative">
                     <ReceiptPercentIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <Input type="number" placeholder="0.00" value={formData.interestRate} onChange={e => setFormData(p => ({ ...p, interestRate: e.target.value }))} className="pl-10 h-11 border-slate-200 bg-slate-50/30 font-black tracking-tight" />
                   </div>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Lock-in Period (Months)</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Duration (Months)</label>
                   <div className="relative">
                     <ClockIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <Input type="number" placeholder="0" value={formData.tenure} onChange={e => setFormData(p => ({ ...p, tenure: e.target.value }))} className="pl-10 h-11 border-slate-200 bg-slate-50/30 font-black tracking-tight" />
@@ -267,37 +283,37 @@ function CreateFDComponent() {
             <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-4">
               <CardTitle className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
                 <Cog6ToothIcon className="h-4 w-4 mr-2 text-primary" />
-                3. Operational Protocol
+                3. FD Settings
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Interest Posting</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Interest Credit Method</label>
                   <Select value={formData.interestMode} onValueChange={v => setFormData(p => ({ ...p, interestMode: v as any }))}>
                     <SelectTrigger className="h-11 border-slate-200 bg-slate-50/30">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="monthly">Monthly Accrual</SelectItem>
-                      <SelectItem value="maturity-only">Maturity Finalization</SelectItem>
+                      <SelectItem value="monthly">Monthly Interest</SelectItem>
+                      <SelectItem value="maturity-only">At Maturity</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Payout Protocol</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Payout Method</label>
                   <Select value={formData.payoutMode} onValueChange={v => setFormData(p => ({ ...p, payoutMode: v as any }))}>
                     <SelectTrigger className="h-11 border-slate-200 bg-slate-50/30">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="reinvest">Auto Reinvest (Cumulative)</SelectItem>
-                      <SelectItem value="paid-out">Liquid Payout (Non-cumulative)</SelectItem>
+                      <SelectItem value="reinvest">Reinvest Interest</SelectItem>
+                      <SelectItem value="paid-out">Payout to Account</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Rounding Logic</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Rounding Method</label>
                   <Select value={formData.roundingMode} onValueChange={v => setFormData(p => ({ ...p, roundingMode: v as any }))}>
                     <SelectTrigger className="h-11 border-slate-200 bg-slate-50/30">
                       <SelectValue />
@@ -317,7 +333,7 @@ function CreateFDComponent() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="0">Zero Decimal (INR)</SelectItem>
-                      <SelectItem value="2">Two Decimals (Paise)</SelectItem>
+                      <SelectItem value="2">2 Decimal Rounding</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -333,40 +349,43 @@ function CreateFDComponent() {
               <CircleStackIcon className="h-24 w-24 text-white" />
             </div>
             <CardHeader className="px-8 pt-8 pb-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Yield Forecasting</p>
-              <CardTitle className="text-white tracking-tight text-xl mt-1">Growth Preview</CardTitle>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Expected Growth</p>
+              <CardTitle className="text-white tracking-tight text-xl mt-1">Returns Preview</CardTitle>
             </CardHeader>
             <CardContent className="px-8 pb-8 space-y-6">
               <div className="space-y-1">
-                <p className="text-[10px] font-bold text-slate-500 uppercase">Estimated Lifecycle Interest</p>
+                <p className="text-[10px] font-bold text-slate-500 uppercase">Total at Maturity</p>
                 <p className="text-3xl font-black text-white tracking-tighter">
-                  {formatCurrency(calculateYield())}
+                  {formatCurrency((parseFloat(formData.principalAmount) || 0) + calculateYield())}
+                </p>
+                <p className="text-xs text-slate-400 mt-1">
+                  Principal {formatCurrency(parseFloat(formData.principalAmount) || 0)} + Interest {formatCurrency(calculateYield())}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Maturation Date</p>
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">End Date</p>
                   <p className="text-xs font-bold text-slate-300">{calculateMaturityDate() || "TBD"}</p>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Total Value</p>
-                  <p className="text-xs font-bold text-slate-300">{formatCurrency((parseFloat(formData.principalAmount) || 0) + calculateYield())}</p>
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Rate of Interest</p>
+                  <p className="text-xs font-bold text-slate-300">{formData.interestRate || 0}% per year</p>
                 </div>
               </div>
 
               <div className="pt-6 border-t border-white/10">
                 <div className="flex items-center gap-2 mb-4">
                   <ShieldCheckIcon className="h-4 w-4 text-emerald-400" />
-                  <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">KYC DEPTH CHECK: PASS</span>
+                  {/* <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">KYC DEPTH CHECK: PASS</span> */}
                 </div>
                 <Button type="submit" disabled={loading} className="w-full finance-gradient-primary text-white font-black uppercase tracking-widest h-14 rounded-2xl shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">
                   {loading ? (
                     <div className="flex items-center gap-2">
                     <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                    Provisioning...
+                    Creating FD...
                     </div>
-                  ) : "Provision FD Instrument"}
+                  ) : "Open FD"}
                 </Button>
               </div>
             </CardContent>
@@ -375,7 +394,7 @@ function CreateFDComponent() {
           <div className="bg-white border border-slate-200 rounded-2xl p-6">
             <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-4 flex items-center">
               <InformationCircleIcon className="h-4 w-4 mr-2 text-primary" />
-              Policy Quick-Ref
+              Key Points
             </h4>
             <div className="space-y-3">
               {[

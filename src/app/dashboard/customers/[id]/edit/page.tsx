@@ -135,9 +135,7 @@ export default function EditCustomer() {
     if (!formData.name.trim()) newErrors.name = 'Name is required'
     if (!formData.email.trim()) newErrors.email = 'Email is required'
     if (!formData.phone.trim()) newErrors.phone = 'Phone is required'
-    if (!formData.address.trim()) newErrors.address = 'Address is required'
-    if (!formData.city.trim()) newErrors.city = 'City is required'
-    if (!formData.zipCode.trim()) newErrors.zipCode = 'ZIP code is required'
+    // Address fields are optional
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }

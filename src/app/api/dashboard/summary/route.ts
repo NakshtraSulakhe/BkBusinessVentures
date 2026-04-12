@@ -84,14 +84,29 @@ export async function GET() {
         overdueEMI,
         dueTodayEMI
       },
-      recentTransactions: recentTransactions.map(t => ({
-        id: t.id,
-        item: t.description || t.type,
-        amount: t.amount || 0,
-        type: t.type === 'INTEREST' || t.type === 'INSTALLMENT' ? 'credit' : 'debit',
-        date: new Date(t.transactionDate).toLocaleDateString(),
-        customer: t.account.customer.name
-      }))
+      recentTransactions: recentTransactions.map(t => {
+        // Determine if transaction is credit (money coming in) or debit (money going out)
+        const typeStr = (t.type || '').toUpperCase()
+        const descStr = (t.description || '').toUpperCase()
+        
+        // Credit = money coming IN to the business (deposits, payments received)
+        const creditTypes = ['INTEREST', 'INSTALLMENT', 'DEPOSIT', 'EMI', 'PAYMENT', 'LOAN_RECEIPT', 'EMI_PAYMENT', 'REPAYMENT']
+        const isCredit = creditTypes.some(ct => typeStr.includes(ct) || descStr.includes(ct))
+        
+        // Format date consistently to avoid hydration issues
+        const d = new Date(t.transactionDate)
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        const formattedDate = `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`
+        
+        return {
+          id: t.id,
+          item: t.description || t.type,
+          amount: t.amount || 0,
+          type: isCredit ? 'credit' : 'debit',
+          date: formattedDate,
+          customer: t.account.customer.name
+        }
+      })
     })
   } catch (error) {
     console.error('Dashboard Stats Error:', error)

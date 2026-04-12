@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { fetchWithAuth } from "@/lib/api"
+import { formatShortDate } from "@/lib/utils"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -93,7 +94,6 @@ export default function LoansPage() {
           <StatCard title="Total Loans" value={filtered.length} subtitle="All accounts" icon={<CreditCard />} iconVariant="primary" borderVariant="primary" className="p-4 sm:p-6" />
           <StatCard title="Active Loans" value={filtered.filter(a => a.status?.toLowerCase() === 'active').length} subtitle="Currently active" icon={<CheckCircle2 />} iconVariant="success" borderVariant="success" className="p-4 sm:p-6" />
           <StatCard title="Total Principal" value={`₹${(totalPrincipal / 100000).toFixed(1)}L`} subtitle="Outstanding exposure" icon={<DollarSign />} iconVariant="danger" borderVariant="danger" className="p-4 sm:p-6" />
-          <StatCard title="Avg Interest Rate" value={`${avgRate.toFixed(1)}%`} subtitle="Across all loans" icon={<BarChart3 />} iconVariant="warning" borderVariant="warning" className="p-4 sm:p-6" />
         </div>
 
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
@@ -150,7 +150,7 @@ export default function LoansPage() {
                           <div className="font-mono text-sm font-semibold text-slate-800">{account.accountNumber}</div>
                           <div className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
                             <Calendar className="h-3 w-3" />
-                            {new Date(account.startDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: '2-digit' })}
+                            {formatShortDate(account.startDate)}
                           </div>
                         </TableCell>
                         <TableCell className="px-4 py-3.5">

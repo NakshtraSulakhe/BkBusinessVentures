@@ -38,9 +38,9 @@ export async function GET(
     const accountSummary = {
       totalAccounts: accounts.length,
       activeAccounts: accounts.filter(acc => (acc as any).status === 'ACTIVE').length,
-      fdAccounts: accounts.filter(acc => acc.accountType === 'FD'),
-      rdAccounts: accounts.filter(acc => acc.accountType === 'RD'),
-      loanAccounts: accounts.filter(acc => acc.accountType === 'LOAN'),
+      fdAccounts: accounts.filter(acc => acc.accountType === 'FD').length,
+      rdAccounts: accounts.filter(acc => acc.accountType === 'RD').length,
+      loanAccounts: accounts.filter(acc => acc.accountType === 'LOAN').length,
     };
 
     // Calculate financial totals

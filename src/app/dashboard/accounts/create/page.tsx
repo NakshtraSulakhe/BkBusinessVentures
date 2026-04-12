@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { fetchWithAuth } from "@/lib/api"
+import { formatDateSafe } from "@/lib/utils"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -70,7 +71,7 @@ function CreateAccountComponent() {
     principalAmount: '',
     interestRate: '',
     tenure: '',
-    startDate: new Date().toISOString().split('T')[0],
+    startDate: '',
     numberingTemplateId: '',
     interestMode: 'monthly' as 'monthly' | 'maturity-only',
     payoutMode: 'reinvest' as 'reinvest' | 'paid-out',
@@ -111,7 +112,7 @@ function CreateAccountComponent() {
     if (!formData.startDate || !formData.tenure) return ''
     const d = new Date(formData.startDate)
     d.setMonth(d.getMonth() + parseInt(formData.tenure))
-    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+    return formatDateSafe(d)
   }
 
   const calculateEMI = () => {
@@ -138,6 +139,14 @@ function CreateAccountComponent() {
     const tenure = parseInt(formData.tenure) || 0
     if (!principal || !rate || !tenure) return 0
     return principal * (rate / 100) * (tenure / 12)
+  }
+
+  const calculateMaturityAmount = () => {
+    const principal = formData.accountType === 'RD' 
+      ? (parseFloat(formData.monthlyInstallment) || 0) * (parseInt(formData.tenure) || 0)
+      : (parseFloat(formData.principalAmount) || 0)
+    const interest = calculateYield()
+    return principal + interest
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -426,10 +435,10 @@ function CreateAccountComponent() {
             <CardContent className="px-8 pb-8 space-y-6">
               <div className="space-y-1">
                 <p className="text-[10px] font-bold text-slate-500 uppercase">
-                  {formData.accountType === 'LOAN' ? "Monthly Payment" : "Total Interest Earned"}
+                  {formData.accountType === 'LOAN' ? "Monthly Payment" : "Maturity Amount"}
                 </p>
                 <p className="text-3xl font-black text-white tracking-tighter">
-                  {formData.accountType === 'LOAN' ? formatCurrency(calculateEMI()) : formatCurrency(calculateYield())}
+                  {formData.accountType === 'LOAN' ? formatCurrency(calculateEMI()) : formatCurrency(calculateMaturityAmount())}
                 </p>
               </div>
 

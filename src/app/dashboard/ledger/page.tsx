@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { fetchWithAuth } from "@/lib/api"
 import { isCreditTransaction, normalizeTransactionType } from "@/lib/accounting-rules"
+import { formatDateSafe, formatTimeSafe } from "@/lib/utils"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -160,6 +161,30 @@ function LedgerContent() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const getTransactionTypeBadge = (type: string) => {
+    const normalized = normalizeTransactionType(type)
+    const typeConfig: Record<string, { label: string; color: string }> = {
+      'CUSTOMER_DEPOSIT': { label: 'Deposit', color: 'bg-emerald-100 text-emerald-700' },
+      'CUSTOMER_WITHDRAWAL': { label: 'Withdrawal', color: 'bg-rose-100 text-rose-700' },
+      'FD_OPENING': { label: 'FD Opening', color: 'bg-blue-100 text-blue-700' },
+      'FD_CLOSURE': { label: 'FD Closure', color: 'bg-orange-100 text-orange-700' },
+      'RD_INSTALLMENT': { label: 'RD Installment', color: 'bg-indigo-100 text-indigo-700' },
+      'RD_MATURITY': { label: 'RD Maturity', color: 'bg-purple-100 text-purple-700' },
+      'LOAN_DISBURSEMENT': { label: 'Loan Disbursement', color: 'bg-amber-100 text-amber-700' },
+      'LOAN_RECEIPT': { label: 'Loan Receipt', color: 'bg-cyan-100 text-cyan-700' },
+      'EMI_PAYMENT_RECEIVED': { label: 'EMI Payment', color: 'bg-teal-100 text-teal-700' },
+      'INTEREST_CREDITED': { label: 'Interest', color: 'bg-blue-50 text-blue-600' },
+      'BANK_DEPOSIT': { label: 'Bank Deposit', color: 'bg-green-100 text-green-700' },
+      'BANK_WITHDRAWAL': { label: 'Bank Withdrawal', color: 'bg-red-100 text-red-700' },
+    }
+    const config = typeConfig[normalized] || { label: normalized.replace(/_/g, ' '), color: 'bg-slate-100 text-slate-600' }
+    return (
+      <Badge className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 border-none ${config.color}`}>
+        {config.label}
+      </Badge>
+    )
   }
 
   const exportToCSV = () => {
@@ -332,7 +357,9 @@ function LedgerContent() {
                   <SelectContent>
                     <SelectItem value="all">All Accounts</SelectItem>
                     {accounts.map(acc => (
-                      <SelectItem key={acc.id} value={acc.id}>{acc.accountNumber} • {acc.customer.name}</SelectItem>
+                      <SelectItem key={acc.id} value={acc.id}>
+                        {acc.accountNumber || 'Unknown'} • {acc.customer?.name || 'Unknown'}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -395,51 +422,74 @@ function LedgerContent() {
                     <TableRow className="border-b border-slate-100">
                       <TableHead className="px-4 sm:px-8 text-[10px] font-black uppercase text-slate-400 h-14 tracking-widest min-w-[120px]">Date & Time</TableHead>
                       <TableHead className="text-[10px] font-black uppercase text-slate-400 h-14 tracking-widest min-w-[160px] sm:min-w-[200px]">Account / Customer</TableHead>
-                      <TableHead className="text-[10px] font-black uppercase text-slate-400 h-14 tracking-widest text-center hide-on-mobile">Type</TableHead>
-                      <TableHead className="text-[10px] font-black uppercase text-slate-400 h-14 tracking-widest text-right min-w-[100px]">Amount</TableHead>
+                      <TableHead className="text-[10px] font-black uppercase text-slate-400 h-14 tracking-widest text-center hide-on-mobile">Transaction Type</TableHead>
+                      <TableHead className="text-[10px] font-black uppercase text-slate-400 h-14 tracking-widest text-right min-w-[100px]">Debit</TableHead>
+                      <TableHead className="text-[10px] font-black uppercase text-slate-400 h-14 tracking-widest text-right min-w-[100px]">Credit</TableHead>
                       <TableHead className="text-[10px] font-black uppercase text-slate-400 h-14 tracking-widest text-right hide-on-tablet">Balance</TableHead>
                       <TableHead className="px-4 sm:px-8 text-[10px] font-black uppercase text-slate-400 h-14 tracking-widest hide-on-mobile">Description</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {transactions.map((tx) => {
-                      const isInflow = isCreditTransaction(tx.type)
-                      return (
-                        <TableRow key={tx.id} className="hover:bg-slate-50/50 transition-colors border-b border-slate-50 group">
-                          <TableCell className="px-4 sm:px-8 py-3 sm:py-5">
-                            <div className="text-xs font-bold text-slate-900 tracking-tight">
-                              {new Date(tx.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                            </div>
-                            <div className="text-[9px] font-black text-slate-400 tracking-widest mt-0.5 uppercase">
-                              {new Date(tx.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-xs font-bold text-slate-900">{tx.account.customer.name}</div>
-                            <div className="text-[10px] font-black text-primary uppercase tracking-widest mt-0.5 font-mono">#{tx.account.accountNumber}</div>
-                          </TableCell>
-                          <TableCell className="text-center hide-on-mobile">
-                            <Badge className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 border-none ${isInflow ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
-                              }`}>
-                              {tx.type}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className={`text-xs font-black tracking-tighter ${isInflow ? 'text-emerald-600' : 'text-rose-600'}`}>
-                              {isInflow ? '+' : '-'}{formatCurrency(tx.amount)}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right text-xs font-bold text-slate-900 tabular-nums hide-on-tablet">
-                            {formatCurrency(tx.balance || 0)}
-                          </TableCell>
-                          <TableCell className="px-4 sm:px-8 max-w-[200px] hide-on-mobile">
-                            <div className="text-[11px] text-slate-500 leading-relaxed truncate group-hover:whitespace-normal transition-all">
-                              {tx.description || tx.reference || 'System Generated'}
-                            </div>
-                          </TableCell>
-                        </TableRow>
+                    {(() => {
+                      // Sort transactions chronologically (oldest first) for proper running balance
+                      const sortedTx = [...transactions].sort((a, b) => 
+                        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
                       )
-                    })}
+                      // Calculate running balance for each transaction
+                      let runningBal = 0
+                      const txWithBalance = sortedTx.map(tx => {
+                        runningBal += isCreditTransaction(tx.type) ? tx.amount : -tx.amount
+                        return { ...tx, displayBalance: runningBal }
+                      })
+                      return txWithBalance.map((tx) => {
+                        const isInflow = isCreditTransaction(tx.type)
+                        return (
+                          <TableRow key={tx.id} className="hover:bg-slate-50/50 transition-colors border-b border-slate-50 group">
+                            <TableCell className="px-4 sm:px-8 py-3 sm:py-5">
+                              <div className="text-xs font-bold text-slate-900 tracking-tight">
+                                {formatDateSafe(tx.createdAt)}
+                              </div>
+                              <div className="text-[9px] font-black text-slate-400 tracking-widest mt-0.5 uppercase">
+                                {formatTimeSafe(tx.createdAt)}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-xs font-bold text-slate-900">{tx.account.customer.name}</div>
+                              <div className="text-[10px] font-black text-primary uppercase tracking-widest mt-0.5 font-mono">#{tx.account.accountNumber}</div>
+                            </TableCell>
+                            <TableCell className="text-center hide-on-mobile">
+                              {getTransactionTypeBadge(tx.type)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {!isInflow ? (
+                                <div className="text-xs font-black tracking-tighter text-rose-600">
+                                  {formatCurrency(tx.amount)}
+                                </div>
+                              ) : (
+                                <div className="text-xs text-slate-400">—</div>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {isInflow ? (
+                                <div className="text-xs font-black tracking-tighter text-emerald-600">
+                                  {formatCurrency(tx.amount)}
+                                </div>
+                              ) : (
+                                <div className="text-xs text-slate-400">—</div>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right text-xs font-bold text-slate-900 tabular-nums hide-on-tablet">
+                              {formatCurrency(tx.displayBalance)}
+                            </TableCell>
+                            <TableCell className="px-4 sm:px-8 max-w-[200px] hide-on-mobile">
+                              <div className="text-[11px] text-slate-500 leading-relaxed truncate group-hover:whitespace-normal transition-all">
+                                {tx.description || tx.reference || 'System Generated'}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })
+                    })()}
                   </TableBody>
                 </Table>
               )}
@@ -458,10 +508,10 @@ function LedgerContent() {
             </CardHeader>
             <CardContent className="p-6 space-y-4">
               {[
-                { label: 'Deposits', count: transactions.filter(t => t.type === 'deposit').length, color: 'bg-emerald-500' },
-                { label: 'Withdrawals', count: transactions.filter(t => t.type === 'withdrawal').length, color: 'bg-rose-500' },
-                { label: 'Interest', count: transactions.filter(t => t.type === 'interest').length, color: 'bg-blue-500' },
-                { label: 'Disbursements', count: transactions.filter(t => t.type === 'disbursement').length, color: 'bg-indigo-500' }
+                { label: 'Deposits', count: transactions.filter(t => isCreditTransaction(t.type)).length, color: 'bg-emerald-500' },
+                { label: 'Withdrawals', count: transactions.filter(t => !isCreditTransaction(t.type) && !t.type?.toLowerCase().includes('emi')).length, color: 'bg-rose-500' },
+                { label: 'Interest', count: transactions.filter(t => t.type?.toLowerCase().includes('interest')).length, color: 'bg-blue-500' },
+                { label: 'EMI Payments', count: transactions.filter(t => t.type?.toLowerCase().includes('emi')).length, color: 'bg-teal-500' }
               ].map((item, idx) => (
                 <div key={idx} className="space-y-1.5">
                   <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-500">
@@ -515,17 +565,29 @@ function LedgerContent() {
           </div>
 
           <div className="p-8 space-y-6 bg-white">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2 col-span-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2 sm:col-span-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Select Account</Label>
-                <Select value={newTransaction.accountId} onValueChange={v => setNewTransaction(p => ({ ...p, accountId: v }))}>
+                <Select 
+                  value={newTransaction.accountId} 
+                  onValueChange={v => setNewTransaction(p => ({ ...p, accountId: v }))}
+                >
                   <SelectTrigger className="h-11 border-slate-200 bg-slate-50/50 rounded-xl font-bold">
-                    <SelectValue placeholder="Choose Account..." />
+                    <SelectValue placeholder="Choose Account...">
+                      {newTransaction.accountId && accounts.find(a => a.id === newTransaction.accountId) 
+                        ? `${accounts.find(a => a.id === newTransaction.accountId)?.accountNumber} • ${accounts.find(a => a.id === newTransaction.accountId)?.customer?.name || 'Unknown'}`
+                        : 'Choose Account...'
+                      }
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    {accounts.map(acc => (
-                      <SelectItem key={acc.id} value={acc.id}>{acc.accountNumber} • {acc.customer.name}</SelectItem>
-                    ))}
+                    {accounts && accounts.length > 0 ? accounts.map(acc => (
+                      <SelectItem key={acc.id} value={acc.id}>
+                        {acc.accountNumber || 'Unknown'} • {acc.customer?.name || 'Unknown Customer'}
+                      </SelectItem>
+                    )) : (
+                      <SelectItem value="loading" disabled>Loading accounts...</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -554,6 +616,16 @@ function LedgerContent() {
                   value={newTransaction.amount}
                   onChange={e => setNewTransaction(p => ({ ...p, amount: e.target.value }))}
                   className="h-11 border-slate-200 bg-slate-50/50 rounded-xl font-black tracking-tight"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Date</Label>
+                <Input
+                  type="date"
+                  value={newTransaction.date}
+                  onChange={e => setNewTransaction(p => ({ ...p, date: e.target.value }))}
+                  className="h-11 border-slate-200 bg-slate-50/50 rounded-xl font-bold"
                 />
               </div>
 

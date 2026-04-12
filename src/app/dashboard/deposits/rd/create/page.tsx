@@ -64,6 +64,7 @@ function CreateRDComponent() {
   
   const [formData, setFormData] = useState({
     customerId: searchParams.get('customerId') || '',
+    accountNumber: '',
     monthlyInstallment: '',
     interestRate: '',
     tenure: '',
@@ -121,8 +122,12 @@ function CreateRDComponent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.customerId || !formData.monthlyInstallment) {
-      setErrors({ customerId: !formData.customerId ? 'Required' : '', amount: 'Required' })
+    if (!formData.customerId || !formData.monthlyInstallment || !formData.accountNumber) {
+      setErrors({ 
+        customerId: !formData.customerId ? 'Required' : '', 
+        accountNumber: !formData.accountNumber ? 'Required' : '',
+        amount: 'Required' 
+      })
       return
     }
 
@@ -193,7 +198,7 @@ function CreateRDComponent() {
             <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-4">
               <CardTitle className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
                 <UsersIcon className="h-4 w-4 mr-2 text-primary" />
-                1. Client Linkage
+                1. Select Account Holder
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
@@ -232,20 +237,31 @@ function CreateRDComponent() {
             <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-4">
               <CardTitle className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
                 <CurrencyDollarIcon className="h-4 w-4 mr-2 text-primary" />
-                2. Instrument Matrix
+                2. RD Details
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Monthly Installment (₹)</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Account ID</label>
+                  <div className="relative">
+                    <BuildingLibraryIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Input type="text" placeholder="e.g., RD260400001" value={formData.accountNumber} onChange={e => setFormData(p => ({ ...p, accountNumber: e.target.value }))} className="pl-10 h-11 border-slate-200 bg-slate-50/30 font-black tracking-tight" />
+                  </div>
+                  {errors.accountNumber && <p className="text-[10px] text-rose-500 font-bold ml-1">Account number is mandatory</p>}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Monthly Amount</label>
                   <div className="relative">
                     <ArrowPathIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <Input type="number" placeholder="0.00" value={formData.monthlyInstallment} onChange={e => setFormData(p => ({ ...p, monthlyInstallment: e.target.value }))} className="pl-10 h-11 border-slate-200 bg-slate-50/30 font-black tracking-tight" />
                   </div>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Commencement Date</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Start Date</label>
                   <div className="relative">
                     <CalendarIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <Input type="date" value={formData.startDate} onChange={e => setFormData(p => ({ ...p, startDate: e.target.value }))} className="pl-10 h-11 border-slate-200 bg-slate-50/30 font-medium" />
@@ -255,14 +271,14 @@ function CreateRDComponent() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Annual Yield (%)</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Interest Rate</label>
                   <div className="relative">
                     <ReceiptPercentIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <Input type="number" placeholder="0.00" value={formData.interestRate} onChange={e => setFormData(p => ({ ...p, interestRate: e.target.value }))} className="pl-10 h-11 border-slate-200 bg-slate-50/30 font-black tracking-tight" />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Duration (Months)</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Duration</label>
                   <div className="relative">
                     <ClockIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <Input type="number" placeholder="0" value={formData.tenure} onChange={e => setFormData(p => ({ ...p, tenure: e.target.value }))} className="pl-10 h-11 border-slate-200 bg-slate-50/30 font-black tracking-tight" />
@@ -277,51 +293,51 @@ function CreateRDComponent() {
             <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-4">
               <CardTitle className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
                 <Cog6ToothIcon className="h-4 w-4 mr-2 text-primary" />
-                3. Operational Protocol
+                3. RD Settings
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Yield Calculation Engine</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Interest Calculation</label>
                   <Select value={formData.interestMethod} onValueChange={v => setFormData(p => ({ ...p, interestMethod: v as any }))}>
                     <SelectTrigger className="h-11 border-slate-200 bg-slate-50/30">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="installment_weighted">Installment Weighted</SelectItem>
+                      <SelectItem value="installment_weighted">Monthly Based</SelectItem>
                       <SelectItem value="monthly_balance">Daily Average Balance</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Balance Cut-off Rule</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Payment Date Rule</label>
                   <Select value={formData.rdBalanceDateRule} onValueChange={v => setFormData(p => ({ ...p, rdBalanceDateRule: v as any }))}>
                     <SelectTrigger className="h-11 border-slate-200 bg-slate-50/30">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="month_end">End of Calendar Month</SelectItem>
-                      <SelectItem value="fixed_day">Specific Cycle Day</SelectItem>
+                      <SelectItem value="month_end">Month End</SelectItem>
+                      <SelectItem value="fixed_day">Specific Day</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 {formData.rdBalanceDateRule === 'fixed_day' && (
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Cycle Day (1-28)</label>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Due Date (Day 1-28)</label>
                     <Input type="number" min="1" max="28" value={formData.rdBalanceDay} onChange={e => setFormData(p => ({ ...p, rdBalanceDay: e.target.value }))} className="h-11 border-slate-200 bg-slate-50/30 font-bold" />
                   </div>
                 )}
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Rounding Protocol</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Rounding</label>
                   <Select value={formData.roundingMode} onValueChange={v => setFormData(p => ({ ...p, roundingMode: v as any }))}>
                     <SelectTrigger className="h-11 border-slate-200 bg-slate-50/30">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="nearest">Mathematical Nearest</SelectItem>
-                      <SelectItem value="up">Always Ceiling (Up)</SelectItem>
-                      <SelectItem value="down">Always Floor (Down)</SelectItem>
+                      <SelectItem value="nearest">Nearest Value</SelectItem>
+                      <SelectItem value="up">Always Up</SelectItem>
+                      <SelectItem value="down">Always Down</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -337,40 +353,40 @@ function CreateRDComponent() {
               <CircleStackIcon className="h-24 w-24 text-white" />
             </div>
             <CardHeader className="px-8 pt-8 pb-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Yield Forecasting</p>
-              <CardTitle className="text-white tracking-tight text-xl mt-1">Growth Preview</CardTitle>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Expected Returns</p>
+              <CardTitle className="text-white tracking-tight text-xl mt-1">Returns Preview</CardTitle>
             </CardHeader>
             <CardContent className="px-8 pb-8 space-y-6">
               <div className="space-y-1">
-                <p className="text-[10px] font-bold text-slate-500 uppercase">Estimated Lifecycle Interest</p>
+                <p className="text-[10px] font-bold text-slate-500 uppercase">Maturity Amount</p>
                 <p className="text-3xl font-black text-white tracking-tighter">
-                  {formatCurrency(calculateEstimatedInterest())}
+                  {formatCurrency(calculateTotalInvestment() + calculateEstimatedInterest())}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Maturation Date</p>
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">End Date</p>
                   <p className="text-xs font-bold text-slate-300">{calculateMaturityDate() || "TBD"}</p>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Final Maturity</p>
-                  <p className="text-xs font-bold text-slate-300">{formatCurrency(calculateTotalInvestment() + calculateEstimatedInterest())}</p>
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Interest Earned</p>
+                  <p className="text-xs font-bold text-slate-300">{formatCurrency(calculateEstimatedInterest())}</p>
                 </div>
               </div>
 
               <div className="pt-6 border-t border-white/10">
                 <div className="flex items-center gap-2 mb-4">
                   <ShieldCheck className="h-4 w-4 text-emerald-400" />
-                  <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">KYC DEPTH CHECK: PASS</span>
+                  <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">KYC Verified</span>
                 </div>
                 <Button type="submit" disabled={loading} className="w-full finance-gradient-primary text-white font-black uppercase tracking-widest h-14 rounded-2xl shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">
                   {loading ? (
                     <div className="flex items-center gap-2">
                     <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                    Provisioning...
+                    Creating RD...
                     </div>
-                  ) : "Establish RD Instrument"}
+                  ) : "Start RD"}
                 </Button>
               </div>
             </CardContent>
@@ -379,14 +395,14 @@ function CreateRDComponent() {
           <div className="bg-white border border-slate-200 rounded-2xl p-6">
             <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-4 flex items-center">
               <InformationCircleIcon className="h-4 w-4 mr-2 text-primary" />
-              RD Parameters
+              Important Info
             </h4>
             <div className="space-y-3">
               {[
-                "Installments are due by the cut-off rule selected",
-                "Interest is calculated based on monthly average balance",
-                "Two consecutive defaults trigger a grace period audit",
-                "System performs automated KYC validation"
+                "Payments follow chosen schedule",
+                "Interest is based on monthly balance",
+                "2 missed payments may trigger review",
+                "KYC is checked automatically"
               ].map((text, idx) => (
                 <div key={idx} className="flex gap-2 text-[10px] font-bold text-slate-500 leading-tight">
                   <div className="h-1 w-1 bg-slate-300 rounded-full mt-1.5 flex-shrink-0" />
