@@ -4,6 +4,8 @@ import { verifyToken } from "@/lib/auth"
 
 // Force Node.js runtime to avoid Edge runtime issues
 export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
+export const fetchCache = "force-no-store"
 
 // Authentication middleware for customer operations (PII data)
 async function authenticateRequest(request: NextRequest) {
@@ -120,7 +122,9 @@ export async function POST(request: NextRequest) {
 
   let body
   try {
-    body = await request.json()
+    // Clone request for safer body parsing in production
+    const clonedRequest = request.clone()
+    body = await clonedRequest.json()
     console.log("✅ CUSTOMERS BODY RECEIVED:", { 
       name: body.name, 
       email: body.email, 
@@ -129,8 +133,13 @@ export async function POST(request: NextRequest) {
     })
   } catch (err) {
     console.error("❌ CUSTOMERS JSON parse error:", err)
+    // Try reading raw body for debugging
+    try {
+      const text = await request.text()
+      console.error("❌ Raw body text:", text)
+    } catch {}
     return NextResponse.json(
-      { error: "Invalid JSON body", details: err instanceof Error ? err.message : 'Unknown error' },
+      { error: "Invalid request body", details: err instanceof Error ? err.message : 'Unknown error' },
       { status: 400 }
     )
   }

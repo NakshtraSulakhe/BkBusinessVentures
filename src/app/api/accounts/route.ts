@@ -4,6 +4,8 @@ import { verifyToken } from "@/lib/auth"
 
 // Force Node.js runtime to avoid Edge runtime issues
 export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
+export const fetchCache = "force-no-store"
 
 // Authentication middleware for account operations
 async function authenticateRequest(request: NextRequest) {

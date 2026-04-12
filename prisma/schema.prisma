@@ -34,10 +34,10 @@ model Customer {
   name          String
   email         String    @unique
   phone         String
-  address       String
-  city          String
-  state         String
-  zipCode       String    @map("zip_code")
+  address       String?
+  city          String?
+  state         String?
+  zipCode       String?   @map("zip_code")
   panNumber     String?   @map("pan_number")
   aadhaarNumber String?   @map("aadhaar_number")
   dateOfBirth   DateTime? @map("date_of_birth")
