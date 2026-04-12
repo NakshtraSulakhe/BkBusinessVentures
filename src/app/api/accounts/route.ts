@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
       where.customerId = customerId
     }
 
-    const [accounts, total] = await Promise.all([
+    const [accounts, total, allAccounts] = await Promise.all([
       prisma.account.findMany({
         where,
         include: {
@@ -103,12 +103,25 @@ export async function GET(request: NextRequest) {
         skip,
         take: limit
       }),
-      prisma.account.count({ where })
+      prisma.account.count({ where }),
+      prisma.account.findMany({
+        select: {
+          accountType: true
+        }
+      })
     ])
+    
+    // Calculate counts by type (case-insensitive)
+    const countsByType = allAccounts.reduce((acc: Record<string, number>, account: any) => {
+      const type = account.accountType.toLowerCase()
+      acc[type] = (acc[type] || 0) + 1
+      return acc
+    }, { fd: 0, rd: 0, loan: 0 })
 
     console.log("✅ Accounts retrieved:", accounts.length)
     console.log("📊 Account types found:", accounts.map((acc: any) => acc.accountType))
     console.log("📋 Account details:", accounts.map((acc: any) => ({ id: acc.id, number: acc.accountNumber, type: acc.accountType, customer: acc.customer.name })))
+    console.log("📈 Counts by type:", countsByType)
 
     return NextResponse.json({
       accounts,
@@ -117,7 +130,8 @@ export async function GET(request: NextRequest) {
         limit,
         total,
         pages: Math.ceil(total / limit)
-      }
+      },
+      countsByType
     })
   } catch (error) {
     console.error("💥 Failed to fetch accounts:", error)

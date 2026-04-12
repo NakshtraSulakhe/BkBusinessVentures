@@ -111,12 +111,11 @@ export default function EMIList() {
       const response = await fetchWithAuth(`/api/transactions?${params}`, { token })
       if (response.ok) {
         const data: PaginatedResponse = await response.json()
-        // Filter specifically for EMI transactions if API doesn't do it perfectly
-        const emiOnly = (data.transactions || []).filter(t => 
-          t.account.accountType === 'LOAN' && 
-          (t.description?.toLowerCase().includes('emi') || t.reference?.toLowerCase().includes('emi'))
+        // Filter for LOAN account deposit transactions (these are EMI payments)
+        const loanDeposits = (data.transactions || []).filter(t => 
+          t.account.accountType === 'LOAN' && t.type.toLowerCase() === 'deposit'
         )
-        setTransactions(emiOnly)
+        setTransactions(loanDeposits)
         setPagination(data.pagination)
       }
     } catch (error) {
@@ -304,9 +303,6 @@ export default function EMIList() {
                           +{formatCurrency(tx.amount)}
                         </div>
                         <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Verified Inflow</div>
-                      </TableCell>
-                      <TableCell className="text-right text-xs font-black text-slate-900 tracking-tight">
-                        {formatCurrency(tx.balance)}
                       </TableCell>
                       <TableCell className="px-8 max-w-[200px]">
                         <div className="text-[11px] text-slate-600 leading-relaxed truncate group-hover:whitespace-normal">

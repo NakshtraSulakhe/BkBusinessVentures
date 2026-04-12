@@ -247,7 +247,6 @@ export default function LoanLedgerPage() {
                     <TableHead className="text-[10px] font-black uppercase text-slate-400 h-12 tracking-widest">Borrower / Instrument</TableHead>
                     <TableHead className="text-[10px] font-black uppercase text-slate-400 h-12 tracking-widest text-center">Protocol</TableHead>
                     <TableHead className="text-[10px] font-black uppercase text-slate-400 h-12 tracking-widest text-right">Magnitude</TableHead>
-                    <TableHead className="text-[10px] font-black uppercase text-slate-400 h-12 tracking-widest text-right">Outstanding</TableHead>
                     <TableHead className="px-8 text-[10px] font-black uppercase text-slate-400 h-12 tracking-widest">Narrative</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -283,9 +282,6 @@ export default function LoanLedgerPage() {
                           }`}>
                             {isInward ? '+' : ''}{formatCurrency(tx.amount)}
                           </span>
-                        </TableCell>
-                        <TableCell className="text-right text-xs font-black text-slate-900 tracking-tight">
-                          {formatCurrency(tx.balance || 0)}
                         </TableCell>
                         <TableCell className="px-8 max-w-[200px]">
                           <div className="text-[11px] text-slate-600 leading-relaxed truncate group-hover:whitespace-normal">

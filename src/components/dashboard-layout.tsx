@@ -89,7 +89,7 @@ const navigation = [
 
   { name: "Loans", href: "/dashboard/loans", icon: ChartBarIcon, section: "loans" },
   { name: "Create Loan", href: "/dashboard/loans/create", icon: DocumentTextIcon, section: "loans", indent: true },
-  { name: "EMI Entry", href: "/dashboard/loans/emi", icon: ReceiptPercentIcon, section: "loans", indent: true },
+  { name: "EMI Entry", href: "/dashboard/loans/emi/create", icon: ReceiptPercentIcon, section: "loans", indent: true },
   { name: "Loan Ledger", href: "/dashboard/loans/ledger", icon: BookOpenIcon, section: "loans", indent: true },
 
   { name: "Reports", href: "/dashboard/reports", icon: DocumentIcon, section: "reports" },

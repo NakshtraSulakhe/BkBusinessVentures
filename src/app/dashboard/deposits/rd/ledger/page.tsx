@@ -20,6 +20,15 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import {
   ArrowLeftIcon,
   BookOpenIcon,
   MagnifyingGlassIcon,
@@ -30,7 +39,8 @@ import {
   BanknotesIcon,
   CurrencyDollarIcon,
   ArrowPathIcon,
-  ClockIcon
+  ClockIcon,
+  PlusIcon
 } from "@heroicons/react/24/outline"
 import {
   Table,
@@ -67,6 +77,16 @@ export default function RDLedgerPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [typeFilter, setTypeFilter] = useState('all')
   const [dateRange, setDateRange] = useState({ start: '', end: '' })
+  const [showAddDialog, setShowAddDialog] = useState(false)
+  const [rdAccounts, setRdAccounts] = useState<any[]>([])
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [newTransaction, setNewTransaction] = useState({
+    accountId: '',
+    amount: '',
+    date: new Date().toISOString().split('T')[0],
+    description: '',
+    reference: ''
+  })
 
   useEffect(() => {
     setMounted(true)
@@ -85,6 +105,74 @@ export default function RDLedgerPage() {
       console.error('Failed to fetch transactions:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchRDAccounts = async () => {
+    try {
+      const response = await fetchWithAuth('/api/accounts?accountType=RD', { token })
+      if (response.ok) {
+        const data = await response.json()
+        setRdAccounts(data.accounts || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch RD accounts:', error)
+    }
+  }
+
+  useEffect(() => {
+    if (showAddDialog) {
+      fetchRDAccounts()
+    }
+  }, [showAddDialog])
+
+  const handleAddTransaction = async () => {
+    if (!newTransaction.accountId || !newTransaction.amount) {
+      setMessage({ type: 'error', text: 'Please select an RD account and enter an amount' })
+      return
+    }
+
+    try {
+      const selectedAccount = rdAccounts.find(acc => acc.id === newTransaction.accountId)
+      if (!selectedAccount) {
+        setMessage({ type: 'error', text: 'Selected account not found' })
+        return
+      }
+
+      const monthlyInstallment = selectedAccount.tenure > 0 ? selectedAccount.principalAmount / selectedAccount.tenure : 0
+
+      const response = await fetchWithAuth('/api/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        token,
+        body: JSON.stringify({
+          accountId: newTransaction.accountId,
+          type: 'RD_INSTALLMENT',
+          amount: parseFloat(newTransaction.amount),
+          description: newTransaction.description || `Monthly RD installment for ${selectedAccount.accountNumber}`,
+          reference: newTransaction.reference || `RD-${new Date().toISOString().split('T')[0]}`,
+          transactionDate: newTransaction.date
+        })
+      })
+
+      if (response.ok) {
+        setMessage({ type: 'success', text: 'RD installment recorded successfully' })
+        setNewTransaction({
+          accountId: '',
+          amount: '',
+          date: new Date().toISOString().split('T')[0],
+          description: '',
+          reference: ''
+        })
+        setShowAddDialog(false)
+        fetchTransactions()
+      } else {
+        const errorData = await response.json()
+        setMessage({ type: 'error', text: errorData.error || 'Failed to record transaction' })
+      }
+    } catch (error) {
+      console.error('Failed to record transaction:', error)
+      setMessage({ type: 'error', text: 'Network error. Please try again.' })
     }
   }
 
@@ -125,6 +213,13 @@ export default function RDLedgerPage() {
           actions={
             <div className="flex items-center gap-3">
               <Button
+                onClick={() => setShowAddDialog(true)}
+                className="h-9 finance-gradient-primary text-white rounded-xl px-4 font-bold transition-all shadow-sm"
+              >
+                <PlusIcon className="h-4 w-4 mr-2" />
+                Record Installment
+              </Button>
+              <Button
                 variant="outline"
                 onClick={() => router.push('/dashboard/deposits/rd')}
                 className="h-9 border-slate-200 text-slate-700 rounded-xl px-4 hover:bg-slate-50 font-medium"
@@ -139,6 +234,32 @@ export default function RDLedgerPage() {
             </div>
           }
         />
+
+        {message && (
+          <div className={`p-4 rounded-xl border flex items-start gap-3 shadow-lg animate-in fade-in slide-in-from-top-4 duration-300 ${
+            message.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-800' : 'bg-rose-50 border-rose-100 text-rose-800'
+          }`}>
+            {message.type === 'success' ? (
+              <div className="h-5 w-5 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
+                <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            ) : (
+              <div className="h-5 w-5 rounded-full bg-rose-500 flex items-center justify-center flex-shrink-0">
+                <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </div>
+            )}
+            <div className="text-sm font-bold">{message.text}</div>
+            <button onClick={() => setMessage(null)} className="ml-auto p-1 rounded-lg hover:bg-black/5">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        )}
 
         {/* Dashboard Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -293,6 +414,112 @@ export default function RDLedgerPage() {
             )}
           </div>
         </Card>
+
+        {/* Add Transaction Dialog */}
+        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+          <DialogContent className="sm:max-w-[500px] border-none shadow-2xl rounded-3xl p-0 overflow-hidden">
+            <div className="bg-slate-900 p-8 text-white relative">
+              <div className="absolute top-0 right-0 p-8 opacity-10">
+                <BanknotesIcon className="h-24 w-24" />
+              </div>
+              <DialogHeader>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">New Transaction</p>
+                <DialogTitle className="text-2xl font-black tracking-tight">Record RD Installment</DialogTitle>
+                <DialogDescription className="text-slate-400 font-bold text-xs">Record a monthly installment for an RD account</DialogDescription>
+              </DialogHeader>
+            </div>
+
+            <div className="p-8 space-y-6 bg-white">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Select RD Account</Label>
+                  <Select 
+                    value={newTransaction.accountId} 
+                    onValueChange={v => setNewTransaction(p => ({ ...p, accountId: v }))}
+                  >
+                    <SelectTrigger className="h-11 border-slate-200 bg-slate-50/50 rounded-xl font-bold">
+                      <SelectValue placeholder="Choose RD Account...">
+                        {newTransaction.accountId && rdAccounts.find(a => a.id === newTransaction.accountId) 
+                          ? `${rdAccounts.find(a => a.id === newTransaction.accountId)?.accountNumber} • ${rdAccounts.find(a => a.id === newTransaction.accountId)?.customer?.name || 'Unknown'}`
+                          : 'Choose RD Account...'
+                        }
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {rdAccounts && rdAccounts.length > 0 ? rdAccounts.map(acc => (
+                        <SelectItem key={acc.id} value={acc.id}>
+                          {acc.accountNumber || 'Unknown'} • {acc.customer?.name || 'Unknown Customer'}
+                        </SelectItem>
+                      )) : (
+                        <SelectItem value="loading" disabled>Loading RD accounts...</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {newTransaction.accountId && (() => {
+                  const account = rdAccounts.find(a => a.id === newTransaction.accountId)
+                  if (!account) return null
+                  const monthlyInstallment = account.tenure > 0 ? account.principalAmount / account.tenure : 0
+                  return (
+                    <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+                      <p className="text-[10px] font-black text-emerald-600 uppercase tracking-wider">Suggested Monthly Installment</p>
+                      <p className="text-lg font-black text-emerald-700">₹{monthlyInstallment.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</p>
+                    </div>
+                  )
+                })()}
+
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Installment Amount (₹)</Label>
+                  <Input
+                    type="number"
+                    placeholder="0.00"
+                    value={newTransaction.amount}
+                    onChange={e => setNewTransaction(p => ({ ...p, amount: e.target.value }))}
+                    className="h-11 border-slate-200 bg-slate-50/50 rounded-xl font-black tracking-tight"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Date</Label>
+                  <Input
+                    type="date"
+                    value={newTransaction.date}
+                    onChange={e => setNewTransaction(p => ({ ...p, date: e.target.value }))}
+                    className="h-11 border-slate-200 bg-slate-50/50 rounded-xl font-bold"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Description</Label>
+                  <Input
+                    placeholder="Enter transaction details..."
+                    value={newTransaction.description}
+                    onChange={e => setNewTransaction(p => ({ ...p, description: e.target.value }))}
+                    className="h-11 border-slate-200 bg-slate-50/50 rounded-xl font-bold"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Reference Number</Label>
+                  <Input
+                    placeholder="Transaction reference (optional)"
+                    value={newTransaction.reference}
+                    onChange={e => setNewTransaction(p => ({ ...p, reference: e.target.value }))}
+                    className="h-11 border-slate-200 bg-slate-50/50 rounded-xl font-bold"
+                  />
+                </div>
+              </div>
+
+              <DialogFooter className="mt-8">
+                <Button variant="ghost" onClick={() => setShowAddDialog(false)} className="h-12 px-6 font-bold text-slate-500 hover:text-slate-900">Cancel</Button>
+                <Button onClick={handleAddTransaction} className="h-12 px-8 finance-gradient-primary text-white font-black uppercase tracking-widest rounded-2xl shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">
+                  Record Installment
+                </Button>
+              </DialogFooter>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   )

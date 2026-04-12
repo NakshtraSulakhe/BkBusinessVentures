@@ -36,7 +36,6 @@ import {
   User,
   Info,
   CreditCard,
-  BarChart3,
   Banknote,
   Clock,
   ChevronDown,
@@ -77,22 +76,12 @@ interface LoanAccount {
   }
 }
 
-interface CustomerBalance {
-  totalDeposits: number
-  totalLoans: number
-  netWorth: number
-  fdAccounts: any[]
-  rdAccounts: any[]
-  loanAccounts: any[]
-}
-
 function CreateEMIComponent() {
   const router = useRouter()
   const { token } = useAuth()
   const searchParams = useSearchParams()
   const [loanAccounts, setLoanAccounts] = useState<LoanAccount[]>([])
   const [selectedAccount, setSelectedAccount] = useState<LoanAccount | null>(null)
-  const [customerBalance, setCustomerBalance] = useState<CustomerBalance | null>(null)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [formData, setFormData] = useState({
@@ -118,25 +107,6 @@ function CreateEMIComponent() {
     }
   }
 
-  const fetchCustomerBalance = async (customerId: string) => {
-    try {
-      const response = await fetchWithAuth(`/api/customers/${customerId}/ledger`, { token })
-      if (response.ok) {
-        const data = await response.json()
-        setCustomerBalance({
-          totalDeposits: data.financialSummary.totalDeposits,
-          totalLoans: data.financialSummary.totalLoans,
-          netWorth: data.financialSummary.netWorth,
-          fdAccounts: data.accounts.filter((acc: any) => acc.accountType === 'FD'),
-          rdAccounts: data.accounts.filter((acc: any) => acc.accountType === 'RD'),
-          loanAccounts: data.accounts.filter((acc: any) => acc.accountType === 'LOAN')
-        })
-      }
-    } catch (error) {
-      console.error('Failed to fetch customer balance:', error)
-    }
-  }
-
   useEffect(() => {
     fetchLoanAccounts()
   }, [])
@@ -154,12 +124,8 @@ function CreateEMIComponent() {
             amount: account.accountRules?.emiAmount?.toString() || '' 
           }))
         }
-        
-        // Fetch customer balance data
-        fetchCustomerBalance(account.customerId)
       } else {
         setSelectedAccount(null)
-        setCustomerBalance(null)
       }
     }
   }, [formData.accountId, loanAccounts])
@@ -313,31 +279,6 @@ function CreateEMIComponent() {
                   {errors.accountId && <p className="text-[10px] text-rose-500 font-bold ml-1">Account selection is mandatory</p>}
                 </div>
 
-                {/* Customer Balance Information */}
-                {customerBalance && (
-                  <div className="mt-6 p-4 bg-gradient-to-r from-violet-50 to-indigo-50 border border-violet-200 rounded-xl">
-                    <h4 className="text-xs font-black text-violet-800 uppercase tracking-widest mb-4 flex items-center">
-                      <BarChart3 className="h-4 w-4 mr-2" />
-                      Customer Portfolio Summary
-                    </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div className="text-center p-3 bg-white/60 rounded-lg">
-                        <p className="text-[10px] font-black text-violet-500 uppercase tracking-wider">Total Deposits</p>
-                        <p className="text-lg font-black text-violet-900">{formatCurrency(customerBalance.totalDeposits)}</p>
-                      </div>
-                      <div className="text-center p-3 bg-white/60 rounded-lg">
-                        <p className="text-[10px] font-black text-rose-500 uppercase tracking-wider">Total Loans</p>
-                        <p className="text-lg font-black text-rose-600">{formatCurrency(customerBalance.totalLoans)}</p>
-                      </div>
-                      <div className="text-center p-3 bg-white/60 rounded-lg">
-                        <p className="text-[10px] font-black text-emerald-500 uppercase tracking-wider">Net Position</p>
-                        <p className={`text-lg font-black ${customerBalance.netWorth >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                          {formatCurrency(customerBalance.netWorth)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
 
                 {/* Selected Account Details */}
                 {selectedAccount && (

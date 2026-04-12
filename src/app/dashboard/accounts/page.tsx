@@ -48,6 +48,7 @@ export default function AccountsPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
+  const [countsByType, setCountsByType] = useState<Record<string, number>>({ fd: 0, rd: 0, loan: 0 })
 
   const fetchAccounts = async (page = 1, q = '', type = '') => {
     try {
@@ -58,6 +59,11 @@ export default function AccountsPage() {
         const data = await res.json()
         setAccounts(data.accounts); setCurrentPage(data.pagination.page)
         setTotalPages(data.pagination.pages); setTotal(data.pagination.total)
+        
+        // Process counts by type from API response
+        if (data.countsByType) {
+          setCountsByType(data.countsByType)
+        }
       }
     } catch (e) { console.error(e) } finally { setLoading(false) }
   }
@@ -80,9 +86,9 @@ export default function AccountsPage() {
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
           <StatCard title="Total Accounts" value={total} subtitle="All account types" icon={<BanknotesIcon />} iconVariant="primary" borderVariant="primary" className="p-4 sm:p-6" />
-          <StatCard title="Fixed Deposits" value={accounts.filter(a => a.accountType === 'fd').length} subtitle="Investment accounts" icon={<BuildingLibraryIcon />} iconVariant="success" borderVariant="success" className="p-4 sm:p-6" />
-          <StatCard title="Recurring Deposits" value={accounts.filter(a => a.accountType === 'rd').length} subtitle="Monthly savings" icon={<CurrencyDollarIcon />} iconVariant="info" borderVariant="info" className="p-4 sm:p-6" />
-          <StatCard title="Loans" value={accounts.filter(a => a.accountType === 'loan').length} subtitle="Active loans" icon={<ChartBarIcon />} iconVariant="danger" borderVariant="danger" className="p-4 sm:p-6" />
+          <StatCard title="Fixed Deposits" value={countsByType.fd} subtitle="Investment accounts" icon={<BuildingLibraryIcon />} iconVariant="success" borderVariant="success" className="p-4 sm:p-6" />
+          <StatCard title="Recurring Deposits" value={countsByType.rd} subtitle="Monthly savings" icon={<CurrencyDollarIcon />} iconVariant="info" borderVariant="info" className="p-4 sm:p-6" />
+          <StatCard title="Loans" value={countsByType.loan} subtitle="Active loans" icon={<ChartBarIcon />} iconVariant="danger" borderVariant="danger" className="p-4 sm:p-6" />
         </div>
 
         {/* Filters */}

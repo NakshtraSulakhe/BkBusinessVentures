@@ -6,7 +6,8 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 // Hydration-safe date formatting - uses fixed format to avoid SSR mismatches
-export function formatDateSafe(date: string | Date): string {
+export function formatDateSafe(date: string | Date | null | undefined): string {
+  if (!date) return ''
   const d = typeof date === 'string' ? new Date(date) : date
   if (isNaN(d.getTime())) return ''
   
@@ -20,7 +21,8 @@ export function formatDateSafe(date: string | Date): string {
 }
 
 // Hydration-safe time formatting - uses fixed format to avoid SSR mismatches
-export function formatTimeSafe(date: string | Date): string {
+export function formatTimeSafe(date: string | Date | null | undefined): string {
+  if (!date) return ''
   const d = typeof date === 'string' ? new Date(date) : date
   if (isNaN(d.getTime())) return ''
   
@@ -32,7 +34,8 @@ export function formatTimeSafe(date: string | Date): string {
 }
 
 // Hydration-safe short date format (e.g., 01 Apr)
-export function formatShortDate(date: string | Date): string {
+export function formatShortDate(date: string | Date | null | undefined): string {
+  if (!date) return ''
   const d = typeof date === 'string' ? new Date(date) : date
   if (isNaN(d.getTime())) return ''
   

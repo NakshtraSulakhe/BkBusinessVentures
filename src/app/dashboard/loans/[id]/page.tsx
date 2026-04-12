@@ -39,7 +39,8 @@ import {
   PhoneIcon,
   EnvelopeIcon,
   MapPinIcon,
-  TrashIcon
+  TrashIcon,
+  DocumentArrowDownIcon
 } from "@heroicons/react/24/outline"
 
 interface LoanAccount {
@@ -154,6 +155,70 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
 
   const formatDate = (dateString: string) => {
     return formatDateSafe(dateString)
+  }
+  const exportToCSV = () => {
+    if (!loan || !loan.transactions) return
+
+    const transactions = getTransactionsWithBalance()
+    
+    // Helper to format number for CSV (raw number, no currency symbol)
+    const formatNumber = (amount: number) => {
+      return new Intl.NumberFormat('en-IN', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(amount)
+    }
+    
+    // Create CSV content
+    const headers = ['Date', 'Transaction Type', 'Description', 'Reference', 'Debit', 'Credit', 'Balance (Owed)']
+    const rows = transactions.map(tx => [
+      formatDate(tx.transactionDate),
+      tx.type,
+      tx.description || '',
+      tx.reference || '',
+      !isCredit(tx.type) ? formatNumber(tx.amount) : '',
+      isCredit(tx.type) ? formatNumber(tx.amount) : '',
+      formatNumber(Math.abs(tx.displayBalance))
+    ])
+
+    // Add loan disbursement as first row
+    const disbursementRow = [
+      formatDate(loan.startDate),
+      'LOAN_DISBURSEMENT',
+      'Loan disbursed to customer (Principal + Interest)',
+      loan.accountNumber,
+      formatNumber(totalPayable),
+      '',
+      formatNumber(totalPayable)
+    ]
+
+    const csvContent = [
+      ['Customer Transaction Report'],
+      [`Customer Name: ${loan.customer.name}`],
+      [`Email: ${loan.customer.email}`],
+      [`Phone: ${loan.customer.phone}`],
+      [`Loan Account: ${loan.accountNumber}`],
+      [`Principal Amount: ${formatNumber(loan.principalAmount)}`],
+      [`Interest Rate: ${loan.interestRate}%`],
+      [`Tenure: ${loan.tenure} months`],
+      [`Total Payable: ${formatNumber(totalPayable)}`],
+      [],
+      headers,
+      disbursementRow,
+      ...rows
+    ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n')
+
+    // Create and download the CSV file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    
+    link.setAttribute('href', url)
+    link.setAttribute('download', `loan_transactions_${loan.accountNumber}_${new Date().toISOString().split('T')[0]}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 
   // Calculate EMI
@@ -356,9 +421,20 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
               <BuildingLibraryIcon className="h-4 w-4 mr-2 text-primary" />
               Loan Transaction History
             </CardTitle>
-            <Badge className="bg-blue-50 text-blue-700 border-none font-bold text-[10px]">
-              {transactionsWithBalance.length} Transactions
-            </Badge>
+            <div className="flex items-center gap-3">
+              <Badge className="bg-blue-50 text-blue-700 border-none font-bold text-[10px]">
+                {transactionsWithBalance.length} Transactions
+              </Badge>
+              <Button
+                onClick={exportToCSV}
+                disabled={!loan?.transactions || loan.transactions.length === 0}
+                variant="outline"
+                className="h-8 border-slate-200 text-slate-700 rounded-lg px-3 hover:bg-slate-50 font-medium text-xs gap-2"
+              >
+                <DocumentArrowDownIcon className="h-4 w-4" />
+                Export CSV
+              </Button>
+            </div>
           </CardHeader>
           <div className="overflow-x-auto">
             <Table>

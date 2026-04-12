@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import {
   CurrencyDollarIcon, CheckCircleIcon, PlusIcon, EyeIcon,
   PencilIcon, MagnifyingGlassIcon, ChartBarIcon, CalendarIcon,
-  ArrowPathIcon,
+  ArrowPathIcon, DocumentArrowDownIcon,
 } from "@heroicons/react/24/outline"
 
 interface RDAccount {
@@ -72,6 +72,62 @@ export default function RDPage() {
   const totalMonthly = filtered.reduce((s, a) => s + (a.principalAmount / a.tenure), 0)
   const avgRate = filtered.length > 0 ? filtered.reduce((s, a) => s + a.interestRate, 0) / filtered.length : 0
 
+  const exportToCSV = () => {
+    // Helper to format number for CSV (raw number, no currency symbol)
+    const formatNumber = (amount: number) => {
+      return new Intl.NumberFormat('en-IN', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(amount)
+    }
+
+    // Create CSV content
+    const headers = ['Account Number', 'Customer Name', 'Customer Email', 'Customer Phone', 'Monthly Installment', 'Interest Rate (%)', 'Tenure (Months)', 'Start Date', 'Maturity Date', 'Status', 'Maturity Amount']
+    const rows = filtered.map(account => {
+      const monthly = account.tenure > 0 ? account.principalAmount / account.tenure : 0
+      const totalPrincipal = monthly * account.tenure
+      const r = account.interestRate / 100
+      const n = account.tenure
+      const rdInterest = monthly * (n * (n + 1) / 2) * (r / 12)
+      const maturityAmount = Math.round(totalPrincipal + rdInterest)
+
+      return [
+        account.accountNumber,
+        account.customer.name,
+        account.customer.email,
+        account.customer.phone,
+        formatNumber(monthly),
+        account.interestRate.toString(),
+        account.tenure.toString(),
+        account.startDate ? new Date(account.startDate).toLocaleDateString('en-IN') : '',
+        account.maturityDate ? new Date(account.maturityDate).toLocaleDateString('en-IN') : '',
+        account.status || 'ACTIVE',
+        formatNumber(maturityAmount)
+      ]
+    })
+
+    const csvContent = [
+      ['Recurring Deposit Accounts Report'],
+      [`Total RD Accounts: ${filtered.length}`],
+      [`Total Monthly Installments: ₹${totalMonthly.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`],
+      [],
+      headers,
+      ...rows
+    ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n')
+
+    // Create and download the CSV file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    
+    link.setAttribute('href', url)
+    link.setAttribute('download', `rd_accounts_${new Date().toISOString().split('T')[0]}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-6 animate-fade-in-up">
@@ -79,9 +135,20 @@ export default function RDPage() {
           title="Recurring Deposits"
           subtitle="Manage all recurring deposit accounts"
           actions={
-            <Button onClick={() => router.push('/dashboard/deposits/rd/create')} className="finance-gradient-primary text-white h-9 px-4 rounded-xl font-medium shadow-sm">
-              <PlusIcon className="h-4 w-4 mr-2" /> Create RD
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={exportToCSV}
+                disabled={filtered.length === 0}
+                variant="outline"
+                className="h-9 border-slate-200 text-slate-700 rounded-xl px-4 hover:bg-slate-50 font-medium"
+              >
+                <DocumentArrowDownIcon className="h-4 w-4 mr-2" />
+                Export CSV
+              </Button>
+              <Button onClick={() => router.push('/dashboard/deposits/rd/create')} className="finance-gradient-primary text-white h-9 px-4 rounded-xl font-medium shadow-sm">
+                <PlusIcon className="h-4 w-4 mr-2" /> Create RD
+              </Button>
+            </div>
           }
         />
 

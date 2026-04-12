@@ -13,7 +13,7 @@ import { PageHeader } from "@/components/ui/page-header"
 import { TableActions } from "@/components/ui/table-actions"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
-  Building2, DollarSign, CheckCircle2, AlertTriangle, Plus, Eye, Pencil, Search, BarChart3, Calendar
+  Building2, DollarSign, CheckCircle2, AlertTriangle, Plus, Eye, Pencil, Search, BarChart3, Calendar, Download
 } from "lucide-react"
 
 interface FDAccount {
@@ -70,6 +70,61 @@ export default function FDPage() {
   const totalPrincipal = filtered.reduce((s, a) => s + a.principalAmount, 0)
   const avgRate = filtered.length > 0 ? filtered.reduce((s, a) => s + a.interestRate, 0) / filtered.length : 0
 
+  const exportToCSV = () => {
+    // Helper to format number for CSV (raw number, no currency symbol)
+    const formatNumber = (amount: number) => {
+      return new Intl.NumberFormat('en-IN', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(amount)
+    }
+
+    // Create CSV content
+    const headers = ['Account Number', 'Customer Name', 'Customer Email', 'Customer Phone', 'Principal Amount', 'Interest Rate (%)', 'Tenure (Months)', 'Start Date', 'Maturity Date', 'Status', 'Maturity Amount']
+    const rows = filtered.map(account => {
+      const principal = account.principalAmount || 0
+      const rate = account.interestRate || 0
+      const tenure = account.tenure || 0
+      const interest = (principal * rate * tenure) / (100 * 12)
+      const maturityAmount = principal + interest
+
+      return [
+        account.accountNumber,
+        account.customer.name,
+        account.customer.email,
+        account.customer.phone,
+        formatNumber(principal),
+        rate.toString(),
+        tenure.toString(),
+        account.startDate ? new Date(account.startDate).toLocaleDateString('en-IN') : '',
+        account.maturityDate ? new Date(account.maturityDate).toLocaleDateString('en-IN') : '',
+        account.status || 'ACTIVE',
+        formatNumber(maturityAmount)
+      ]
+    })
+
+    const csvContent = [
+      ['Fixed Deposit Accounts Report'],
+      [`Total FD Accounts: ${filtered.length}`],
+      [`Total Principal: ₹${totalPrincipal.toLocaleString('en-IN')}`],
+      [],
+      headers,
+      ...rows
+    ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n')
+
+    // Create and download the CSV file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    
+    link.setAttribute('href', url)
+    link.setAttribute('download', `fd_accounts_${new Date().toISOString().split('T')[0]}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-6 animate-fade-in-up">
@@ -77,9 +132,20 @@ export default function FDPage() {
           title="Fixed Deposits"
           subtitle="Manage all fixed deposit accounts"
           actions={
-            <Button onClick={() => router.push('/dashboard/deposits/fd/create')} className="finance-gradient-primary text-white h-9 px-4 rounded-xl font-medium shadow-sm">
-              <Plus className="h-4 w-4 mr-2" /> Create FD
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={exportToCSV}
+                disabled={filtered.length === 0}
+                variant="outline"
+                className="h-9 border-slate-200 text-slate-700 rounded-xl px-4 hover:bg-slate-50 font-medium"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
+              </Button>
+              <Button onClick={() => router.push('/dashboard/deposits/fd/create')} className="finance-gradient-primary text-white h-9 px-4 rounded-xl font-medium shadow-sm">
+                <Plus className="h-4 w-4 mr-2" /> Create FD
+              </Button>
+            </div>
           }
         />
 

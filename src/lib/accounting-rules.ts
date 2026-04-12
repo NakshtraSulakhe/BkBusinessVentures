@@ -246,8 +246,8 @@ export const ACCOUNTING_RULES: Record<TransactionType, AccountingRule> = {
  * Determines if a transaction type is a credit or debit based on standard accounting rules
  */
 export function isCreditTransaction(type: string): boolean {
-  const transactionType = type as TransactionType;
-  const rule = ACCOUNTING_RULES[transactionType];
+  const normalizedType = normalizeTransactionType(type);
+  const rule = ACCOUNTING_RULES[normalizedType];
   return rule?.normalBalance === 'CREDIT' || false;
 }
 
@@ -255,8 +255,8 @@ export function isCreditTransaction(type: string): boolean {
  * Determines if a transaction type is a debit or credit based on standard accounting rules
  */
 export function isDebitTransaction(type: string): boolean {
-  const transactionType = type as TransactionType;
-  const rule = ACCOUNTING_RULES[transactionType];
+  const normalizedType = normalizeTransactionType(type);
+  const rule = ACCOUNTING_RULES[normalizedType];
   return rule?.normalBalance === 'DEBIT' || false;
 }
 
@@ -271,7 +271,8 @@ export function calculateNewBalance(
   transactionType: string,
   amount: number
 ): number {
-  const rule = ACCOUNTING_RULES[transactionType as TransactionType];
+  const normalizedType = normalizeTransactionType(transactionType);
+  const rule = ACCOUNTING_RULES[normalizedType];
   if (!rule) return currentBalance;
 
   switch (rule.category) {
@@ -335,8 +336,8 @@ export function validateTransaction(
  * Gets transaction category for reporting purposes
  */
 export function getTransactionCategory(type: string): string {
-  const transactionType = type as TransactionType;
-  return ACCOUNTING_RULES[transactionType]?.category || 'OTHER';
+  const normalizedType = normalizeTransactionType(type);
+  return ACCOUNTING_RULES[normalizedType]?.category || 'OTHER';
 }
 
 /**
