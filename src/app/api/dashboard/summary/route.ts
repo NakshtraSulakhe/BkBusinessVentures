@@ -102,7 +102,7 @@ export async function GET() {
           amount: t.amount || 0,
           type: isCredit ? 'credit' : 'debit',
           date: formattedDate,
-          customer: t.account.customer.name
+          customer: t.account?.customer?.name || 'Unknown'
         }
       })
     })

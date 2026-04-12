@@ -4,19 +4,27 @@ import { comparePassword, signToken } from "@/lib/auth";
 
 // Force Node.js runtime to avoid Edge runtime issues
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 
 export async function POST(request: NextRequest) {
   console.log(" LOGIN API CALLED - Request headers:", Object.fromEntries(request.headers.entries()));
   
   let body;
   try {
-    body = await request.json();
+    // Clone request to allow re-reading if needed
+    const clonedRequest = request.clone();
+    body = await clonedRequest.json();
     console.log(" BODY RECEIVED:", body);
   } catch (err) {
     console.error(" JSON parse error:", err);
-    console.error(" Request body text:", await request.text());
+    // Try reading as text for debugging
+    try {
+      const text = await request.text();
+      console.error(" Raw body text:", text);
+    } catch {}
     return NextResponse.json(
-      { error: "Invalid JSON body", details: err instanceof Error ? err.message : 'Unknown error' },
+      { error: "Invalid request body", details: err instanceof Error ? err.message : 'Unknown error' },
       { status: 400 }
     );
   }

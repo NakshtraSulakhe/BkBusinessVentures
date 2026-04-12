@@ -4,18 +4,27 @@ import { signToken } from "@/lib/auth";
 
 // Force Node.js runtime to avoid Edge runtime issues
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 
 export async function POST(request: NextRequest) {
   console.log(" SIGNUP API CALLED");
   
   let body;
   try {
-    body = await request.json();
+    // Clone request to allow re-reading if needed
+    const clonedRequest = request.clone();
+    body = await clonedRequest.json();
     console.log(" SIGNUP BODY RECEIVED:", { email: body.email, name: body.name });
   } catch (err) {
     console.error(" SIGNUP JSON parse error:", err);
+    // Try reading as text for debugging
+    try {
+      const text = await request.text();
+      console.error(" Raw body text:", text);
+    } catch {}
     return NextResponse.json(
-      { error: "Invalid JSON body", details: err instanceof Error ? err.message : 'Unknown error' },
+      { error: "Invalid request body", details: err instanceof Error ? err.message : 'Unknown error' },
       { status: 400 }
     );
   }

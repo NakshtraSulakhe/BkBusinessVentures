@@ -45,6 +45,8 @@ export function LoginForm({
     setError('')
     setIsLoading(true)
 
+    console.log('[LoginForm] Submitting - isSignUp:', isSignUp, 'formData:', { email: formData.email, password: formData.password ? '***' : 'empty' })
+
     try {
       if (isSignUp) {
         if (formData.password !== formData.confirmPassword) {
@@ -66,7 +68,9 @@ export function LoginForm({
           router.push('/dashboard')
         }
       } else {
+        console.log('[LoginForm] Calling login with email:', formData.email)
         const result = await login(formData.email, formData.password)
+        console.log('[LoginForm] Login result:', result)
 
         if (!result.success) {
           setError(result.error || 'Login failed')
