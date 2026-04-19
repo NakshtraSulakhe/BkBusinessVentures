@@ -400,6 +400,7 @@ export default function CreateCustomer() {
                 <div className="space-y-4">
                   <p className="text-xs text-slate-400 font-medium mb-4">Choose the account type for this customer.</p>
                   
+
                   {[
                     { val: 'savings', label: 'Savings Account', icon: '💰', color: 'bg-blue-50 text-blue-600' },
                     { val: 'current', label: 'Current Account', icon: '💼', color: 'bg-emerald-50 text-emerald-600' },

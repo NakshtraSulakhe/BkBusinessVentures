@@ -8,24 +8,53 @@ export async function PUT(
   try {
     const { id } = await params
     const body = await request.json()
-    const { principalAmount, interestRate, tenure, startDate, status } = body
+    const { principalAmount, interestRate, tenure, startDate, status, calculationMethod } = body
 
     // Calculate new maturity date based on start date and tenure
     const start = new Date(startDate)
     const maturityDate = new Date(start.getFullYear(), start.getMonth() + tenure, start.getDate())
 
+    // Prepare update data
+    const updateData: any = {
+      principalAmount,
+      interestRate,
+      tenure,
+      startDate: start,
+      maturityDate,
+      status,
+    }
+
+    // If calculationMethod is provided, update accountRules
+    if (calculationMethod) {
+      // First check if accountRules exists
+      const existingAccount = await prisma.account.findUnique({
+        where: { id },
+        include: { accountRules: true }
+      })
+
+      if (existingAccount?.accountRules) {
+        // Update existing accountRules
+        await prisma.accountRules.update({
+          where: { id: existingAccount.accountRules.id },
+          data: { calculationMethod }
+        })
+      } else {
+        // Create new accountRules
+        await prisma.accountRules.create({
+          data: {
+            accountId: id,
+            calculationMethod
+          }
+        })
+      }
+    }
+
     const updatedAccount = await prisma.account.update({
       where: { id },
-      data: {
-        principalAmount,
-        interestRate,
-        tenure,
-        startDate: start,
-        maturityDate,
-        status,
-      },
+      data: updateData,
       include: {
         customer: true,
+        accountRules: true,
       }
     })
 

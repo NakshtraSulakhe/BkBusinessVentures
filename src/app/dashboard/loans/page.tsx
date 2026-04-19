@@ -13,7 +13,7 @@ import { PageHeader } from "@/components/ui/page-header"
 import { TableActions } from "@/components/ui/table-actions"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
-  Building2, DollarSign, CheckCircle2, Plus, Eye, Pencil, Search, BarChart3, Calendar, CreditCard
+  Building2, DollarSign, CheckCircle2, Plus, Eye, Pencil, Search, BarChart3, Calendar, CreditCard, Download
 } from "lucide-react"
 
 interface LoanAccount {
@@ -63,9 +63,11 @@ export default function LoansPage() {
   }, [token])
 
   const calcEMI = (p: number, r: number, t: number) => {
-    const mr = r / 12 / 100
-    const emi = p * mr * Math.pow(1 + mr, t) / (Math.pow(1 + mr, t) - 1)
-    return isNaN(emi) ? 0 : emi
+    if (!p || !r || !t) return 0
+    
+    // Flat rate calculation only
+    const totalInterest = p * (r / 100) * (t / 12)
+    return (p + totalInterest) / t
   }
 
   const filtered = loans.filter(a =>
@@ -77,6 +79,57 @@ export default function LoansPage() {
   const totalPrincipal = filtered.reduce((s, a) => s + a.principalAmount, 0)
   const avgRate = filtered.length > 0 ? filtered.reduce((s, a) => s + a.interestRate, 0) / filtered.length : 0
 
+  const exportToCSV = () => {
+    // Helper to format number for CSV
+    const formatNumber = (amount: number) => {
+      return new Intl.NumberFormat('en-IN', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(amount)
+    }
+
+    // Create CSV content
+    const headers = ['Account Number', 'Customer Name', 'Customer Email', 'Customer Phone', 'Principal Amount', 'Interest Rate (%)', 'Tenure (Months)', 'Start Date', 'Maturity Date', 'Status', 'EMI']
+    const rows = filtered.map(account => {
+      const emi = calcEMI(account.principalAmount, account.interestRate, account.tenure)
+
+      return [
+        account.accountNumber,
+        account.customer.name,
+        account.customer.email,
+        account.customer.phone,
+        formatNumber(account.principalAmount),
+        account.interestRate.toString(),
+        account.tenure.toString(),
+        account.startDate ? new Date(account.startDate).toLocaleDateString('en-IN') : '',
+        account.maturityDate ? new Date(account.maturityDate).toLocaleDateString('en-IN') : '',
+        account.status || 'ACTIVE',
+        formatNumber(emi)
+      ]
+    })
+
+    const csvContent = [
+      ['Loan Accounts Report'],
+      [`Total Loans: ${filtered.length}`],
+      [`Total Principal: INR ${totalPrincipal.toLocaleString('en-IN')}`],
+      [],
+      headers,
+      ...rows
+    ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n')
+
+    // Create and download the CSV file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+
+    link.setAttribute('href', url)
+    link.setAttribute('download', `loan_accounts_${new Date().toISOString().split('T')[0]}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-6 animate-fade-in-up">
@@ -84,9 +137,20 @@ export default function LoansPage() {
           title="Loans"
           subtitle="Manage all loan accounts and EMI schedules"
           actions={
-            <Button onClick={() => router.push('/dashboard/loans/create')} className="finance-gradient-primary text-white h-9 px-4 rounded-xl font-medium shadow-sm">
-              <Plus className="h-4 w-4 mr-2" /> Create Loan
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={exportToCSV}
+                disabled={filtered.length === 0}
+                variant="outline"
+                className="h-9 border-slate-200 text-slate-700 rounded-xl px-4 hover:bg-slate-50 font-medium"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
+              </Button>
+              <Button onClick={() => router.push('/dashboard/loans/create')} className="finance-gradient-primary text-white h-9 px-4 rounded-xl font-medium shadow-sm">
+                <Plus className="h-4 w-4 mr-2" /> Create Loan
+              </Button>
+            </div>
           }
         />
 

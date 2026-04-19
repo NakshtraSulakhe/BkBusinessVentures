@@ -151,7 +151,7 @@ export default function RDLedgerPage() {
           amount: parseFloat(newTransaction.amount),
           description: newTransaction.description || `Monthly RD installment for ${selectedAccount.accountNumber}`,
           reference: newTransaction.reference || `RD-${new Date().toISOString().split('T')[0]}`,
-          transactionDate: newTransaction.date
+          date: newTransaction.date
         })
       })
 
@@ -435,7 +435,15 @@ export default function RDLedgerPage() {
                   <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Select RD Account</Label>
                   <Select 
                     value={newTransaction.accountId} 
-                    onValueChange={v => setNewTransaction(p => ({ ...p, accountId: v }))}
+                    onValueChange={v => {
+                      const account = rdAccounts.find(a => a.id === v)
+                      const monthlyInstallment = account && account.tenure > 0 ? account.principalAmount / account.tenure : 0
+                      setNewTransaction(p => ({ 
+                        ...p, 
+                        accountId: v,
+                        amount: monthlyInstallment > 0 ? monthlyInstallment.toString() : ''
+                      }))
+                    }}
                   >
                     <SelectTrigger className="h-11 border-slate-200 bg-slate-50/50 rounded-xl font-bold">
                       <SelectValue placeholder="Choose RD Account...">
@@ -457,18 +465,6 @@ export default function RDLedgerPage() {
                   </Select>
                 </div>
 
-                {newTransaction.accountId && (() => {
-                  const account = rdAccounts.find(a => a.id === newTransaction.accountId)
-                  if (!account) return null
-                  const monthlyInstallment = account.tenure > 0 ? account.principalAmount / account.tenure : 0
-                  return (
-                    <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
-                      <p className="text-[10px] font-black text-emerald-600 uppercase tracking-wider">Suggested Monthly Installment</p>
-                      <p className="text-lg font-black text-emerald-700">₹{monthlyInstallment.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</p>
-                    </div>
-                  )
-                })()}
-
                 <div className="space-y-2">
                   <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Installment Amount (₹)</Label>
                   <Input
@@ -476,8 +472,12 @@ export default function RDLedgerPage() {
                     placeholder="0.00"
                     value={newTransaction.amount}
                     onChange={e => setNewTransaction(p => ({ ...p, amount: e.target.value }))}
-                    className="h-11 border-slate-200 bg-slate-50/50 rounded-xl font-black tracking-tight"
+                    disabled={!!newTransaction.accountId}
+                    className="h-11 border-slate-200 bg-slate-100 rounded-xl font-black tracking-tight disabled:opacity-70 disabled:cursor-not-allowed"
                   />
+                  {newTransaction.accountId && (
+                    <p className="text-[10px] text-slate-400">Amount is auto-calculated based on RD account details</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">

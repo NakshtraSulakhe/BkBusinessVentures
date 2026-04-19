@@ -18,6 +18,7 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { PageHeader } from "@/components/ui/page-header"
+import { Switch } from "@/components/ui/switch"
 import { 
   ArrowLeftIcon,
   UserIcon,
@@ -55,6 +56,7 @@ interface Customer {
   annualIncome: number;
   accountType: 'savings' | 'current' | 'fd' | 'rd' | 'loan';
   purpose: string;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -80,7 +82,8 @@ export default function EditCustomer() {
     occupation: '',
     annualIncome: '',
     accountType: 'savings' as 'savings' | 'current' | 'fd' | 'rd' | 'loan',
-    purpose: ''
+    purpose: '',
+    isActive: true
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [mounted, setMounted] = useState(false)
@@ -106,7 +109,8 @@ export default function EditCustomer() {
           occupation: data.customer.occupation || '',
           annualIncome: data.customer.annualIncome?.toString() || '',
           accountType: data.customer.accountType,
-          purpose: data.customer.purpose || ''
+          purpose: data.customer.purpose || '',
+          isActive: data.customer.isActive !== undefined ? data.customer.isActive : true
         })
       } else {
         showMessage('Customer not found', 'error')
@@ -152,7 +156,8 @@ export default function EditCustomer() {
         token,
         body: JSON.stringify({
           ...formData,
-          annualIncome: parseFloat(formData.annualIncome) || 0
+          annualIncome: parseFloat(formData.annualIncome) || 0,
+          isActive: formData.isActive
         }),
       })
 
@@ -405,6 +410,39 @@ export default function EditCustomer() {
 
           <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-6">
             <Card className="border-slate-200 shadow-sm">
+              <CardHeader className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-t-xl px-6 py-4">
+                <CardTitle className="text-xs font-black uppercase tracking-[0.2em] flex items-center">
+                  <ShieldCheckIcon className="h-4 w-4 mr-2" />
+                  Account Status
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="text-sm font-bold text-slate-900">Active Status</div>
+                      <div className="text-xs text-slate-500 mt-1">
+                        {formData.isActive ? 'Customer is currently active' : 'Customer is currently inactive'}
+                      </div>
+                    </div>
+                    <Switch
+                      checked={formData.isActive}
+                      onCheckedChange={(checked) => handleInputChange('isActive', checked as any)}
+                      className="data-[state=checked]:bg-emerald-600"
+                    />
+                  </div>
+                  <div className={`p-3 rounded-lg text-xs font-bold ${
+                    formData.isActive 
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                      : 'bg-slate-100 text-slate-600 border border-slate-200'
+                  }`}>
+                    {formData.isActive ? '✓ Active customers can transact and access services' : '○ Inactive customers are restricted from transactions'}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* <Card className="border-slate-200 shadow-sm">
               <CardHeader className="bg-slate-800 text-white rounded-t-xl px-6 py-4">
                 <CardTitle className="text-xs font-black uppercase tracking-[0.2em] flex items-center">
                   <BuildingOfficeIcon className="h-4 w-4 mr-2 text-primary-foreground/60" />
@@ -442,12 +480,12 @@ export default function EditCustomer() {
                   ))}
                 </div>
               </CardContent>
-            </Card>
+            </Card> */}
 
             <div className="bg-amber-50 border border-amber-100 rounded-2xl p-6">
               <h4 className="text-xs font-black text-amber-700 uppercase tracking-[0.15em] mb-4 flex items-center">
                 <ExclamationTriangleIcon className="h-4 w-4 mr-2" />
-                Audit Warning
+               Warning
               </h4>
               <p className="text-[11px] font-bold text-amber-600 leading-relaxed">
                 Updating legal names or identification numbers will trigger an automated re-verification of KYC compliance. Ensure documents are verified before saving.
@@ -467,7 +505,7 @@ export default function EditCustomer() {
               ) : (
                 <>
                   <CheckCircleIcon className="h-5 w-5 mr-3" />
-                  Save Portfolio
+                  Save 
                 </>
               )}
             </Button>

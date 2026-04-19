@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { StatCard } from "@/components/ui/stat-card"
 import { PageHeader } from "@/components/ui/page-header"
-import { AmountDisplay } from "@/components/ui"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { AmountDisplay, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui"
+import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/contexts/auth-context"
 import { fetchWithAuth } from "@/lib/api"
 import {
@@ -20,11 +20,8 @@ import {
   ExclamationTriangleIcon,
   PlusIcon,
   ArrowRightIcon,
-  CalendarIcon,
   ClockIcon,
   ShieldCheckIcon,
-  RocketLaunchIcon,
-  ArrowPathIcon,
   QueueListIcon,
   UserGroupIcon as UserIcon,
   BuildingLibraryIcon,
@@ -36,7 +33,6 @@ import {
   CheckCircleIcon,
   BoltIcon
 } from "@heroicons/react/24/outline"
-import { Badge } from "@/components/ui/badge"
 
 // ─── Premium Visualizations ───────────────────────────────────────────────────
 
@@ -161,9 +157,6 @@ function DashboardContent() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<any>(null)
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
-  const [selectedYear] = useState(new Date().getFullYear())
-  const [running, setRunning] = useState(false)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -183,26 +176,6 @@ function DashboardContent() {
     }
   }
 
-  const handleQuickRun = async () => {
-    try {
-      setRunning(true)
-      const res = await fetchWithAuth('/api/suggestions/run-monthly', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        token,
-        body: JSON.stringify({ month: selectedMonth, year: selectedYear })
-      })
-      if (res.ok) {
-        fetchSummary()
-        router.push('/dashboard/operations/suggestions')
-      }
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setRunning(false)
-    }
-  }
-
   if (!mounted) return null
 
   const summary = data?.summary || {
@@ -216,39 +189,13 @@ function DashboardContent() {
         title="Overview"
         subtitle="A quick summary of all your customers, deposits, loans, and payments"
         actions={
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-sm">
-              <CalendarIcon className="h-4 w-4 text-slate-400" />
-              <select
-                value={selectedMonth}
-                onChange={e => setSelectedMonth(parseInt(e.target.value))}
-                className="bg-transparent text-[10px] font-black text-slate-900 uppercase outline-none cursor-pointer"
-              >
-                {Array.from({ length: 12 }, (_, i) => (
-                  <option key={i + 1} value={i + 1}>
-                    {new Date(2000, i).toLocaleString('en-US', { month: 'short' }).toUpperCase()}
-                  </option>
-                ))}
-              </select>
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={running}
-                onClick={handleQuickRun}
-                className="h-7 px-3 text-[10px] font-black uppercase text-primary hover:bg-primary hover:text-white transition-all rounded-lg"
-              >
-                {running ? <ArrowPathIcon className="h-3 w-3 animate-spin mr-1.5" /> : <RocketLaunchIcon className="h-3 w-3 mr-1.5" />}
-                Process Month
-              </Button>
-            </div>
-            <Button
-              onClick={() => router.push('/dashboard/customers/create')}
-              className="h-9 finance-gradient-primary text-white rounded-xl px-6 font-bold transition-all shadow-md hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <PlusIcon className="h-4 w-4 mr-2" />
-              Add Customer
-            </Button>
-          </div>
+          <Button
+            onClick={() => router.push('/dashboard/customers/create')}
+            className="h-9 finance-gradient-primary text-white rounded-xl px-6 font-bold transition-all shadow-md hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <PlusIcon className="h-4 w-4 mr-2" />
+            Add Customer
+          </Button>
         }
       />
 

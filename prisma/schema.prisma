@@ -91,6 +91,7 @@ model AccountRules {
   penaltyRate         Float?             @default(1.0) @map("penalty_rate")
   roundingMode        String             @default("nearest") @map("rounding_mode")
   roundingPrecision   Int                @default(2) @map("rounding_precision")
+  calculationMethod   String             @default("compound") @map("calculation_method")
   numberingTemplateId String?            @map("numbering_template_id")
   customFields        Json?              @map("custom_fields")
   createdAt           DateTime           @default(now()) @map("created_at")

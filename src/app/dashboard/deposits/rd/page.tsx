@@ -12,10 +12,12 @@ import { StatCard } from "@/components/ui/stat-card"
 import { PageHeader } from "@/components/ui/page-header"
 import { TableActions } from "@/components/ui/table-actions"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import {
   CurrencyDollarIcon, CheckCircleIcon, PlusIcon, EyeIcon,
   PencilIcon, MagnifyingGlassIcon, ChartBarIcon, CalendarIcon,
-  ArrowPathIcon, DocumentArrowDownIcon,
+  ArrowPathIcon, DocumentArrowDownIcon, DocumentTextIcon,
 } from "@heroicons/react/24/outline"
 
 interface RDAccount {
@@ -109,7 +111,7 @@ export default function RDPage() {
     const csvContent = [
       ['Recurring Deposit Accounts Report'],
       [`Total RD Accounts: ${filtered.length}`],
-      [`Total Monthly Installments: ₹${totalMonthly.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`],
+      [`Total Monthly Installments: INR ${totalMonthly.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`],
       [],
       headers,
       ...rows
@@ -119,13 +121,201 @@ export default function RDPage() {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     const url = URL.createObjectURL(blob)
-    
+
     link.setAttribute('href', url)
     link.setAttribute('download', `rd_accounts_${new Date().toISOString().split('T')[0]}.csv`)
     link.style.visibility = 'hidden'
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+  }
+
+  const exportToPDF = () => {
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a4'
+    })
+
+    const totalMaturity = filtered.reduce((sum, account) => {
+      const monthly = account.tenure > 0 ? account.principalAmount / account.tenure : 0
+      const totalPrincipal = monthly * account.tenure
+      const r = account.interestRate / 100
+      const n = account.tenure
+      const rdInterest = monthly * (n * (n + 1) / 2) * (r / 12)
+      return sum + (totalPrincipal + rdInterest)
+    }, 0)
+
+    const totalInterest = filtered.reduce((sum, account) => {
+      const monthly = account.tenure > 0 ? account.principalAmount / account.tenure : 0
+      const totalPrincipal = monthly * account.tenure
+      const r = account.interestRate / 100
+      const n = account.tenure
+      const rdInterest = monthly * (n * (n + 1) / 2) * (r / 12)
+      return sum + rdInterest
+    }, 0)
+
+    const totalPrincipal = filtered.reduce((sum, account) => {
+      const monthly = account.tenure > 0 ? account.principalAmount / account.tenure : 0
+      return sum + (monthly * account.tenure)
+    }, 0)
+
+    // Invoice header with company info
+    doc.setFillColor(37, 99, 235)
+    doc.rect(0, 0, 297, 35, 'F')
+    
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(24)
+    doc.setFont('helvetica', 'bold')
+    doc.text('BK Business Ventures', 14, 20)
+    
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    doc.text('Financial Management System', 14, 28)
+    
+    doc.setFontSize(10)
+    doc.text('INVOICE / REPORT', 240, 20)
+    doc.setFontSize(8)
+    doc.text(`Date: ${new Date().toLocaleDateString('en-IN')}`, 240, 26)
+    doc.text(`Ref: RD-RPT-${Date.now().toString().slice(-8)}`, 240, 32)
+
+    // Invoice title
+    doc.setTextColor(30, 41, 59)
+    doc.setFontSize(18)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Recurring Deposit Accounts Statement', 14, 48)
+
+    // Bill to section
+    doc.setDrawColor(200, 200, 200)
+    doc.setLineWidth(0.3)
+    doc.line(14, 52, 283, 52)
+    
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(71, 85, 105)
+    doc.text('Report Details', 14, 60)
+    
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(9)
+    doc.setTextColor(30, 41, 59)
+    doc.text(`Total Accounts: ${filtered.length}`, 14, 67)
+    doc.text(`Report Date: ${new Date().toLocaleDateString('en-IN')}`, 14, 73)
+
+    // Summary box
+    doc.setDrawColor(37, 99, 235)
+    doc.setLineWidth(0.5)
+    doc.rect(180, 58, 103, 20)
+    
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(9)
+    doc.setTextColor(37, 99, 235)
+    doc.text('SUMMARY', 185, 65)
+    
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8)
+    doc.setTextColor(30, 41, 59)
+    doc.text(`Total Principal: INR ${totalPrincipal.toLocaleString('en-IN')}`, 185, 71)
+    doc.text(`Total Interest: INR ${Math.round(totalInterest).toLocaleString('en-IN')}`, 185, 76)
+
+    // Prepare table data
+    const headers = [['S.No', 'Account No', 'Customer Name', 'Monthly', 'Rate', 'Tenure', 'Start Date', 'Maturity Date', 'Status', 'Maturity Amount', 'Interest']]
+    const rows = filtered.map((account, index) => {
+      const monthly = account.tenure > 0 ? account.principalAmount / account.tenure : 0
+      const totalPrincipal = monthly * account.tenure
+      const r = account.interestRate / 100
+      const n = account.tenure
+      const rdInterest = monthly * (n * (n + 1) / 2) * (r / 12)
+      const maturityAmount = totalPrincipal + rdInterest
+
+      return [
+        (index + 1).toString(),
+        account.accountNumber,
+        account.customer.name,
+        monthly.toLocaleString('en-IN'),
+        `${account.interestRate}%`,
+        `${account.tenure}m`,
+        account.startDate ? new Date(account.startDate).toLocaleDateString('en-IN') : '-',
+        account.maturityDate ? new Date(account.maturityDate).toLocaleDateString('en-IN') : '-',
+        account.status || 'ACTIVE',
+        Math.round(maturityAmount).toLocaleString('en-IN'),
+        Math.round(rdInterest).toLocaleString('en-IN')
+      ]
+    })
+
+    // Add table with invoice styling
+    autoTable(doc, {
+      startY: 85,
+      head: headers,
+      body: rows,
+      styles: {
+        fontSize: 7,
+        cellPadding: 3,
+        lineColor: [226, 232, 240],
+        lineWidth: 0.3,
+        overflow: 'linebreak',
+        font: 'helvetica',
+      },
+      headStyles: {
+        fillColor: [30, 41, 59],
+        textColor: 255,
+        fontStyle: 'bold',
+        fontSize: 7,
+        cellPadding: 4,
+        halign: 'center',
+      },
+      columnStyles: {
+        0: { cellWidth: 12, halign: 'center', fontStyle: 'bold' },
+        1: { cellWidth: 25 },
+        2: { cellWidth: 35 },
+        3: { cellWidth: 22, halign: 'right' },
+        4: { cellWidth: 15, halign: 'center' },
+        5: { cellWidth: 15, halign: 'center' },
+        6: { cellWidth: 22, halign: 'center' },
+        7: { cellWidth: 22, halign: 'center' },
+        8: { cellWidth: 18, halign: 'center' },
+        9: { cellWidth: 25, halign: 'right', fontStyle: 'bold' },
+        10: { cellWidth: 22, halign: 'right', fontStyle: 'bold' },
+      },
+      alternateRowStyles: {
+        fillColor: [248, 250, 252],
+      },
+      margin: { top: 85, left: 14, right: 14, bottom: 40 },
+      didDrawPage: (data) => {
+        // Add page number
+        const pageSize = doc.internal.pageSize
+        const pageHeight = pageSize.height ? pageSize.height : pageSize.getHeight()
+        doc.setFontSize(8)
+        doc.setTextColor(148, 163, 184)
+        doc.text(
+          `Page ${data.pageNumber}`,
+          pageSize.width ? pageSize.width / 2 : 148,
+          pageHeight - 12,
+          { align: 'center' }
+        )
+      },
+    })
+
+    // Footer
+    const pageCount = doc.internal.pages.length - 1
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i)
+      
+      // Footer line
+      doc.setDrawColor(226, 232, 240)
+      doc.setLineWidth(0.5)
+      doc.line(14, 185, 283, 185)
+      
+      // Footer text
+      doc.setFontSize(7)
+      doc.setTextColor(148, 163, 184)
+      doc.setFont('helvetica', 'normal')
+      doc.text('This is a computer-generated document. For any queries, please contact support.', 14, 192)
+      doc.text('BK Business Ventures - Financial Management System', 14, 198)
+      doc.text(`Generated on: ${new Date().toLocaleDateString('en-IN')} at ${new Date().toLocaleTimeString('en-IN')}`, 240, 192, { align: 'right' })
+    }
+
+    // Save the PDF
+    doc.save(`RD_Statement_${new Date().toISOString().split('T')[0]}.pdf`)
   }
 
   return (
@@ -144,6 +334,15 @@ export default function RDPage() {
               >
                 <DocumentArrowDownIcon className="h-4 w-4 mr-2" />
                 Export CSV
+              </Button>
+              <Button
+                onClick={exportToPDF}
+                disabled={filtered.length === 0}
+                variant="outline"
+                className="h-9 border-slate-200 text-slate-700 rounded-xl px-4 hover:bg-slate-50 font-medium"
+              >
+                <DocumentTextIcon className="h-4 w-4 mr-2" />
+                Export PDF
               </Button>
               <Button onClick={() => router.push('/dashboard/deposits/rd/create')} className="finance-gradient-primary text-white h-9 px-4 rounded-xl font-medium shadow-sm">
                 <PlusIcon className="h-4 w-4 mr-2" /> Create RD

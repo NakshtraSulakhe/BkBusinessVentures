@@ -68,8 +68,8 @@ function CreateFDComponent() {
     interestRate: '',
     tenure: '',
     startDate: new Date().toISOString().split('T')[0],
+    calculationMethod: 'compound' as 'simple' | 'compound',
     interestMode: 'monthly' as 'monthly' | 'maturity-only',
-    payoutMode: 'reinvest' as 'reinvest' | 'paid-out',
     roundingMode: 'nearest' as 'nearest' | 'up' | 'down',
     roundingPrecision: '2'
   })
@@ -107,7 +107,22 @@ function CreateFDComponent() {
     const rate = parseFloat(formData.interestRate) || 0
     const tenure = parseInt(formData.tenure) || 0
     if (!principal || !rate || !tenure) return 0
-    return principal * (rate / 100) * (tenure / 12)
+
+    if (formData.calculationMethod === 'simple') {
+      // Simple Interest Formula: SI = P * R * T
+      return principal * (rate / 100) * (tenure / 12)
+    } else {
+      // Compound Interest Formula (Quarterly Compounding)
+      // A = P * (1 + r/n)^(n*t)
+      const r = rate / 100
+      const n = 4 // Quarterly compounding
+      const t = tenure / 12 // Convert months to years
+
+      const finalAmount = principal * Math.pow((1 + r / n), n * t)
+      const interestEarned = finalAmount - principal
+
+      return interestEarned
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -134,7 +149,8 @@ function CreateFDComponent() {
           interestRate: parseFloat(formData.interestRate),
           tenure: parseInt(formData.tenure),
           maturityDate: new Date(new Date(formData.startDate).setMonth(new Date(formData.startDate).getMonth() + parseInt(formData.tenure))).toISOString(),
-          roundingPrecision: parseInt(formData.roundingPrecision)
+          roundingPrecision: parseInt(formData.roundingPrecision),
+          calculationMethod: formData.calculationMethod
         }),
       })
 
@@ -289,26 +305,14 @@ function CreateFDComponent() {
             <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Interest Credit Method</label>
-                  <Select value={formData.interestMode} onValueChange={v => setFormData(p => ({ ...p, interestMode: v as any }))}>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Interest Calculation Method</label>
+                  <Select value={formData.calculationMethod} onValueChange={v => setFormData(p => ({ ...p, calculationMethod: v as any }))}>
                     <SelectTrigger className="h-11 border-slate-200 bg-slate-50/30">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="monthly">Monthly Interest</SelectItem>
-                      <SelectItem value="maturity-only">At Maturity</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Payout Method</label>
-                  <Select value={formData.payoutMode} onValueChange={v => setFormData(p => ({ ...p, payoutMode: v as any }))}>
-                    <SelectTrigger className="h-11 border-slate-200 bg-slate-50/30">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="reinvest">Reinvest Interest</SelectItem>
-                      <SelectItem value="paid-out">Payout to Account</SelectItem>
+                      <SelectItem value="simple">Simple Interest</SelectItem>
+                      <SelectItem value="compound">Quarterly Compounding</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -356,10 +360,10 @@ function CreateFDComponent() {
               <div className="space-y-1">
                 <p className="text-[10px] font-bold text-slate-500 uppercase">Total at Maturity</p>
                 <p className="text-3xl font-black text-white tracking-tighter">
-                  {formatCurrency((parseFloat(formData.principalAmount) || 0) + calculateYield())}
+                  {formatCurrency(Math.round((parseFloat(formData.principalAmount) || 0) + calculateYield()))}
                 </p>
                 <p className="text-xs text-slate-400 mt-1">
-                  Principal {formatCurrency(parseFloat(formData.principalAmount) || 0)} + Interest {formatCurrency(calculateYield())}
+                  Principal {formatCurrency(parseFloat(formData.principalAmount) || 0)} + Interest {formatCurrency(Math.round(calculateYield()))}
                 </p>
               </div>
 

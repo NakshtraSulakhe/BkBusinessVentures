@@ -93,6 +93,7 @@ export async function GET(request: NextRequest) {
               phone: true
             }
           },
+          accountRules: true,
           _count: {
             select: {
               transactions: true
@@ -172,7 +173,7 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const { customerId, accountType, principalAmount, interestRate, tenure, accountNumber: manualAccountNumber } = body
+  const { customerId, accountType, principalAmount, interestRate, tenure, accountNumber: manualAccountNumber, loanMethod, emiAmount, emiDueDay, gracePeriodDays, penaltyRate, roundingMode, roundingPrecision, startDate: providedStartDate, maturityDate: providedMaturityDate } = body
 
   // Validate required fields
   if (!customerId || !accountType || !principalAmount || !manualAccountNumber) {
@@ -236,38 +237,97 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate dates
-    const startDate = new Date()
-    let maturityDate: Date | null = null
+    const startDate = providedStartDate ? new Date(providedStartDate) : new Date()
+    let maturityDate: Date | null = providedMaturityDate ? new Date(providedMaturityDate) : null
 
-    if (accountType.toUpperCase() !== 'LOAN') {
+    if (!maturityDate && accountType.toUpperCase() !== 'LOAN') {
       maturityDate = new Date()
       maturityDate.setMonth(maturityDate.getMonth() + (parseInt(tenure) || 12))
     }
 
-    console.log("💼 Creating account:", { accountNumber, accountType, principalAmount: parsedAmount })
+    console.log("💼 Creating account:", { accountNumber, accountType, principalAmount: parsedAmount, loanMethod })
 
-    const account = await prisma.account.create({
-      data: {
-        accountNumber,
-        customerId,
-        accountType: accountType.toUpperCase(),
-        principalAmount: parsedAmount,
-        interestRate: parseFloat(interestRate) || 0,
-        tenure: parseInt(tenure) || 12,
-        startDate,
-        maturityDate,
-      },
-      include: {
-        customer: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            phone: true
+    // Prepare account data
+    const accountData: any = {
+      accountNumber,
+      customerId,
+      accountType: accountType.toUpperCase(),
+      principalAmount: parsedAmount,
+      interestRate: parseFloat(interestRate) || 0,
+      tenure: parseInt(tenure) || 12,
+      startDate,
+      maturityDate,
+    }
+
+    // Create account with accountRules for loans and FD
+    let account
+    if (accountType.toUpperCase() === 'LOAN') {
+      account = await prisma.account.create({
+        data: {
+          ...accountData,
+          accountRules: {
+            create: {
+              loanMethod: 'flat', // Always use flat rate
+              emiAmount: emiAmount ? parseFloat(emiAmount) : null,
+              emiDueDay: emiDueDay ? parseInt(emiDueDay) : 1,
+              gracePeriodDays: gracePeriodDays ? parseInt(gracePeriodDays) : 0,
+              penaltyRate: penaltyRate ? parseFloat(penaltyRate) : 0,
+              roundingMode: roundingMode || 'nearest',
+              roundingPrecision: roundingPrecision ? parseInt(roundingPrecision) : 2,
+            }
+          }
+        },
+        include: {
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true
+            }
+          },
+          accountRules: true
+        }
+      })
+    } else if (accountType.toUpperCase() === 'FD') {
+      // For FD accounts, save calculationMethod in accountRules
+      const calculationMethod = body.calculationMethod || 'compound'
+      account = await prisma.account.create({
+        data: {
+          ...accountData,
+          accountRules: {
+            create: {
+              calculationMethod
+            }
+          }
+        },
+        include: {
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true
+            }
+          },
+          accountRules: true
+        }
+      })
+    } else {
+      account = await prisma.account.create({
+        data: accountData,
+        include: {
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true
+            }
           }
         }
-      }
-    })
+      })
+    }
 
     console.log("✅ Account created successfully:", account.id)
 

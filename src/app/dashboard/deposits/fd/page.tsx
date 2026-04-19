@@ -12,8 +12,10 @@ import { StatCard } from "@/components/ui/stat-card"
 import { PageHeader } from "@/components/ui/page-header"
 import { TableActions } from "@/components/ui/table-actions"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import {
-  Building2, DollarSign, CheckCircle2, AlertTriangle, Plus, Eye, Pencil, Search, BarChart3, Calendar, Download
+  Building2, DollarSign, CheckCircle2, AlertTriangle, Plus, Eye, Pencil, Search, BarChart3, Calendar, Download, FileText
 } from "lucide-react"
 
 interface FDAccount {
@@ -70,22 +72,39 @@ export default function FDPage() {
   const totalPrincipal = filtered.reduce((s, a) => s + a.principalAmount, 0)
   const avgRate = filtered.length > 0 ? filtered.reduce((s, a) => s + a.interestRate, 0) / filtered.length : 0
 
-  const exportToCSV = () => {
-    // Helper to format number for CSV (raw number, no currency symbol)
-    const formatNumber = (amount: number) => {
-      return new Intl.NumberFormat('en-IN', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }).format(amount)
-    }
+  const formatNumber = (num: number) => {
+    return num.toLocaleString('en-IN')
+  }
 
+  const calculateCompoundInterest = (principal: number, rate: number, tenure: number, method: string = 'compound') => {
+    if (!principal || !rate || !tenure) return 0
+
+    if (method === 'simple') {
+      // Simple Interest Formula: SI = P * R * T
+      return principal * (rate / 100) * (tenure / 12)
+    } else {
+      // Compound Interest Formula (Quarterly Compounding)
+      // A = P * (1 + r/n)^(n*t)
+      const r = rate / 100
+      const n = 4 // Quarterly compounding
+      const t = tenure / 12 // Convert months to years
+
+      const finalAmount = principal * Math.pow((1 + r / n), n * t)
+      const interestEarned = finalAmount - principal
+
+      return interestEarned
+    }
+  }
+
+  const exportToCSV = () => {
     // Create CSV content
-    const headers = ['Account Number', 'Customer Name', 'Customer Email', 'Customer Phone', 'Principal Amount', 'Interest Rate (%)', 'Tenure (Months)', 'Start Date', 'Maturity Date', 'Status', 'Maturity Amount']
+    const headers = ['Account Number', 'Customer Name', 'Customer Email', 'Customer Phone', 'Principal Amount', 'Interest Rate (%)', 'Tenure (Months)', 'Start Date', 'Maturity Date', 'Status', 'Maturity Amount', 'Interest Earned', 'Calculation Method']
     const rows = filtered.map(account => {
       const principal = account.principalAmount || 0
       const rate = account.interestRate || 0
       const tenure = account.tenure || 0
-      const interest = (principal * rate * tenure) / (100 * 12)
+      const calculationMethod = (account.accountRules?.calculationMethod as string) || 'compound'
+      const interest = calculateCompoundInterest(principal, rate, tenure, calculationMethod)
       const maturityAmount = principal + interest
 
       return [
@@ -99,14 +118,16 @@ export default function FDPage() {
         account.startDate ? new Date(account.startDate).toLocaleDateString('en-IN') : '',
         account.maturityDate ? new Date(account.maturityDate).toLocaleDateString('en-IN') : '',
         account.status || 'ACTIVE',
-        formatNumber(maturityAmount)
+        formatNumber(Math.round(maturityAmount)),
+        formatNumber(Math.round(interest)),
+        calculationMethod === 'simple' ? 'Simple Interest' : 'Quarterly Compounding'
       ]
     })
 
     const csvContent = [
       ['Fixed Deposit Accounts Report'],
       [`Total FD Accounts: ${filtered.length}`],
-      [`Total Principal: ₹${totalPrincipal.toLocaleString('en-IN')}`],
+      [`Total Principal: INR ${totalPrincipal.toLocaleString('en-IN')}`],
       [],
       headers,
       ...rows
@@ -116,13 +137,197 @@ export default function FDPage() {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     const url = URL.createObjectURL(blob)
-    
+
     link.setAttribute('href', url)
     link.setAttribute('download', `fd_accounts_${new Date().toISOString().split('T')[0]}.csv`)
     link.style.visibility = 'hidden'
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+  }
+
+  const exportToPDF = () => {
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a4'
+    })
+
+    const totalMaturity = filtered.reduce((sum, account) => {
+      const principal = account.principalAmount || 0
+      const rate = account.interestRate || 0
+      const tenure = account.tenure || 0
+      const calculationMethod = (account.accountRules?.calculationMethod as string) || 'compound'
+      const interest = calculateCompoundInterest(principal, rate, tenure, calculationMethod)
+      return sum + principal + interest
+    }, 0)
+
+    const totalInterest = filtered.reduce((sum, account) => {
+      const principal = account.principalAmount || 0
+      const rate = account.interestRate || 0
+      const tenure = account.tenure || 0
+      const calculationMethod = (account.accountRules?.calculationMethod as string) || 'compound'
+      return sum + calculateCompoundInterest(principal, rate, tenure, calculationMethod)
+    }, 0)
+
+    // Invoice header with company info
+    doc.setFillColor(37, 99, 235)
+    doc.rect(0, 0, 297, 35, 'F')
+    
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(24)
+    doc.setFont('helvetica', 'bold')
+    doc.text('BK Business Ventures', 14, 20)
+    
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    doc.text('Financial Management System', 14, 28)
+    
+    doc.setFontSize(10)
+    doc.text('INVOICE / REPORT', 240, 20)
+    doc.setFontSize(8)
+    doc.text(`Date: ${new Date().toLocaleDateString('en-IN')}`, 240, 26)
+    doc.text(`Ref: FD-RPT-${Date.now().toString().slice(-8)}`, 240, 32)
+
+    // Invoice title
+    doc.setTextColor(30, 41, 59)
+    doc.setFontSize(18)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Fixed Deposit Accounts Statement', 14, 48)
+
+    // Bill to section
+    doc.setDrawColor(200, 200, 200)
+    doc.setLineWidth(0.3)
+    doc.line(14, 52, 283, 52)
+    
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(71, 85, 105)
+    doc.text('Report Details', 14, 60)
+    
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(9)
+    doc.setTextColor(30, 41, 59)
+    doc.text(`Total Accounts: ${filtered.length}`, 14, 67)
+    doc.text(`Report Date: ${new Date().toLocaleDateString('en-IN')}`, 14, 73)
+
+    // Summary box
+    doc.setDrawColor(37, 99, 235)
+    doc.setLineWidth(0.5)
+    doc.rect(180, 58, 103, 20)
+    
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(9)
+    doc.setTextColor(37, 99, 235)
+    doc.text('SUMMARY', 185, 65)
+    
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8)
+    doc.setTextColor(30, 41, 59)
+    doc.text(`Total Principal: INR ${totalPrincipal.toLocaleString('en-IN')}`, 185, 71)
+    doc.text(`Total Interest: INR ${Math.round(totalInterest).toLocaleString('en-IN')}`, 185, 76)
+
+    // Prepare table data
+    const headers = [['S.No', 'Account No', 'Customer Name', 'Principal', 'Rate', 'Tenure', 'Start Date', 'Maturity Date', 'Status', 'Maturity Amount', 'Interest', 'Method']]
+    const rows = filtered.map((account, index) => {
+      const principal = account.principalAmount || 0
+      const rate = account.interestRate || 0
+      const tenure = account.tenure || 0
+      const calculationMethod = (account.accountRules?.calculationMethod as string) || 'compound'
+      const interest = calculateCompoundInterest(principal, rate, tenure, calculationMethod)
+      const maturityAmount = principal + interest
+
+      return [
+        (index + 1).toString(),
+        account.accountNumber,
+        account.customer.name,
+        principal.toLocaleString('en-IN'),
+        `${rate}%`,
+        `${tenure}m`,
+        account.startDate ? new Date(account.startDate).toLocaleDateString('en-IN') : '-',
+        account.maturityDate ? new Date(account.maturityDate).toLocaleDateString('en-IN') : '-',
+        account.status || 'ACTIVE',
+        Math.round(maturityAmount).toLocaleString('en-IN'),
+        Math.round(interest).toLocaleString('en-IN'),
+        calculationMethod === 'simple' ? 'Simple' : 'Compound'
+      ]
+    })
+
+    // Add table with invoice styling
+    autoTable(doc, {
+      startY: 85,
+      head: headers,
+      body: rows,
+      styles: {
+        fontSize: 7,
+        cellPadding: 3,
+        lineColor: [226, 232, 240],
+        lineWidth: 0.3,
+        overflow: 'linebreak',
+        font: 'helvetica',
+      },
+      headStyles: {
+        fillColor: [30, 41, 59],
+        textColor: 255,
+        fontStyle: 'bold',
+        fontSize: 7,
+        cellPadding: 4,
+        halign: 'center',
+      },
+      columnStyles: {
+        0: { cellWidth: 12, halign: 'center', fontStyle: 'bold' },
+        1: { cellWidth: 25 },
+        2: { cellWidth: 35 },
+        3: { cellWidth: 22, halign: 'right' },
+        4: { cellWidth: 15, halign: 'center' },
+        5: { cellWidth: 15, halign: 'center' },
+        6: { cellWidth: 22, halign: 'center' },
+        7: { cellWidth: 22, halign: 'center' },
+        8: { cellWidth: 18, halign: 'center' },
+        9: { cellWidth: 25, halign: 'right', fontStyle: 'bold' },
+        10: { cellWidth: 22, halign: 'right', fontStyle: 'bold' },
+        11: { cellWidth: 20, halign: 'center' },
+      },
+      alternateRowStyles: {
+        fillColor: [248, 250, 252],
+      },
+      margin: { top: 85, left: 14, right: 14, bottom: 40 },
+      didDrawPage: (data) => {
+        // Add page number
+        const pageSize = doc.internal.pageSize
+        const pageHeight = pageSize.height ? pageSize.height : pageSize.getHeight()
+        doc.setFontSize(8)
+        doc.setTextColor(148, 163, 184)
+        doc.text(
+          `Page ${data.pageNumber}`,
+          pageSize.width ? pageSize.width / 2 : 148,
+          pageHeight - 12,
+          { align: 'center' }
+        )
+      },
+    })
+
+    // Footer
+    const pageCount = doc.internal.pages.length - 1
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i)
+      
+      // Footer line
+      doc.setDrawColor(226, 232, 240)
+      doc.setLineWidth(0.5)
+      doc.line(14, 185, 283, 185)
+      
+      // Footer text
+      doc.setFontSize(7)
+      doc.setTextColor(148, 163, 184)
+      doc.setFont('helvetica', 'normal')
+      doc.text('This is a computer-generated document. For any queries, please contact support.', 14, 192)
+      doc.text('BK Business Ventures - Financial Management System', 14, 198)
+      doc.text(`Generated on: ${new Date().toLocaleDateString('en-IN')} at ${new Date().toLocaleTimeString('en-IN')}`, 240, 192, { align: 'right' })
+    }
+
+    // Save the PDF
+    doc.save(`FD_Statement_${new Date().toISOString().split('T')[0]}.pdf`)
   }
 
   return (
@@ -141,6 +346,15 @@ export default function FDPage() {
               >
                 <Download className="h-4 w-4 mr-2" />
                 Export CSV
+              </Button>
+              <Button
+                onClick={exportToPDF}
+                disabled={filtered.length === 0}
+                variant="outline"
+                className="h-9 border-slate-200 text-slate-700 rounded-xl px-4 hover:bg-slate-50 font-medium"
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Export PDF
               </Button>
               <Button onClick={() => router.push('/dashboard/deposits/fd/create')} className="finance-gradient-primary text-white h-9 px-4 rounded-xl font-medium shadow-sm">
                 <Plus className="h-4 w-4 mr-2" /> Create FD
@@ -237,10 +451,11 @@ export default function FDPage() {
                             const principal = account.principalAmount || 0
                             const rate = account.interestRate || 0
                             const tenure = account.tenure || 0
-                            const interest = (principal * rate * tenure) / (100 * 12)
+                            const calculationMethod = (account.accountRules?.calculationMethod as string) || 'compound'
+                            const interest = calculateCompoundInterest(principal, rate, tenure, calculationMethod)
                             const maturityAmount = principal + interest
                             return (
-                              <span className="text-sm font-bold text-emerald-700 tabular-nums">₹{maturityAmount.toLocaleString('en-IN')}</span>
+                              <span className="text-sm font-bold text-emerald-700 tabular-nums">₹{Math.round(maturityAmount).toLocaleString('en-IN')}</span>
                             )
                           })()}
                         </TableCell>

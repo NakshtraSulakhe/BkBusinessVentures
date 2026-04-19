@@ -35,6 +35,9 @@ interface Account {
   tenure: number
   startDate: string
   status: string
+  accountRules?: {
+    calculationMethod?: string
+  }
   customer: {
     id: string
     name: string
@@ -57,6 +60,7 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
     tenure: '',
     startDate: '',
     status: 'ACTIVE',
+    calculationMethod: 'compound' as 'simple' | 'compound',
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -77,6 +81,7 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
           tenure: data.account.tenure?.toString() || '',
           startDate: data.account.startDate?.split('T')[0] || '',
           status: data.account.status || 'ACTIVE',
+          calculationMethod: (data.account.accountRules?.calculationMethod as string) || 'compound',
         })
       } else {
         setMessage({ type: 'error', text: 'Failed to load account' })
@@ -121,6 +126,7 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
           tenure: parseInt(formData.tenure),
           startDate: formData.startDate,
           status: formData.status,
+          calculationMethod: formData.calculationMethod,
         }),
       })
 
@@ -260,6 +266,27 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
                   />
                   {errors.startDate && <p className="text-xs text-rose-500">{errors.startDate}</p>}
                 </div>
+
+                {account?.accountType?.toLowerCase() === 'fd' && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                      <BuildingLibraryIcon className="h-4 w-4 text-slate-400" />
+                      Interest Calculation Method
+                    </label>
+                    <Select
+                      value={formData.calculationMethod}
+                      onValueChange={(value) => setFormData({ ...formData, calculationMethod: value as any })}
+                    >
+                      <SelectTrigger className="h-10">
+                        <SelectValue placeholder="Select calculation method" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="simple">Simple Interest</SelectItem>
+                        <SelectItem value="compound">Quarterly Compounding</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-slate-700">Status</label>

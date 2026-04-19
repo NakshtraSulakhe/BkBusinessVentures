@@ -87,10 +87,10 @@ export default function CustomerView() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [showDeleteDialog, setShowDeleteDialog] = useState<{ show: boolean; customerId: string; customerName: string }>({ show: false, customerId: '', customerName: '' })
-  
+
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [transactionType, setTransactionType] = useState('all')
-  const [accountFilter, setAccountFilter] = useState('all')
   const [dateFilter, setDateFilter] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [pagination, setPagination] = useState({
@@ -124,7 +124,11 @@ export default function CustomerView() {
         ...(dateFilter && { date: dateFilter }),
       })
 
-      if (customerLedger?.accounts) {
+      // If a specific account is selected, filter by that account
+      if (selectedAccountId) {
+        queryParams.set('accountId', selectedAccountId)
+      } else if (customerLedger?.accounts) {
+        // Otherwise, filter by all customer accounts
         const accountIds = customerLedger.accounts.map((acc: any) => acc.id)
         if (accountIds.length > 0) {
           queryParams.set('accountId', accountIds.join(','))
@@ -148,7 +152,7 @@ export default function CustomerView() {
     if (customerLedger) {
       fetchAllTransactions()
     }
-  }, [currentPage, searchTerm, transactionType, accountFilter, dateFilter, customerLedger])
+  }, [currentPage, searchTerm, transactionType, dateFilter, customerLedger, selectedAccountId])
 
   const fetchCustomer = async () => {
     try {
@@ -443,12 +447,166 @@ export default function CustomerView() {
           </div>
         </div>
 
+        {/* Accounts Section - Grouped by Type */}
+        {customerLedger?.accounts && customerLedger.accounts.length > 0 && (
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-bold text-slate-900">Accounts</h2>
+                <p className="text-xs text-slate-400 mt-1 font-medium">
+                  {selectedAccountId ? 'Showing transactions for selected account' : 'Showing transactions for all accounts'}
+                </p>
+              </div>
+              {selectedAccountId && (
+                <Button
+                  onClick={() => setSelectedAccountId(null)}
+                  variant="outline"
+                  size="sm"
+                  className="h-8 border-slate-200 text-slate-600 hover:bg-slate-50 rounded-lg text-xs font-medium"
+                >
+                  Show All Accounts
+                </Button>
+              )}
+            </div>
+
+            <div className="divide-y divide-slate-100">
+              {(() => {
+                const fdAccounts = customerLedger.accounts.filter((acc: any) => acc.accountType?.toUpperCase() === 'FD')
+                const rdAccounts = customerLedger.accounts.filter((acc: any) => acc.accountType?.toUpperCase() === 'RD')
+                const loanAccounts = customerLedger.accounts.filter((acc: any) => acc.accountType?.toUpperCase() === 'LOAN')
+
+                return (
+                  <>
+                    {fdAccounts.length > 0 && (
+                      <div className="p-4">
+                        <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                          <BuildingLibraryIcon className="h-3 w-3" />
+                          Fixed Deposits ({fdAccounts.length})
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {fdAccounts.map((account: any) => (
+                            <div
+                              key={account.id}
+                              onClick={() => setSelectedAccountId(account.id)}
+                              className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                                selectedAccountId === account.id
+                                  ? 'bg-primary/5 border-primary shadow-sm'
+                                  : 'bg-slate-50 border-slate-100 hover:bg-slate-100 hover:border-slate-200'
+                              }`}
+                            >
+                              <div className="flex items-start justify-between mb-2">
+                                <div>
+                                  <p className="text-xs font-bold text-slate-900">{account.accountNumber}</p>
+                                  <p className="text-[10px] text-slate-500 mt-0.5">FD Account</p>
+                                </div>
+                                {selectedAccountId === account.id && (
+                                  <CheckCircleIcon className="h-4 w-4 text-primary" />
+                                )}
+                              </div>
+                              <div className="flex items-baseline gap-1">
+                                <span className="text-sm font-black text-slate-900">{formatCurrency(account.principalAmount)}</span>
+                                <span className="text-[10px] text-slate-500">@ {account.interestRate}%</span>
+                              </div>
+                              <div className="text-[10px] text-slate-400 mt-1">{account.tenure} months</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {rdAccounts.length > 0 && (
+                      <div className="p-4">
+                        <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                          <CreditCardIcon className="h-3 w-3" />
+                          Recurring Deposits ({rdAccounts.length})
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {rdAccounts.map((account: any) => (
+                            <div
+                              key={account.id}
+                              onClick={() => setSelectedAccountId(account.id)}
+                              className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                                selectedAccountId === account.id
+                                  ? 'bg-primary/5 border-primary shadow-sm'
+                                  : 'bg-slate-50 border-slate-100 hover:bg-slate-100 hover:border-slate-200'
+                              }`}
+                            >
+                              <div className="flex items-start justify-between mb-2">
+                                <div>
+                                  <p className="text-xs font-bold text-slate-900">{account.accountNumber}</p>
+                                  <p className="text-[10px] text-slate-500 mt-0.5">RD Account</p>
+                                </div>
+                                {selectedAccountId === account.id && (
+                                  <CheckCircleIcon className="h-4 w-4 text-primary" />
+                                )}
+                              </div>
+                              <div className="flex items-baseline gap-1">
+                                <span className="text-sm font-black text-slate-900">{formatCurrency(account.principalAmount)}</span>
+                                <span className="text-[10px] text-slate-500">@ {account.interestRate}%</span>
+                              </div>
+                              <div className="text-[10px] text-slate-400 mt-1">{account.tenure} months</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {loanAccounts.length > 0 && (
+                      <div className="p-4">
+                        <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                          <CurrencyDollarIcon className="h-3 w-3" />
+                          Loans ({loanAccounts.length})
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {loanAccounts.map((account: any) => (
+                            <div
+                              key={account.id}
+                              onClick={() => setSelectedAccountId(account.id)}
+                              className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                                selectedAccountId === account.id
+                                  ? 'bg-primary/5 border-primary shadow-sm'
+                                  : 'bg-slate-50 border-slate-100 hover:bg-slate-100 hover:border-slate-200'
+                              }`}
+                            >
+                              <div className="flex items-start justify-between mb-2">
+                                <div>
+                                  <p className="text-xs font-bold text-slate-900">{account.accountNumber}</p>
+                                  <p className="text-[10px] text-slate-500 mt-0.5">Loan Account</p>
+                                </div>
+                                {selectedAccountId === account.id && (
+                                  <CheckCircleIcon className="h-4 w-4 text-primary" />
+                                )}
+                              </div>
+                              <div className="flex items-baseline gap-1">
+                                <span className="text-sm font-black text-slate-900">{formatCurrency(account.principalAmount)}</span>
+                                <span className="text-[10px] text-slate-500">@ {account.interestRate}%</span>
+                              </div>
+                              <div className="text-[10px] text-slate-400 mt-1">{account.tenure} months</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )
+              })()}
+            </div>
+          </div>
+        )}
+
         {/* Financial Activity - Tabs Style */}
         <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
           <div className="px-6 py-5 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h2 className="text-sm font-bold text-slate-900">Comprehensive Transaction Ledger</h2>
-              <p className="text-xs text-slate-400 mt-1 font-medium">Monitoring all linked account activities</p>
+              <h2 className="text-sm font-bold text-slate-900">
+                {selectedAccountId ? 'Account Transaction Ledger' : 'Comprehensive Transaction Ledger'}
+              </h2>
+              <p className="text-xs text-slate-400 mt-1 font-medium">
+                {selectedAccountId
+                  ? `Showing transactions for selected account only`
+                  : 'Monitoring all linked account activities'
+                }
+              </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <div className="relative">

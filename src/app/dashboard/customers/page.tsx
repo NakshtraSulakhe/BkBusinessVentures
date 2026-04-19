@@ -114,7 +114,10 @@ export default function CustomerMaster() {
       const q = searchTerm.toLowerCase()
       return (c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q) ||
         c.phone.includes(q) || c.city.toLowerCase().includes(q)) &&
-        (filterType === 'all' || c.accountType === filterType)
+        (filterType === 'all' || 
+         filterType === 'active' ? c.isActive : 
+         filterType === 'inactive' ? !c.isActive : 
+         c.accountType === filterType)
     })
     .sort((a, b) => {
       const av = a[sortField], bv = b[sortField]
@@ -153,11 +156,10 @@ export default function CustomerMaster() {
           }
         />
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
           <StatCard title="Total Customers" value={customers.length} subtitle="All registered" icon={<User />} iconVariant="primary" borderVariant="primary" className="p-4 sm:p-6" />
-          <StatCard title="Savings Accounts" value={customers.filter(c => c.accountType === 'savings').length} subtitle="Active savings" icon={<Banknote />} iconVariant="success" borderVariant="success" className="p-4 sm:p-6" />
-          <StatCard title="Current Accounts" value={customers.filter(c => c.accountType === 'current').length} subtitle="Business accounts" icon={<Building2 />} iconVariant="info" borderVariant="info" className="p-4 sm:p-6" />
-          <StatCard title="Loan Accounts" value={customers.filter(c => c.accountType === 'loan').length} subtitle="Active loans" icon={<CreditCard />} iconVariant="danger" borderVariant="danger" className="p-4 sm:p-6" />
+          <StatCard title="Active Customers" value={customers.filter(c => c.isActive).length} subtitle="Currently active" icon={<User />} iconVariant="success" borderVariant="success" className="p-4 sm:p-6" />
+          <StatCard title="Inactive Customers" value={customers.filter(c => !c.isActive).length} subtitle="Currently inactive" icon={<User />} iconVariant="danger" borderVariant="danger" className="p-4 sm:p-6" />
         </div>
 
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
@@ -169,12 +171,13 @@ export default function CustomerMaster() {
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <Filter className="h-4 w-4 text-slate-400 flex-shrink-0" />
               <select value={filterType} onChange={e => setFilterType(e.target.value)} className="h-10 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 w-full sm:min-w-[160px]">
-                <option value="all">All Account Types</option>
-                <option value="savings">Savings</option>
-                <option value="current">Current</option>
+                <option value="all">All Customers</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                {/* <option value="savings">Savings</option>
                 <option value="fd">Fixed Deposit</option>
                 <option value="rd">Recurring Deposit</option>
-                <option value="loan">Loan</option>
+                <option value="loan">Loan</option> */}
               </select>
             </div>
           </div>
@@ -223,7 +226,6 @@ export default function CustomerMaster() {
                     <TableHead className="px-3 sm:px-4 min-w-[160px] sm:min-w-[200px]"><SortBtn field="name" label="Customer" /></TableHead>
                     <TableHead className="px-3 sm:px-4 min-w-[150px] sm:min-w-[180px] hide-on-mobile"><SortBtn field="email" label="Contact" /></TableHead>
                     <TableHead className="px-3 sm:px-4 min-w-[100px] sm:min-w-[140px]"><SortBtn field="isActive" label="Status" /></TableHead>
-                    <TableHead className="px-3 sm:px-4 min-w-[80px] sm:min-w-[100px] text-right"><SortBtn field="annualIncome" label="Income" /></TableHead>
                     <TableHead className="px-3 sm:px-4 min-w-[90px] sm:min-w-[100px] hide-on-tablet"><SortBtn field="createdAt" label="Created" /></TableHead>
                     <TableHead className="px-3 sm:px-4 w-12 sm:w-14 text-right text-[10px] font-black uppercase text-slate-400">Actions</TableHead>
                   </TableRow>
@@ -254,9 +256,6 @@ export default function CustomerMaster() {
                           </div>
                         </TableCell>
                         <TableCell className="px-4 py-3.5"><span className={statusBadge.cls}>{statusBadge.label}</span></TableCell>
-                        <TableCell className="px-4 py-3.5 text-right">
-                          <span className="text-sm font-semibold text-slate-800 tabular-nums">{customer.annualIncome ? `₹${(customer.annualIncome / 1000).toFixed(0)}K` : '—'}</span>
-                        </TableCell>
                         <TableCell className="px-4 py-3.5">
                           <span className="text-xs text-slate-500">{new Date(customer.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' })}</span>
                         </TableCell>

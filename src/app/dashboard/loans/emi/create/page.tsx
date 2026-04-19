@@ -11,6 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { PageHeader } from "@/components/ui/page-header"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
@@ -91,7 +93,8 @@ function CreateEMIComponent() {
     paymentMethod: 'cash' as 'cash' | 'bank' | 'cheque' | 'online',
     referenceNumber: '',
     notes: '',
-    penaltyAmount: '0'
+    penaltyApplicable: false,
+    penaltyAmount: '1'
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -116,14 +119,14 @@ function CreateEMIComponent() {
       const account = loanAccounts.find(a => a.id === formData.accountId)
       if (account) {
         setSelectedAccount(account)
-        
-        // Pre-fill EMI amount if available
-        if (account.accountRules?.emiAmount) {
-          setFormData(prev => ({ 
-            ...prev, 
-            amount: account.accountRules?.emiAmount?.toString() || '' 
-          }))
-        }
+
+        // Auto-calculate EMI from loan parameters
+        const calculatedEMI = calculateEMI(account.principalAmount, account.interestRate, account.tenure)
+        setFormData(prev => ({
+          ...prev,
+          amount: calculatedEMI > 0 ? calculatedEMI.toFixed(2) : '',
+          penaltyAmount: account.accountRules?.penaltyRate?.toString() || '1'
+        }))
       } else {
         setSelectedAccount(null)
       }
@@ -148,29 +151,11 @@ function CreateEMIComponent() {
     return Object.keys(newErrors).length === 0
   }
 
-  const calculatePenalty = () => {
-    if (!selectedAccount || !selectedAccount.accountRules) return 0
-    
-    const dueDay = selectedAccount.accountRules.emiDueDay
-    const graceDays = selectedAccount.accountRules.gracePeriodDays
-    const penaltyRate = selectedAccount.accountRules.penaltyRate
-    
-    const paymentDate = new Date(formData.paymentDate)
-    const currentMonth = paymentDate.getMonth()
-    const currentYear = paymentDate.getFullYear()
-    const dueDate = new Date(currentYear, currentMonth, dueDay)
-    
-    if (paymentDate > dueDate) {
-      const daysLate = Math.floor((paymentDate.getTime() - dueDate.getTime()) / (1000 * 60 * 24))
-      const gracePeriodDaysLate = daysLate - graceDays
-      
-      if (gracePeriodDaysLate > 0) {
-        const emiAmount = parseFloat(formData.amount || '0')
-        return (emiAmount * penaltyRate / 100) * (gracePeriodDaysLate / 30)
-      }
-    }
-    
-    return 0
+  const calculateEMI = (principal: number, rate: number, tenure: number) => {
+    if (!principal || !rate || !tenure) return 0
+    // Flat rate calculation
+    const totalInterest = principal * (rate / 100) * (tenure / 12)
+    return (principal + totalInterest) / tenure
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -180,10 +165,10 @@ function CreateEMIComponent() {
 
     try {
       setLoading(true)
-      const penalty = calculatePenalty()
-      const totalAmount = parseFloat(formData.amount || '0') + penalty
+      const emiAmount = parseFloat(formData.amount || '0')
       
-      const response = await fetchWithAuth('/api/transactions', {
+      // Create EMI transaction
+      const emiResponse = await fetchWithAuth('/api/transactions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -191,22 +176,54 @@ function CreateEMIComponent() {
         token,
         body: JSON.stringify({
           accountId: formData.accountId,
-          type: 'deposit', // EMI payment is recorded as deposit
-          amount: totalAmount,
-          description: `EMI payment${penalty > 0 ? ` (includes ₹${penalty.toFixed(2)} penalty)` : ''}`,
-          reference: formData.referenceNumber || `EMI-${new Date().toISOString().split('T')[0]}`
+          type: 'CREDIT',
+          amount: emiAmount,
+          description: `EMI payment - ${formData.paymentMethod}${formData.notes ? ` (${formData.notes})` : ''}`,
+          reference: formData.referenceNumber || `EMI-${new Date().toISOString().split('T')[0]}`,
+          date: formData.paymentDate
         }),
       })
 
-      if (response.ok) {
-        showMessage('EMI payment recorded successfully', 'success')
-        setTimeout(() => {
-          router.push('/dashboard/loans')
-        }, 2000)
-      } else {
-        const errorData = await response.json()
+      if (!emiResponse.ok) {
+        const errorData = await emiResponse.json()
         showMessage(errorData.error || 'Failed to record EMI payment', 'error')
+        setLoading(false)
+        return
       }
+
+      // If penalty is applicable, create separate penalty transaction
+      if (formData.penaltyApplicable) {
+        const penaltyRate = parseFloat(formData.penaltyAmount) || 1
+        const penaltyAmount = selectedAccount?.principalAmount ? selectedAccount.principalAmount * (penaltyRate / 100) : 0
+
+        const penaltyResponse = await fetchWithAuth('/api/transactions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          token,
+          body: JSON.stringify({
+            accountId: formData.accountId,
+            type: 'DEBIT',
+            amount: penaltyAmount,
+            description: `Penalty charge (${penaltyRate}% on principal amount)`,
+            reference: `PENALTY-${new Date().toISOString().split('T')[0]}`,
+            date: formData.paymentDate
+          }),
+        })
+
+        if (!penaltyResponse.ok) {
+          const errorData = await penaltyResponse.json()
+          showMessage(`EMI recorded but penalty failed: ${errorData.error || 'Failed to record penalty'}`, 'error')
+          setLoading(false)
+          return
+        }
+      }
+
+      showMessage('EMI payment recorded successfully', 'success')
+      setTimeout(() => {
+        router.push('/dashboard/loans')
+      }, 2000)
     } catch (error) {
       console.error('Failed to record EMI payment:', error)
       showMessage('Failed to record EMI payment', 'error')
@@ -218,9 +235,6 @@ function CreateEMIComponent() {
   const formatCurrency = (amt: number) => {
     return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amt)
   }
-
-  const penalty = calculatePenalty()
-  const totalAmount = parseFloat(formData.amount || '0') + penalty
 
   return (
     <div className="space-y-6 animate-fade-in-up pb-20">
@@ -261,7 +275,15 @@ function CreateEMIComponent() {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Loan Account</label>
-                  <Select value={formData.accountId} onValueChange={(value) => setFormData(prev => ({ ...prev, accountId: value }))}>
+                  <Select value={formData.accountId} onValueChange={(value) => {
+                    const account = loanAccounts.find(a => a.id === value)
+                    const calculatedEMI = account ? calculateEMI(account.principalAmount, account.interestRate, account.tenure) : 0
+                    setFormData(prev => ({
+                      ...prev,
+                      accountId: value,
+                      amount: calculatedEMI > 0 ? calculatedEMI.toFixed(2) : ''
+                    }))
+                  }}>
                     <SelectTrigger className={`h-11 border-slate-200 bg-slate-50/30 ${errors.accountId ? 'border-rose-500' : ''}`}>
                       <SelectValue placeholder="Select loan account..." />
                     </SelectTrigger>
@@ -304,15 +326,11 @@ function CreateEMIComponent() {
                         <span className="text-[10px] font-bold text-slate-500 uppercase">Tenure</span>
                         <p className="font-bold text-slate-900">{selectedAccount.tenure} months</p>
                       </div>
-                    </div>
-                    {selectedAccount.accountRules?.emiAmount && (
-                      <div className="mt-4 pt-4 border-t border-slate-200">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-bold text-slate-500 uppercase">Scheduled EMI Amount</span>
-                          <p className="font-black text-primary text-lg">{formatCurrency(selectedAccount.accountRules.emiAmount)}</p>
-                        </div>
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase">Due Day</span>
+                        <p className="font-bold text-slate-900">{selectedAccount.accountRules?.emiDueDay || 'N/A'} of each month</p>
                       </div>
-                    )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -333,15 +351,20 @@ function CreateEMIComponent() {
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">EMI Amount (Rs.)</label>
                   <div className="relative">
                     <Banknote className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <Input 
-                      type="number" 
+                    <Input
+                      type="number"
                       step="0.01"
-                      placeholder="0.00" 
-                      value={formData.amount} 
-                      onChange={e => setFormData(p => ({ ...p, amount: e.target.value }))} 
-                      className={`pl-10 h-11 border-slate-200 bg-slate-50/30 font-black tracking-tight ${errors.amount ? 'border-rose-500' : ''}`} 
+                      placeholder="0.00"
+                      value={formData.amount}
+                      onChange={e => setFormData(p => ({ ...p, amount: e.target.value }))}
+                      className={`pl-10 h-11 border-slate-200 bg-slate-50/30 font-black tracking-tight ${errors.amount ? 'border-rose-500' : ''}`}
                     />
                   </div>
+                  {selectedAccount && (
+                    <p className="text-[10px] text-emerald-600 font-bold ml-1">
+                      Calculated from principal: {formatCurrency(selectedAccount.principalAmount)}, rate: {selectedAccount.interestRate}%, tenure: {selectedAccount.tenure} months
+                    </p>
+                  )}
                   {errors.amount && <p className="text-[10px] text-rose-500 font-bold ml-1">{errors.amount}</p>}
                 </div>
                 <div className="space-y-2">
@@ -356,6 +379,33 @@ function CreateEMIComponent() {
                     />
                   </div>
                   {errors.paymentDate && <p className="text-[10px] text-rose-500 font-bold ml-1">{errors.paymentDate}</p>}
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Penalty Applicable</label>
+                    <Switch
+                      checked={formData.penaltyApplicable}
+                      onCheckedChange={(checked) => setFormData(p => ({ ...p, penaltyApplicable: checked }))}
+                    />
+                  </div>
+                  {formData.penaltyApplicable && (
+                    <div className="space-y-2 mt-2">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Penalty Rate on Principal (%)</label>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        placeholder="1.0"
+                        value={formData.penaltyAmount}
+                        onChange={e => setFormData(p => ({ ...p, penaltyAmount: e.target.value }))}
+                        className="h-11 border-slate-200 bg-slate-50/30 font-bold"
+                      />
+                      {selectedAccount && (
+                        <p className="text-[10px] text-slate-500 ml-1">
+                          Penalty amount: {formatCurrency((selectedAccount.principalAmount || 0) * (parseFloat(formData.penaltyAmount) || 1) / 100)}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -427,21 +477,27 @@ function CreateEMIComponent() {
                   <p className="text-[10px] font-bold text-slate-500 uppercase">EMI Amount</p>
                   <p className="text-sm font-bold text-white">{formatCurrency(parseFloat(formData.amount) || 0)}</p>
                 </div>
-                
-                {penalty > 0 && (
+
+                {formData.penaltyApplicable && (
                   <div className="flex justify-between items-center p-3 bg-rose-500/10 rounded-lg border border-rose-500/20">
                     <div className="flex items-center gap-2">
                       <AlertTriangle className="h-4 w-4 text-rose-400" />
-                      <p className="text-[10px] font-bold text-rose-400 uppercase">Late Penalty</p>
+                      <p className="text-[10px] font-bold text-rose-400 uppercase">Penalty ({formData.penaltyAmount}% on principal)</p>
                     </div>
-                    <p className="text-sm font-bold text-rose-400">{formatCurrency(penalty)}</p>
+                    <p className="text-sm font-bold text-rose-400">
+                      {formatCurrency((selectedAccount?.principalAmount || 0) * (parseFloat(formData.penaltyAmount) || 1) / 100)}
+                    </p>
                   </div>
                 )}
-                
+
                 <div className="pt-4 border-t border-white/10">
                   <div className="flex justify-between items-center">
                     <p className="text-[10px] font-black text-emerald-400 uppercase tracking-wider">Total Payable</p>
-                    <p className="text-2xl font-black text-white tracking-tighter">{formatCurrency(totalAmount)}</p>
+                    <p className="text-2xl font-black text-white tracking-tighter">
+                      {formatCurrency(
+                        (parseFloat(formData.amount) || 0) + (formData.penaltyApplicable ? (selectedAccount?.principalAmount || 0) * (parseFloat(formData.penaltyAmount) || 1) / 100 : 0)
+                      )}
+                    </p>
                   </div>
                 </div>
               </div>

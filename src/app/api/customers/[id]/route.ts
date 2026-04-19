@@ -1,11 +1,49 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/database";
+import { verifyToken } from "@/lib/auth";
+
+// Force Node.js runtime to avoid Edge runtime issues
+export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
+export const fetchCache = "force-no-store"
+
+// Authentication middleware for customer operations (PII data)
+async function authenticateRequest(request: NextRequest) {
+  const token = request.headers.get("authorization")?.replace("Bearer ", "")
+  
+  if (!token) {
+    return { error: "Authorization required for customer operations", status: 401 }
+  }
+
+  try {
+    const decoded = verifyToken(token)
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId }
+    })
+
+    if (!user || !user.isActive) {
+      return { error: "Invalid or inactive user", status: 403 }
+    }
+
+    return { user }
+  } catch (error) {
+    console.error("Customer auth error:", error)
+    return { error: "Invalid or expired token", status: 401 }
+  }
+}
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   console.log('=== API Route: GET /api/customers/[id] ===')
+  
+  // Authenticate for PII data access
+  const auth = await authenticateRequest(request)
+  if (auth.error) {
+    console.log("❌ Customer GET auth failed:", auth.error)
+    return NextResponse.json({ error: auth.error }, { status: auth.status })
+  }
   
   try {
     const { id } = await params
@@ -47,6 +85,13 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Authenticate for PII data update
+  const auth = await authenticateRequest(request)
+  if (auth.error) {
+    console.log("❌ Customer PUT auth failed:", auth.error)
+    return NextResponse.json({ error: auth.error }, { status: auth.status })
+  }
+  
   try {
     const { id } = await params
     const body = await request.json();
@@ -137,6 +182,7 @@ export async function PUT(
         annualIncome: body.annualIncome ? parseFloat(body.annualIncome) : null,
         accountType: body.accountType,
         purpose: body.purpose || null,
+        isActive: body.isActive !== undefined ? body.isActive : existingCustomer.isActive,
       },
     });
 
@@ -154,6 +200,13 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Authenticate for PII data deletion
+  const auth = await authenticateRequest(request)
+  if (auth.error) {
+    console.log("❌ Customer DELETE auth failed:", auth.error)
+    return NextResponse.json({ error: auth.error }, { status: auth.status })
+  }
+  
   try {
     const { id } = await params
     

@@ -119,7 +119,7 @@ export default function FDLedgerPage() {
       <div className="space-y-6 animate-fade-in-up pb-20">
         <PageHeader
           title="FD Transaction Ledger"
-          subtitle="Audit-grade historical records for all term deposit instruments"
+          subtitle="View all FD account transactions"
           actions={
             <div className="flex items-center gap-3">
               <Button
@@ -141,24 +141,24 @@ export default function FDLedgerPage() {
         {/* Dashboard Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <StatCard
-            title="Total Transaction Volume"
+            title="Total Amount"
             value={formatCurrency(totalVolume)}
             icon={CurrencyDollarIcon}
-            trend={{ value: "Instrument Activity", isPositive: true }}
+            trend={{ value: "All Transactions", isPositive: true }}
             className="border-primary"
           />
           <StatCard
-            title="Active Entries"
+            title="Total Transactions"
             value={filteredTransactions.length}
             icon={DocumentTextIcon}
-            trend={{ value: `${depositCount} Deposits recorded`, isPositive: true }}
+            trend={{ value: `${depositCount} Deposits`, isPositive: true }}
             className="border-blue-500"
           />
           <StatCard
-            title="Last Activity"
+            title="Last Transaction"
             value={filteredTransactions.length > 0 ? new Date(filteredTransactions[0].transactionDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }) : 'N/A'}
             icon={CalendarIcon}
-            trend={{ value: "Most recent sync", isPositive: true }}
+            trend={{ value: "Recent date", isPositive: true }}
             className="border-emerald-500"
           />
         </div>
@@ -168,7 +168,7 @@ export default function FDLedgerPage() {
           <div className="relative flex-1 min-w-[300px]">
             <MagnifyingGlassIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <Input
-              placeholder="Search by account number, client name, or narrative..."
+              placeholder="Search by account number, customer name, or description..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 h-10 border-slate-200 bg-slate-50/50 focus:bg-white rounded-xl text-sm transition-all"
@@ -178,28 +178,28 @@ export default function FDLedgerPage() {
           <div className="flex items-center gap-2">
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger className="h-10 w-48 border-slate-200 bg-slate-50/50 rounded-xl font-medium">
-                <SelectValue placeholder="Classification" />
+                <SelectValue placeholder="Type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Classifications</SelectItem>
-                <SelectItem value="deposit">Principal Inward</SelectItem>
-                <SelectItem value="interest">Yield Accrual</SelectItem>
-                <SelectItem value="withdrawal">Liquid Outward</SelectItem>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="deposit">Deposit</SelectItem>
+                <SelectItem value="interest">Interest</SelectItem>
+                <SelectItem value="withdrawal">Withdrawal</SelectItem>
               </SelectContent>
             </Select>
 
             <div className="flex items-center border border-slate-200 rounded-xl bg-slate-50/50 px-2 h-10">
               <CalendarIcon className="h-4 w-4 text-slate-400 mr-2" />
-              <input 
-                type="date" 
-                value={dateRange.start} 
+              <input
+                type="date"
+                value={dateRange.start}
                 onChange={(e) => setDateRange({...dateRange, start: e.target.value})}
                 className="bg-transparent border-none text-xs font-bold text-slate-700 outline-none w-28"
               />
               <span className="text-slate-300 mx-2">—</span>
-              <input 
-                type="date" 
-                value={dateRange.end} 
+              <input
+                type="date"
+                value={dateRange.end}
                 onChange={(e) => setDateRange({...dateRange, end: e.target.value})}
                 className="bg-transparent border-none text-xs font-bold text-slate-700 outline-none w-28"
               />
@@ -212,36 +212,36 @@ export default function FDLedgerPage() {
           <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-8 h-16 flex flex-row items-center justify-between">
             <CardTitle className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
               <BookOpenIcon className="h-4 w-4 mr-2 text-primary" />
-              Instrument Activity Logs
+              Transaction History
             </CardTitle>
             <Badge className="bg-blue-50 text-blue-700 border-none font-bold text-[10px] uppercase">
-              {filteredTransactions.length} Verified Records
+              {filteredTransactions.length} Records
             </Badge>
           </CardHeader>
           <div className="overflow-x-auto">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20 gap-4">
                 <div className="h-10 w-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Reconstructing Ledger...</p>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Loading...</p>
               </div>
             ) : filteredTransactions.length === 0 ? (
               <div className="text-center py-20">
                 <div className="h-16 w-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
                   <DocumentTextIcon className="h-8 w-8 text-slate-300" />
                 </div>
-                <h3 className="text-sm font-bold text-slate-900 uppercase">No records resolved</h3>
-                <p className="text-xs text-slate-500 mt-2 max-w-xs mx-auto leading-relaxed">Adjust your temporal filters or search criteria to locate specific instrument logs.</p>
+                <h3 className="text-sm font-bold text-slate-900 uppercase">No records found</h3>
+                <p className="text-xs text-slate-500 mt-2 max-w-xs mx-auto leading-relaxed">Try adjusting your filters or search terms to find transactions.</p>
               </div>
             ) : (
               <Table>
                 <TableHeader className="bg-slate-50/30">
                   <TableRow>
-                    <TableHead className="px-8 text-[10px] font-black uppercase text-slate-400 h-12 tracking-widest">Temporal Marker</TableHead>
-                    <TableHead className="text-[10px] font-black uppercase text-slate-400 h-12 tracking-widest">Identity / Identifier</TableHead>
-                    <TableHead className="text-[10px] font-black uppercase text-slate-400 h-12 tracking-widest text-center">Protocol</TableHead>
-                    <TableHead className="text-[10px] font-black uppercase text-slate-400 h-12 tracking-widest text-right">Magnitude</TableHead>
+                    <TableHead className="px-8 text-[10px] font-black uppercase text-slate-400 h-12 tracking-widest">Date</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase text-slate-400 h-12 tracking-widest">Account</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase text-slate-400 h-12 tracking-widest text-center">Type</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase text-slate-400 h-12 tracking-widest text-right">Amount</TableHead>
                     <TableHead className="text-[10px] font-black uppercase text-slate-400 h-12 tracking-widest text-right">Balance</TableHead>
-                    <TableHead className="px-8 text-[10px] font-black uppercase text-slate-400 h-12 tracking-widest">Narrative</TableHead>
+                    <TableHead className="px-8 text-[10px] font-black uppercase text-slate-400 h-12 tracking-widest">Description</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

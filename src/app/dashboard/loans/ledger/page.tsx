@@ -135,10 +135,10 @@ export default function LoanLedgerPage() {
                 <ArrowLeftIcon className="h-4 w-4 mr-2" />
                 Back to Loans
               </Button>
-              <Button className="h-9 bg-slate-800 hover:bg-slate-900 text-white rounded-xl px-4 font-bold transition-all shadow-sm">
+              {/* <Button className="h-9 bg-slate-800 hover:bg-slate-900 text-white rounded-xl px-4 font-bold transition-all shadow-sm">
                 <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
                 Export Audit Log
-              </Button>
+              </Button> */}
             </div>
           }
         />

@@ -235,7 +235,13 @@ export async function GET(request: NextRequest) {
     }
 
     if (accountId) {
-      where.accountId = accountId
+      // Handle multiple accountIds (comma-separated)
+      const accountIds = accountId.split(',').map(id => id.trim())
+      if (accountIds.length > 1) {
+        where.accountId = { in: accountIds }
+      } else {
+        where.accountId = accountId
+      }
     }
 
     if (type) {

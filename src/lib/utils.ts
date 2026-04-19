@@ -45,3 +45,15 @@ export function formatShortDate(date: string | Date | null | undefined): string 
   
   return `${day} ${month}`
 }
+
+// Currency formatting for Indian Rupees
+export function formatCurrency(amount: number | null | undefined): string {
+  if (amount === null || amount === undefined) return '0'
+  
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount)
+}

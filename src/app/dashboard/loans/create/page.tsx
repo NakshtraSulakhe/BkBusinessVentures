@@ -70,7 +70,6 @@ function CreateLoanComponent() {
     interestRate: '',
     tenure: '',
     startDate: new Date().toISOString().split('T')[0],
-    loanMethod: 'reducing' as 'flat' | 'reducing',
     emiDueDay: '1',
     gracePeriodDays: '3',
     penaltyRate: '1.0',
@@ -105,14 +104,9 @@ function CreateLoanComponent() {
     const tenure = parseInt(formData.tenure) || 0
     if (!principal || !rate || !tenure) return 0
     
-    if (formData.loanMethod === 'flat') {
-      const totalInterest = principal * (rate / 100) * (tenure / 12)
-      return (principal + totalInterest) / tenure
-    } else {
-      const monthlyRate = rate / 12 / 100
-      const emi = principal * monthlyRate * Math.pow(1 + monthlyRate, tenure) / (Math.pow(1 + monthlyRate, tenure) - 1)
-      return isNaN(emi) ? 0 : emi
-    }
+    // Flat rate calculation only
+    const totalInterest = principal * (rate / 100) * (tenure / 12)
+    return (principal + totalInterest) / tenure
   }
 
   const calculateMaturityDate = () => {
@@ -307,18 +301,6 @@ function CreateLoanComponent() {
             </CardHeader>
             <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Interest Method</label>
-                  <Select value={formData.loanMethod} onValueChange={v => setFormData(p => ({ ...p, loanMethod: v as any }))}>
-                    <SelectTrigger className="h-11 border-slate-200 bg-slate-50/30 font-bold">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="flat">Flat Interest Rate</SelectItem>
-                      <SelectItem value="reducing">Reducing Balance EMI</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">EMI Due Date</label>
                   <Select value={formData.emiDueDay} onValueChange={v => setFormData(p => ({ ...p, emiDueDay: v }))}>
