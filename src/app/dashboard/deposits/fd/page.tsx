@@ -103,7 +103,8 @@ export default function FDPage() {
       const principal = account.principalAmount || 0
       const rate = account.interestRate || 0
       const tenure = account.tenure || 0
-      const calculationMethod = (account.accountRules?.calculationMethod as string) || 'compound'
+      const method = account.accountRules?.calculationMethod
+      const calculationMethod = method === 'simple' || method === 'compound' ? method : 'compound'
       const interest = calculateCompoundInterest(principal, rate, tenure, calculationMethod)
       const maturityAmount = principal + interest
 
@@ -157,7 +158,8 @@ export default function FDPage() {
       const principal = account.principalAmount || 0
       const rate = account.interestRate || 0
       const tenure = account.tenure || 0
-      const calculationMethod = (account.accountRules?.calculationMethod as string) || 'compound'
+      const method = account.accountRules?.calculationMethod
+      const calculationMethod = method === 'simple' || method === 'compound' ? method : 'compound'
       const interest = calculateCompoundInterest(principal, rate, tenure, calculationMethod)
       return sum + principal + interest
     }, 0)
@@ -166,7 +168,8 @@ export default function FDPage() {
       const principal = account.principalAmount || 0
       const rate = account.interestRate || 0
       const tenure = account.tenure || 0
-      const calculationMethod = (account.accountRules?.calculationMethod as string) || 'compound'
+      const method = account.accountRules?.calculationMethod
+      const calculationMethod = method === 'simple' || method === 'compound' ? method : 'compound'
       return sum + calculateCompoundInterest(principal, rate, tenure, calculationMethod)
     }, 0)
 
@@ -233,7 +236,8 @@ export default function FDPage() {
       const principal = account.principalAmount || 0
       const rate = account.interestRate || 0
       const tenure = account.tenure || 0
-      const calculationMethod = (account.accountRules?.calculationMethod as string) || 'compound'
+      const method = account.accountRules?.calculationMethod
+      const calculationMethod = method === 'simple' || method === 'compound' ? method : 'compound'
       const interest = calculateCompoundInterest(principal, rate, tenure, calculationMethod)
       const maturityAmount = principal + interest
 
@@ -451,7 +455,8 @@ export default function FDPage() {
                             const principal = account.principalAmount || 0
                             const rate = account.interestRate || 0
                             const tenure = account.tenure || 0
-                            const calculationMethod = (account.accountRules?.calculationMethod as string) || 'compound'
+                            const method = account.accountRules?.calculationMethod
+      const calculationMethod = method === 'simple' || method === 'compound' ? method : 'compound'
                             const interest = calculateCompoundInterest(principal, rate, tenure, calculationMethod)
                             const maturityAmount = principal + interest
                             return (

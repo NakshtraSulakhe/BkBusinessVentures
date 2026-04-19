@@ -81,7 +81,10 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
           tenure: data.account.tenure?.toString() || '',
           startDate: data.account.startDate?.split('T')[0] || '',
           status: data.account.status || 'ACTIVE',
-          calculationMethod: (data.account.accountRules?.calculationMethod as string) || 'compound',
+          calculationMethod: (() => {
+            const method = data.account.accountRules?.calculationMethod
+            return method === 'simple' || method === 'compound' ? method : 'compound'
+          })(),
         })
       } else {
         setMessage({ type: 'error', text: 'Failed to load account' })

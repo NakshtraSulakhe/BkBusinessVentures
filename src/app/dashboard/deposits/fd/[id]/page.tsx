@@ -354,7 +354,10 @@ function FDAccountDetail() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-600">Maturity Amount:</span>
-                    <span className="font-semibold">{formatCurrency(Math.round(account.principalAmount + calculateCompoundInterest(account.principalAmount, account.interestRate, account.tenure, (account.accountRules?.calculationMethod as string) || 'compound')))}</span>
+                    <span className="font-semibold">{formatCurrency(Math.round(account.principalAmount + calculateCompoundInterest(account.principalAmount, account.interestRate, account.tenure, (() => {
+                    const method = account.accountRules?.calculationMethod
+                    return method === 'simple' || method === 'compound' ? method : 'compound'
+                  })())))}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-600">Start Date:</span>
